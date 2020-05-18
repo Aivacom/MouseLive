@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?><!--美颜-->
+<layout>
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="25dp"
+            android:layout_marginRight="25dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.warkiz.widget.IndicatorStayLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginRight="30dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.6">
+
+                <com.warkiz.widget.IndicatorSeekBar
+                    android:id="@+id/seekEffectBeauty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="visible"
+                    app:isb_indicator_color="#000000"
+                    app:isb_indicator_content_layout="@layout/indicator_layout"
+                    app:isb_indicator_text_color="#FFFFFF"
+                    app:isb_indicator_text_size="14sp"
+                    app:isb_max="100"
+                    app:isb_min="0"
+                    app:isb_show_indicator="custom"
+                    app:isb_show_tick_marks_type="oval"
+                    app:isb_thumb_color="#FFFFFF"
+                    app:isb_tick_marks_color="#000000"
+                    app:isb_tick_texts_typeface="monospace"
+                    app:isb_track_background_color="#33ffffff"
+                    app:isb_track_progress_color="#FFFFFF" />
+
+            </com.warkiz.widget.IndicatorStayLayout>
+
+            <TextView
+                android:id="@+id/tvEffectBeautyDefault"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawableTop="@mipmap/ic_reset_effect"
+                android:gravity="center"
+                android:padding="4dp"
+                android:text="@string/magic_reset"
+                android:textColor="@android:color/white"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <include
+                android:id="@+id/ilOrginal"
+                layout="@layout/item_effect_beauty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="#414141" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvEffectBeauty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="15dp"
+                android:layout_marginRight="15dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</layout>
