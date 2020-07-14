@@ -118,8 +118,10 @@ public class VoiceUserMenuDialog extends BaseDialog implements View.OnClickListe
         long targetUID = user.getUid();
         long targetRID = user.getRoomId();
         showLoading();
+
+        boolean force = (mRoomUser.getRoomRole() == RoomUser.RoomRole.Admin);
         FunWSSvc.getInstance()
-                .handupChat(targetUID, targetRID)
+                .handupChat(targetUID, targetRID, force)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindUntilEvent(FragmentEvent.DESTROY))
                 .subscribe(aBoolean -> {

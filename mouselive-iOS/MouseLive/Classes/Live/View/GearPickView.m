@@ -7,6 +7,7 @@
 //
 
 #import "GearPickView.h"
+#import "SYThunderManagerNew.h"
 
 @interface GearPickView()<UIPickerViewDelegate,UIPickerViewDataSource>
 
@@ -14,8 +15,8 @@
 /** pickView 数据源*/
 @property (nonatomic, strong) NSArray *dataArray;
 /**选择的档位*/
-@property (nonatomic,  assign)NSInteger selectGear;
-@property (weak, nonatomic) IBOutlet UILabel *qualityBtn;
+@property (nonatomic, assign)NSInteger selectGear;
+@property (nonatomic, weak) IBOutlet UILabel *qualityBtn;
 
 @end
 
@@ -87,9 +88,37 @@
 
 - (IBAction)okAction:(UIButton *)sender
 {
-    [[NSNotificationCenter defaultCenter]postNotificationName:kNotifySettingGear object:@(self.selectGear)];
+    [self settingGear:self.selectGear];
 }
 
+- (void)settingGear:(NSInteger)gear
+{
+    int mode = 0;
+    switch (gear) {
+        case 0:  //流畅
+            mode = THUNDERPUBLISH_VIDEO_MODE_FLUENCY;
+            break;
+        case 1://标清
+            mode = THUNDERPUBLISH_VIDEO_MODE_NORMAL;
+            
+            break;
+        case 2: //高清
+            mode = THUNDERPUBLISH_VIDEO_MODE_HIGHQULITY;
+            break;
+        case 3://超清
+            mode = THUNDERPUBLISH_VIDEO_MODE_SUPERQULITY;
+            break;
+        case 4://蓝光
+            mode = THUNDERPUBLISH_VIDEO_MODE_BLUERAY_2M;
+            break;
+        default:
+            mode = THUNDERPUBLISH_VIDEO_MODE_FLUENCY;
+            break;
+    }
+    [[SYThunderManagerNew sharedManager] switchPublishMode:mode];
+    [self hidenGearView];
+    
+}
 - (void)hidenGearView
 {
     self.hidden = YES;

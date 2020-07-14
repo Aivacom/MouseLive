@@ -8,7 +8,6 @@
 
 #import "LivePublicTalkView.h"
 #import "LivePublicTalkCell.h"
-#import "SYHummerManager.h"
 
 @interface LivePublicTalkView()<UITableViewDataSource,UITableViewDelegate>
 
@@ -20,7 +19,7 @@ static NSString *reuseIdentifier = @"LivePublicTalkCell";
 {
     if (!_dataArray) {
         _dataArray = [NSMutableArray array];
-        [_dataArray addObject:[self fectoryTalkStringWithString:NSLocalizedString(@"SunClouds provides low latency, high quality video and audio livestreaming SDK and chatroom SDK. Try the features in the liveroom and let us know if you like it!", nil) color:[UIColor sl_colorWithHexString:@"#FFFFFF"]]];
+        [_dataArray addObject:[self fectoryTalkStringWithString:NSLocalizedString(@"Jocloud provides low latency, high quality video and audio streaming SDK and chatroom SDK. Try the features in the live room and know more about us via www.jocloud.com.", nil) color:[UIColor sl_colorWithHexString:@"#FFFFFF"]]];
       
     }
     return _dataArray;
@@ -78,5 +77,9 @@ static NSString *reuseIdentifier = @"LivePublicTalkCell";
     }
 }
 
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+    [[self nextResponder] touchesBegan:touches withEvent:event];
+}
 
 @end

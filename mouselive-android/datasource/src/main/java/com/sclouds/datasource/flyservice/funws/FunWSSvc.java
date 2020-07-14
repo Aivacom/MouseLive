@@ -113,7 +113,7 @@ public class FunWSSvc implements FunWSClientHandler.onMsglistener {
             public void onConnectStateChanged(int state) {
                 switch (state) {
                     case FunWSClientHandler.ConnectState.CONNECT_STATE_CONNECTED: {
-                        sendPkg(new RoomPacket(appid,genTraceId(), BasePacket.EV_CS_ENTER_ROOM_NTY,
+                        sendPkg(new RoomPacket(appid, genTraceId(), BasePacket.EV_CS_ENTER_ROOM_NTY,
                                 uid,
                                 roomId,
                                 chatRoomId));
@@ -132,7 +132,7 @@ public class FunWSSvc implements FunWSClientHandler.onMsglistener {
         connectExecutor = Executors.newSingleThreadExecutor();
     }
 
-    public void start(long appid,long uid, long roomId, long chatRoomId, int chatType) {
+    public void start(long appid, long uid, long roomId, long chatRoomId, int chatType) {
         if (uid <= 0 || roomId <= 0) {
             throw new IllegalArgumentException("invild uid:" + uid + " roomid:" + roomId);
         }
@@ -156,7 +156,7 @@ public class FunWSSvc implements FunWSClientHandler.onMsglistener {
     }
 
     private void sendLeavePkg() {
-        LeavePacksge.LeaveInfo info = new LeavePacksge.LeaveInfo(appid,genTraceId(),uid,roomId,
+        LeavePacksge.LeaveInfo info = new LeavePacksge.LeaveInfo(appid, genTraceId(), uid, roomId,
                 chatRoomId);
         sendPkg(new LeavePacksge(info));
     }
@@ -324,7 +324,7 @@ public class FunWSSvc implements FunWSClientHandler.onMsglistener {
                 }
             }
             break;
-            case BasePacket.EV_CS_LEAVE_ROOM_NTY:{
+            case BasePacket.EV_CS_LEAVE_ROOM_NTY: {
                 mClientHandler.stop();
                 mSendChat.clear();
                 mRcvChat.clear();
@@ -374,7 +374,7 @@ public class FunWSSvc implements FunWSClientHandler.onMsglistener {
      */
     public Observable<Integer> sendChat(long dstUid, long dstRid, int chatType) {
         ChatPacket pkg =
-                new ChatPacket(appid,genTraceId(), "", BasePacket.EV_CC_CHAT_REQ, uid, roomId,
+                new ChatPacket(appid, genTraceId(), "", BasePacket.EV_CC_CHAT_REQ, uid, roomId,
                         dstUid,
                         dstRid, chatType);
         sendPkg(pkg);
@@ -459,9 +459,24 @@ public class FunWSSvc implements FunWSClientHandler.onMsglistener {
      * @return
      */
     public Observable<Boolean> handupChat(long dstUid, long dstRid) {
+        return handupChat(dstUid, dstRid, false);
+    }
+
+    /**
+     * 挂断连麦
+     *
+     * @param
+     * @return
+     */
+    public Observable<Boolean> handupChat(long dstUid, long dstRid, boolean force) {
         ChatPacket pkg = mRcvChat.remove(dstUid);
         if (pkg == null) {
             pkg = mSendChat.remove(dstUid);
+        }
+        if (force && pkg == null) { //强制挂断，用于语聊房管理员下麦用户
+            pkg = new ChatPacket(appid, genTraceId(), "", BasePacket.EV_CC_CHAT_HANGUP, uid, roomId,
+                    dstUid,
+                    dstRid, chatType);
         }
 
         if (pkg == null) {
@@ -474,7 +489,7 @@ public class FunWSSvc implements FunWSClientHandler.onMsglistener {
     }
 
     public Observable<Boolean> enableRemoteMic(long dstUid, int chatType, boolean enable) {
-        return sendPkg(new MicPacket(appid,genTraceId(), BasePacket.EV_CC_MIC_ENABLE, uid, roomId,
+        return sendPkg(new MicPacket(appid, genTraceId(), BasePacket.EV_CC_MIC_ENABLE, uid, roomId,
                 dstUid,
                 roomId,
                 chatType, enable));

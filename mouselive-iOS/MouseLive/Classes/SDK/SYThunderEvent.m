@@ -262,9 +262,24 @@ onVideoSizeChangedOfUid:(nonnull NSString *)uid
     size:(CGSize)size
     rotation:(NSInteger)rotation
 {
-    if ([self.delegate respondsToSelector:@selector(thunderEngine:onVideoSizeChangedOfUid:size:rotation:)]) {
-        [self.delegate thunderEngine:engine onVideoSizeChangedOfUid:uid size:size rotation:rotation];
+    YYLogDebug(@"[MouseLive-iOS] onVideoSizeChangedOfUid, uid:%@, w:%f, h:%f, rotation:%ld", uid, size.width, size.height, (long)rotation);
+    if ([uid isEqual:[SYThunderManagerNew sharedManager].localUid]) { // only local uid need to set videomark
+        if ([SYThunderManagerNew sharedManager].waterMarkAdapter == nil) {
+            [SYThunderManagerNew sharedManager].waterMarkAdapter = [[WaterMarkAdapter alloc] init];
+            [[SYThunderManagerNew sharedManager].waterMarkAdapter setImgUrl:[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"watermark" ofType:@"png"]]];
+//            [[NSURL fileURLWithPath:[NSBundle mainBundle] pathForResource:@"watermark" ofType:@"png"]]
+            [[SYThunderManagerNew sharedManager].waterMarkAdapter setStartX:850];
+            [[SYThunderManagerNew sharedManager].waterMarkAdapter setStartY:73];
+            [[SYThunderManagerNew sharedManager].waterMarkAdapter setWidth:40];
+            [[SYThunderManagerNew sharedManager].waterMarkAdapter setHeight:40];
+        }
+        ThunderImage* image = [[SYThunderManagerNew sharedManager].waterMarkAdapter createThunderBoltImage:size.width videoHeight:size.height rotation:rotation];
+        YYLogDebug(@"createVideoCanvasWithUid setVideoWatermark  rect x:%f, y:%f, width:%f, height:%f", image.rect.origin.x, image.rect.origin.y, image.rect.size.width, image.rect.size.height);
+        [[SYThunderManagerNew sharedManager] setVideoWatermarkWithThunderImage:image];
     }
+//    if ([self.delegate respondsToSelector:@selector(thunderEngine:onVideoSizeChangedOfUid:size:rotation:)]) {
+//        [self.delegate thunderEngine:engine onVideoSizeChangedOfUid:uid size:size rotation:rotation];
+//    }
 }
 
 /**
@@ -297,8 +312,16 @@ onVideoSizeChangedOfUid:(nonnull NSString *)uid
  */
 - (void)thunderEngine:(ThunderEngine * _Nonnull)engine onRoomStats:(nonnull RoomStats *)stats
 {
-    if ([self.delegate respondsToSelector:@selector(thunderEngine:onRoomStats:)]) {
-        [self.delegate thunderEngine:engine onRoomStats:stats];
+    NetworkQualityStauts *networkQualityStatus = [NetworkQualityStauts alloc];
+    networkQualityStatus.audioUpload = stats.txAudioBitrate / 8192;
+    networkQualityStatus.audioDownload = stats.rxAudioBitrate / 8192;
+    networkQualityStatus.videoUpload = stats.txVideoBitrate / 8192;
+    networkQualityStatus.videoDownload = stats.rxVideoBitrate / 8192;
+    networkQualityStatus.upload = stats.txBitrate / 8192;
+    networkQualityStatus.download = stats.rxBitrate / 8192;
+    
+    if ([self.delegate respondsToSelector:@selector(thunderEngine:networkQualityStatus:)]) {
+        [self.delegate thunderEngine:engine networkQualityStatus:networkQualityStatus];
     }
 }
 

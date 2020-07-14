@@ -6,10 +6,10 @@
         android:icon="@drawable/selector_main_menu_main"
         android:title="@string/main_menu_main_text" />
 
-    <item
-        android:id="@+id/menuVideo"
-        android:icon="@drawable/selector_main_menu_video"
-        android:title="@string/main_menu_main_video" />
+<!--    <item-->
+<!--        android:id="@+id/menuVideo"-->
+<!--        android:icon="@drawable/selector_main_menu_video"-->
+<!--        android:title="@string/main_menu_main_video" />-->
 
     <item
         android:id="@+id/empty"
@@ -20,8 +20,8 @@
         android:icon="@drawable/selector_main_menu_feedback"
         android:title="@string/main_menu_main_fadeback" />
 
-    <item
-        android:id="@+id/menuMine"
-        android:icon="@drawable/selector_main_menu_mine"
-        android:title="@string/main_menu_mine_text" />
+<!--    <item-->
+<!--        android:id="@+id/menuMine"-->
+<!--        android:icon="@drawable/selector_main_menu_mine"-->
+<!--        android:title="@string/main_menu_mine_text" />-->
 </menu>

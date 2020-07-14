@@ -7,7 +7,8 @@
 //
 
 #import "AudioWhineView.h"
-#import "SYThunderManagerNew.h"
+#import "LiveManager.h"
+
 @interface AudioWhineView()
 @property (nonatomic, weak) IBOutlet UIView *whineView;
 
@@ -90,7 +91,7 @@
     self.selectedButton.selected = YES;
     self.whineSwitch.on = NO;
     self.earButton.selected = NO;
-    [[SYThunderManagerNew sharedManager]setVoiceChanger:THUNDER_VOICE_CHANGER_NONE];
+    [[LiveManager shareManager] setVoiceChanger:THUNDER_VOICE_CHANGER_NONE];
 }
 - (void)createUI
 {
@@ -135,24 +136,23 @@
     
     if (self.whineSwitch.on) {
         // 如果开启了变声
-        [[SYThunderManagerNew sharedManager]setVoiceChanger:self.mode];
+        [[LiveManager shareManager] setVoiceChanger:self.mode];
     }
 }
 
 - (IBAction)switchAction:(UISwitch *)sender
 {
     if (sender.on) {
-        [[SYThunderManagerNew sharedManager]setVoiceChanger:self.mode];
+        [[LiveManager shareManager] setVoiceChanger:self.mode];
     } else {
-        [[SYThunderManagerNew sharedManager]setVoiceChanger:THUNDER_VOICE_CHANGER_NONE];
-
+        [[LiveManager shareManager] setVoiceChanger:THUNDER_VOICE_CHANGER_NONE];
     }
 }
 
 - (IBAction)earaction:(UIButton *)sender
 {
     sender.selected = !sender.selected;
-    [[SYThunderManagerNew sharedManager] setEnableInEarMonitor:sender.selected];
+    [[LiveManager shareManager]setEnableInEarMonitor:sender.selected];
 }
 
 @end

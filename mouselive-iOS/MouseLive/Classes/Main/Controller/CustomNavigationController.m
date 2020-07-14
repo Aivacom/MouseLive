@@ -17,7 +17,6 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    // Do any additional setup after loading the view.
 }
 // 重写自定义的UINavigationController中的push方法
 // 处理tabbar的显示隐藏

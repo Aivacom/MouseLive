@@ -82,35 +82,61 @@ static LivePresenter * _instance;
 
 }
 
+
 //用户信息
 - (void)fetchUserDataWithUid:(NSString *)uid  success:(SYNetServiceSuccessBlock)success failure:(SYNetServiceFailBlock)failure
 {
-    
-    int taskId = [HttpService sy_httpRequestWithType:SYHttpRequestKeyType_GetUserInfo params:@{kUid:@(uid.longLongValue)} success:^(int taskId, id  _Nullable respObjc) {
-        [self.taskArray removeObject:@(taskId)];
-        NSString *code = [NSString stringWithFormat:@"%@",respObjc[kCode]];
-        if ([code isEqualToString:ksuccessCode]) {
-            YYLogError(@"[MouseLive-App] LivePresenter GetUserInfo success ");
-            LiveUserModel *model = [LiveUserModel mj_objectWithKeyValues:respObjc[kData]];
-            if (success && respObjc) {
-                success(0,model);
-            }
-        } else {
-            
-            YYLogError(@"[MouseLive-App] LivePresenter GetUserInfo error %@",respObjc[kMsg]);
-            if (success) {
-                success(0,nil);
-            }
+    RLMLiveUserModel *user = [RLMLiveUserModel objectForPrimaryKey:uid];
+    //用户详情存在
+    if (user.NickName) {
+        if (success) {
+            success(0,user);
         }
-    } failure:^(int taskId, id  _Nullable respObjc, NSString * _Nullable errorCode, NSString * _Nullable errorMsg) {
-        [self.taskArray removeObject:@(taskId)];
-        YYLogError(@"[MouseLive-App] LivePresenter GetUserInfo error %@",errorMsg);
-        if (failure) {
-            failure(0,respObjc,errorCode,errorMsg);
-        }
-    }];
-    
-    [self.taskArray addObject:@(taskId)];
+        return;
+    } else {
+        //用户详情不存在 请求网络
+        int taskId = [HttpService sy_httpRequestWithType:SYHttpRequestKeyType_GetUserInfo params:@{kUid:@(uid.longLongValue)} success:^(int taskId, id  _Nullable respObjc) {
+            [self.taskArray removeObject:@(taskId)];
+            NSString *code = [NSString stringWithFormat:@"%@",respObjc[kCode]];
+            if ([code isEqualToString:ksuccessCode]) {
+                YYLogError(@"[MouseLive-App] LivePresenter GetUserInfo success ");
+                 RLMLiveUserModel *userModel = [RLMLiveUserModel objectForPrimaryKey:uid];
+                 RLMRealm *realm = [RLMRealm defaultRealm];
+                if (!userModel) {
+                     userModel = [RLMLiveUserModel mj_objectWithKeyValues:respObjc[kData]];
+                } else {
+                    RLMLiveUserModel *user = [RLMLiveUserModel mj_objectWithKeyValues:respObjc[kData]];
+                    [realm beginWriteTransaction];
+                    userModel.NickName = user.NickName;
+                    userModel.Cover = user.Cover;
+                    userModel.SelfMicEnable = user.SelfMicEnable;
+                    userModel.LinkRoomId = user.LinkRoomId;
+                    userModel.LinkUid = user.LinkUid;
+                    [realm commitWriteTransaction];
+                }
+               
+                [realm beginWriteTransaction];
+                [realm addOrUpdateObject:userModel];
+                [realm commitWriteTransaction];
+                if (success && respObjc) {
+                    success(0,userModel);
+                }
+            } else {
+                if (success) {
+                    success(0,nil);
+                }
+                YYLogError(@"[MouseLive-App] LivePresenter GetUserInfo error %@",respObjc[kMsg]);
+            }
+        } failure:^(int taskId, id  _Nullable respObjc, NSString * _Nullable errorCode, NSString * _Nullable errorMsg) {
+            [self.taskArray removeObject:@(taskId)];
+            YYLogError(@"[MouseLive-App] LivePresenter GetUserInfo error %@",errorMsg);
+            if (failure) {
+                failure(0,respObjc,errorCode,errorMsg);
+            }
+        }];
+        
+        [self.taskArray addObject:@(taskId)];
+    }
 }
 
 - (void)fetchGetchatIdWithParams:(NSDictionary *)params
@@ -120,8 +146,8 @@ static LivePresenter * _instance;
         [self.taskArray removeObject:@(taskId)];
         NSString *code = [NSString stringWithFormat:@"%@",respObjc[kCode]];
         if ([code isEqualToString:ksuccessCode]) {
-            if (self.delegate && [self.delegate respondsToSelector:@selector(audienceJoinChatRoom:)]) {
-                [self.delegate audienceJoinChatRoom:respObjc[kData]];
+            if (self.delegate && [self.delegate respondsToSelector:@selector(successGetChatId:)]) {
+                [self.delegate successGetChatId:respObjc[kData]];
             }
         } else {
             if (self.isStop) {
@@ -156,18 +182,30 @@ static LivePresenter * _instance;
     [self.taskArray addObject:@(taskId)];
 }
 
-- (void)fetchChatRoomWithType:(LiveType)type params:(NSDictionary *)params
+- (void)fetchChatRoomWithType:(RoomType)type params:(NSDictionary *)params
 {
     
     int taskId = [HttpService sy_httpRequestWithType:SYHttpRequestKeyType_CreateRoom params:params success:^(int taskId, id  _Nullable respObjc) {
         [self.taskArray removeObject:@(taskId)];
         NSString *code = [NSString stringWithFormat:@"%@",respObjc[kCode]];
         if ([code isEqualToString:ksuccessCode]) {
+#if USE_REALM
+            RLMRealm *realm = [RLMRealm defaultRealm];
+            [realm beginWriteTransaction];
+            RLMLiveRoomModel *roomModel = [RLMLiveRoomModel mj_objectWithKeyValues:[respObjc objectForKey:kData]];
+            [realm addOrUpdateObject:roomModel];
+            [realm commitWriteTransaction];
+            
+            if (self.delegate && [self.delegate respondsToSelector:@selector(successChatRoom:)]) {
+                [self.delegate successChatRoom:roomModel];
+                
+            }
+#else
             LiveRoomInfoModel *model = [LiveRoomInfoModel mj_objectWithKeyValues:[respObjc objectForKey:kData]];
             if (self.delegate && [self.delegate respondsToSelector:@selector(successChatRoom:withType:)]) {
                 [self.delegate successChatRoom:model withType:type];
-
             }
+#endif
         } else {
             if (self.isStop) {
                 return;
@@ -246,8 +284,28 @@ static LivePresenter * _instance;
     [self.taskArray addObject:@(taskId)];
 }
 
+//重新请求roominfo
+- (void)fetchRoomInfoWithType:(RoomType)type config:(LiveDefaultConfig *)config
+{
+   NSDictionary *params = @{
+        kUid:[NSNumber numberWithInteger:[config.localUid integerValue]],
+        kRoomId:[NSNumber numberWithInteger:[config.ownerRoomId integerValue]],
+        kRType:@(type),
+    };
+    int taskId = [HttpService sy_httpRequestWithType:SYHttpRequestKeyType_RoomInfo params:params success:^(int taskId, id  _Nullable respObjc) {
+        [self.taskArray removeObject:@(taskId)];
+        NSString *code = [NSString stringWithFormat:@"%@",respObjc[kCode]];
+        if ([code isEqualToString:ksuccessCode]) {
+            YYLogDebug(@"[MouseLive LivePresenter] fetchRoomInfoWithType:config success");
+        }
+    } failure:^(int taskId, id  _Nullable respObjc, NSString * _Nullable errorCode, NSString * _Nullable errorMsg) {
+        [self.taskArray removeObject:@(taskId)];
+    }];
+    
+    [self.taskArray addObject:@(taskId)];
+}
 //房间信息
-- (void)fetchRoomInfoWithType:(LiveType)type config:(LiveDefaultConfig *)config success:(SYNetServiceSuccessBlock)success failure:(SYNetServiceFailBlock)failure
+- (void)fetchRoomInfoWithType:(RoomType)type config:(LiveDefaultConfig *)config success:(SYNetServiceSuccessBlock)success failure:(SYNetServiceFailBlock)failure
 {
     
     NSDictionary *params = @{
@@ -261,6 +319,16 @@ static LivePresenter * _instance;
         NSString *code = [NSString stringWithFormat:@"%@",respObjc[kCode]];
         if ([code isEqualToString:ksuccessCode]) {
         YYLogDebug(@"[MouseLive LivePresenter] getRoomInfo success");
+#if USE_REALM
+            RLMRealm *realm = [RLMRealm defaultRealm];
+            [realm beginWriteTransaction];
+            RLMLiveRoomModel *roomModel = [RLMLiveRoomModel mj_objectWithKeyValues:[respObjc objectForKey:kData]];
+            [realm addOrUpdateObject:roomModel];
+            [realm commitWriteTransaction];
+            if (self.delegate && [self.delegate respondsToSelector:@selector(successChatRoom:)]) {
+                [self.delegate successChatRoom:roomModel];
+            }
+#else
         LiveRoomModel *model = [LiveRoomModel mj_objectWithKeyValues:[respObjc objectForKey:kData]];
             if (success && respObjc) {
                 success(0,model);
@@ -307,15 +375,20 @@ static LivePresenter * _instance;
                 self.liveConfig.anchroMainUid = [NSString stringWithFormat:@"%@",[userDict objectForKey:kUid]];
                 self.liveConfig.ownerRoomId = model.RoomInfo.RoomId;
             }
-            if (self.delegate && type == LiveTypeVideo && [self.delegate respondsToSelector:@selector(resetLiveConfig:)]) {
-                [self.delegate resetLiveConfig:self.liveConfig];
+//            if (self.delegate && type == LiveTypeVideo && [self.delegate respondsToSelector:@selector(resetLiveConfig:)]) {
+//                [self.delegate resetLiveConfig:self.liveConfig];
+//            }
+//            if (self.delegate && [self.delegate respondsToSelector:@selector(refreshLiveStatusWithLinkUid:)]) {
+//                    [self.delegate refreshLiveStatusWithLinkUid:self.liveConfig.anchroSecondUid];
+//            }
+//            if (self.delegate && [self.delegate respondsToSelector:@selector(liveViewRoomInfo:UserListDataSource:)]) {
+//                [self.delegate liveViewRoomInfo:model.RoomInfo UserListDataSource:model.UserList];
+//            }
+#endif
+            if (success && respObjc) {
+                success(0,respObjc);
             }
-            if (self.delegate && [self.delegate respondsToSelector:@selector(refreshLiveStatusWithLinkUid:)]) {
-                    [self.delegate refreshLiveStatusWithLinkUid:self.liveConfig.anchroSecondUid];
-            }
-            if (self.delegate && [self.delegate respondsToSelector:@selector(liveViewRoomInfo:UserListDataSource:)]) {
-                [self.delegate liveViewRoomInfo:model.RoomInfo UserListDataSource:model.UserList];
-            }
+
         } else {
             if (success && respObjc) {
                 success(0,nil);
@@ -339,7 +412,7 @@ static LivePresenter * _instance;
     [self.taskArray addObject:@(taskId)];
 }
 
-- (void)fetchAnchorListWithType:(LiveType)type config:(LiveDefaultConfig *)config success:(SYNetServiceSuccessBlock)success failure:(SYNetServiceFailBlock)failure
+- (void)fetchAnchorListWithType:(RoomType)type config:(LiveDefaultConfig *)config success:(SYNetServiceSuccessBlock)success failure:(SYNetServiceFailBlock)failure
 {
     NSDictionary *params = @{
         kUid:[NSNumber numberWithInteger:[config.localUid integerValue]],
@@ -376,6 +449,7 @@ static LivePresenter * _instance;
     
     [self.taskArray addObject:@(taskId)];
 }
+
 
 
 

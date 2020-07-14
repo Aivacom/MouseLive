@@ -47,7 +47,8 @@
 "Mirror" = "Mirror";
 "Mute All" = "Mute All";
 "Mute" = "Mute";
-"Network" = "Network";
+"TxNetwork" = "TxNetwork";
+"RxNetwork" = "RxNetwork";
 "No.1" = "No.1";
 "No.2" = "No.2";
 "No.3" = "No.3";
@@ -63,6 +64,8 @@
 "List_Owner" = "Owner";//观众列表主播 的禁言用Ban，语音房闭麦用Mute
 "Please Choose a Room Type to Broadcast" = "Please Choose a Room Type to Broadcast";
 "Please kindly let us know your concerns." = "Please kindly let us know your concerns.";
+"Feedback success." = "Feedback success.";
+"Feedback failed." = "Feedback failed.";
 "Poor" = "Poor";
 "Reject" = "Reject";
 "Seats are full." = "Seats are full.";
@@ -71,7 +74,7 @@
 "Sports/Games Commentary" = "Sports/Games Commentary";
 "Storie" = "Storie";
 "Submit" = "Submit";
-"SunClouds provides low latency, high quality video and audio livestreaming SDK and chatroom SDK. Try the features in the liveroom and let us know if you like it!" = "SunClouds provides low latency, high quality video and audio livestreaming SDK and chatroom SDK. Try the features in the liveroom and let us know if you like it!";
+"Jocloud provides low latency, high quality video and audio streaming SDK and chatroom SDK. Try the features in the live room and know more about us via www.jocloud.com." = "Jocloud provides low latency, high quality video and audio streaming SDK and chatroom SDK. Try the features in the live room and know more about us via www.jocloud.com.";
 "Switch" = "Switch";
 "Reconnecting to internet, please wait." = "Reconnecting to internet, please wait.";
 "Unban All" = "Unban All";

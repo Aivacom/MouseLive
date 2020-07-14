@@ -82,8 +82,10 @@ public class PermissionActivity extends FragmentActivity implements PermissionCa
         Room room = getIntentParams();
         if (Room.ROOM_TYPE_CHAT == room.getRType()) {
             VoiceRoomActivity.startActivity(this, room);
-        } else {
+        } else if (Room.ROOM_TYPE_LIVE == room.getRType()) {
             LivingRoomActivity.startActivity(this, room);
+        } else if (Room.ROOM_TYPE_KTV == room.getRType()) {
+            KTVRoomActivity.startActivity(this, room);
         }
     }
 

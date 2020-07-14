@@ -17,11 +17,11 @@ typedef void(^TaskRunBefore)();
 typedef void(^TaskRunAfter)();
 typedef void(^TaskResolver)(PMKResolver);
 typedef void(^TaskAction)(id inputBody, TaskResolver resolveBlock);
-typedef AnyPromise*(^TaskActionReturnPromise)(TaskResolver resolveBlock);
+typedef AnyPromise *(^TaskActionReturnPromise)(TaskResolver resolveBlock);
 
 @interface Task : NSObject
 
-+ (Task*)initWithActionArray;
++ (Task *)initWithActionArray;
 
 + (BOOL)RunTaskWithAction:(TaskAction)action success:(TaskSuccess)success failed:(TaskFailed)failed before:(TaskRunBefore)before after:(TaskRunAfter)after;
 

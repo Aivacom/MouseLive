@@ -9,7 +9,10 @@
 
 #import "SYFeedbackManager.h"
 
-static NSString * const kSYFeedbackRequestUrl = @"https://isoda-inforeceiver.yy.com/userFeedback"; // 反馈接口URL
+//static NSString * const kSYFeedbackRequestUrl = @"https://isoda-inforeceiver.yy.com/userFeedback"; // 反馈接口URL, old
+
+/// https://git.yy.com/autotest/feedback/feedback_doc/wikis/%E5%8F%8D%E9%A6%88%E7%B3%BB%E7%BB%9F%E6%8E%A5%E5%85%A5
+static NSString * const kSYFeedbackRequestUrl = @"https://imobfeedback.yy.com/userFeedback"; // 反馈接口URL, new
 
 
 @interface SYFeedbackManager ()

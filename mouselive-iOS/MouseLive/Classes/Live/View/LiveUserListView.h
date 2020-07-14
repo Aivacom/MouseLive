@@ -7,23 +7,25 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "LivePresenter.h"
-#import "LiveDefaultConfig.h"
-#import "LiveUserInfoList.h"
-#import "LiveRoomInfoModel.h"
+#import "LiveUserListManager.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-typedef void (^ClickCellBlock)(BOOL isAnchor, id model);
-typedef void (^AllMuteBlock)(BOOL);
+typedef void (^ClickCellBlock)(BOOL isAnchor, LiveUserModel*model);
+typedef void (^AllMuteBlock)(UIButton *button);
 
 @interface LiveUserListView : UIView
 @property (nonatomic, copy)ClickCellBlock clickBlock;
 @property (nonatomic, copy)AllMuteBlock allMuteBlock; // 是否全部禁言
-@property (nonatomic, weak)LiveRoomInfoModel* roomInfoModel;
+
+@property (nonatomic, copy)NSString *roomId;
 
 + (instancetype)liveUserListView;
-- (void)refreshViewWithType:(LiveType)type needAnchor:(BOOL)needAnchor isAnchor:(BOOL)isAnchor config:(LiveDefaultConfig *)config userInfoList:(LiveUserInfoList*)userInfoList;
+
+//刷新房间成员列表
+- (void)refreshUserViewWithRoomId:(NSString *)roomId;
+//刷新主播列表
+- (void)refreshAnchorViewWithArray:(NSArray<LiveUserModel *> *)dataArray;
 
 @end
 

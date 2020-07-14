@@ -27,12 +27,12 @@ typedef enum : NSUInteger {
 @property (nonatomic) long long DestUid;
 @property (nonatomic) long long DestRoomId;
 @property (nonatomic) int ChatType;  // 查看 RoomType
-@property (nonatomic, copy) NSString* TraceId;
+@property (nonatomic, copy) NSString *TraceId;
 
 // 在设置过 srcUid 后调用
-- (NSString*)createTraceId;
+- (NSString *)createTraceId;
 
-- (NSString*)string;
+- (NSString *)string;
 
 @end
 

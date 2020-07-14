@@ -53,8 +53,8 @@ public class FlyHttpSvc {
      * @param DevUUID // 设备UUID：android：例如：9774d56d682e549c
      * @return 返回对象
      */
-    public Observable<HttpResponse<User>> login(long uid, String DevName, String DevUUID,
-                                                long appId, String appSecret) {
+    public Observable<User> login(long uid, String DevName, String DevUUID,
+                                  long appId, String appSecret) {
         HashMap<String, Object> params = createParams();
         params.put("AppId", appId);
         params.put("AppSecret", appSecret);
@@ -62,7 +62,7 @@ public class FlyHttpSvc {
         params.put("Uid", uid);
         params.put("DevName", DevName);
         params.put("DevUUID", DevUUID);
-        return mService.login(params);
+        return mService.login(params).flatMap(new ObservableFunction<>());
     }
 
     public Observable<HttpResponse<String>> getToken(long uid, long appid, String appScret,
@@ -82,11 +82,11 @@ public class FlyHttpSvc {
      * @param RType 房间类型 {@link RoomType}
      * @return 返回对象
      */
-    public Observable<HttpResponse<List<Anchor>>> getPKMembers(long Uid, @RoomType int RType) {
+    public Observable<List<Anchor>> getPKMembers(long Uid, @RoomType int RType) {
         HashMap<String, Object> params = createParams();
         params.put("Uid", Uid);
         params.put("RType", RType);
-        return mService.getPKMembers(params);
+        return mService.getPKMembers(params).flatMap(new ObservableFunction<>());
     }
 
     /**
@@ -95,14 +95,14 @@ public class FlyHttpSvc {
      * @param offset   偏移量
      * @return 返回对象
      */
-    public Observable<HttpResponse<RoomListBean>> getRoomList(long uid, @RoomType int roomType,
-                                                              int offset) {
+    public Observable<RoomListBean> getRoomList(long uid, @RoomType int roomType,
+                                                int offset) {
         HashMap<String, Object> params = createParams();
         params.put("Uid", uid);
         params.put("RType", roomType);
         params.put("Offset", offset);
         params.put("Limit", 20);
-        return mService.getRoomList(params);
+        return mService.getRoomList(params).flatMap(new ObservableFunction<>());
     }
 
     /**
@@ -111,13 +111,13 @@ public class FlyHttpSvc {
      * @param RType  房间类型
      * @return 返回对象
      */
-    public Observable<HttpResponse<GetRoomInfo>> getRoomInfo(long uid, long roomId,
-                                                             @RoomType int RType) {
+    public Observable<GetRoomInfo> getRoomInfo(long uid, long roomId,
+                                               @RoomType int RType) {
         HashMap<String, Object> params = createParams();
         params.put("Uid", uid);
         params.put("RoomId", roomId);
         params.put("RType", RType);
-        return mService.getRoomInfo(params);
+        return mService.getRoomInfo(params).flatMap(new ObservableFunction<>());
     }
 
     /**
@@ -128,13 +128,13 @@ public class FlyHttpSvc {
      * @param rtype 房间类型 {@link RoomType}
      * @return 返回对象
      */
-    public Observable<HttpResponse<GetChatIdBean>> getChatId(long uid, long rid,
-                                                             @RoomType int rtype) {
+    public Observable<GetChatIdBean> getChatId(long uid, long rid,
+                                               @RoomType int rtype) {
         HashMap<String, Object> params = createParams();
         params.put("Uid", uid);
         params.put("RoomId", rid);
         params.put("RType", rtype);
-        return mService.getChatId(params);
+        return mService.getChatId(params).flatMap(new ObservableFunction<>());
     }
 
     /**
@@ -146,14 +146,14 @@ public class FlyHttpSvc {
      * @param chatId   聊天室id
      * @return 返回对象
      */
-    public Observable<HttpResponse<String>> setChatId(long uid, long rid,
-                                                      @RoomType int roomType, long chatId) {
+    public Observable<String> setChatId(long uid, long rid,
+                                        @RoomType int roomType, long chatId) {
         HashMap<String, Object> params = createParams();
         params.put("Uid", uid);
         params.put("RoomId", rid);
         params.put("RType", roomType);
         params.put("RChatId", chatId);
-        return mService.setChatId(params);
+        return mService.setChatId(params).flatMap(new ObservableFunction<>());
     }
 
     /**
@@ -163,12 +163,12 @@ public class FlyHttpSvc {
      * @param room 创建的房间信息
      * @return 返回对象
      */
-    public Observable<HttpResponse<Room>> createRoom(User user, Room room) {
+    public Observable<Room> createRoom(User user, Room room) {
         HashMap<String, Object> params = createParams();
         params.put("Uid", user.getUid());
         params.put("RType", room.getRType());
         params.put("RPublishMode", room.getRPublishMode());
-        return mService.createRoom(params);
+        return mService.createRoom(params).flatMap(new ObservableFunction<>());
     }
 
     /**
@@ -177,10 +177,10 @@ public class FlyHttpSvc {
      * @param uid 用户id
      * @return 返回对象
      */
-    public Observable<HttpResponse<User>> getUserInfo(long uid) {
+    public Observable<User> getUserInfo(long uid) {
         HashMap<String, Object> params = createParams();
         params.put("Uid", uid);
-        return mService.getUserInfo(params);
+        return mService.getUserInfo(params).flatMap(new ObservableFunction<>());
     }
 
     /**
@@ -191,13 +191,13 @@ public class FlyHttpSvc {
      * @param RMicEnable 是否可用
      * @return 返回对象
      */
-    public Observable<HttpResponse<String>> setRoomMic(long Rid, @RoomType int RType,
-                                                       boolean RMicEnable) {
+    public Observable<String> setRoomMic(long Rid, @RoomType int RType,
+                                         boolean RMicEnable) {
         HashMap<String, Object> params = createParams();
         params.put("RoomId", Rid);
         params.put("RType", RType);
         params.put("RMicEnable", RMicEnable);
-        return mService.setRoomMic(params);
+        return mService.setRoomMic(params).flatMap(new ObservableFunction<>());
     }
 
     /**
@@ -215,10 +215,11 @@ public class FlyHttpSvc {
      *
      * @return 返回对象
      */
-    public Observable<HttpResponse<List<EffectTab>>> getEffectList(String Version) {
+    public Observable<List<EffectTab>> getEffectList(String Version) {
         HashMap<String, Object> params = createParams();
         params.put("Version", Version);
-        return mService.getEffectList("http://funapi.sunclouds.com/fun/api/v1/getBeauty", params);
+        return mService.getEffectList("http://fundbg.sunclouds.com/fun/api/v1/getBeauty", params)
+                .flatMap(new ObservableFunction<>());
     }
 
     private HashMap<String, Object> createParams() {

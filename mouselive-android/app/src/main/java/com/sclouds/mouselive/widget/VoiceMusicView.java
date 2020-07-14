@@ -13,19 +13,18 @@ import android.widget.SeekBar;
 import com.sclouds.datasource.thunder.ThunderSvc;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.utils.FileUtil;
-import com.thunder.livesdk.ThunderAudioFilePlayer;
+import com.thunder.livesdk.IThunderAudioFilePlayerEventCallback;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 /**
- * 聊天室音乐控件
+ * 聊天室音乐控件，主要处理背景音乐播放逻辑
  *
  * @author Aslan chenhengfei@yy.com
  * @since 2019/12/26
  */
-public class VoiceMusicView extends LinearLayout
-        implements ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback {
+public class VoiceMusicView extends LinearLayout {
 
     private static final int DEFAULT_VOL = 50;
     private boolean isOpen = false;
@@ -36,6 +35,17 @@ public class VoiceMusicView extends LinearLayout
     private ImageView ivVol;
     private SeekBar sbVol;
     private long totalPlayTimeMS;
+
+    private IThunderAudioFilePlayerEventCallback mCallback =
+            new IThunderAudioFilePlayerEventCallback() {
+                @Override
+                public void onAudioFileVolume(long volume, long currentMs, long totalMs) {
+                    super.onAudioFileVolume(volume, currentMs, totalMs);
+                    if (isOpen) {
+                        ivMusic.setPercentage(currentMs * 100 / totalPlayTimeMS);
+                    }
+                }
+            };
 
     private Handler mHandler = new Handler();
     private Runnable mRunnableClose = new Runnable() {
@@ -185,56 +195,14 @@ public class VoiceMusicView extends LinearLayout
     }
 
     @Override
-    public void onAudioFilePlayEnd() {
-
-    }
-
-    @Override
-    public void onAudioFileVolume(long volume, long currentMs, long totalMs) {
-        if (isOpen) {
-            ivMusic.setPercentage(currentMs * 100 / totalPlayTimeMS);
-        }
-    }
-
-    @Override
-    public void onAudioFilePlayError(int errorCode) {
-
-    }
-
-    @Override
-    public void onAudioFilePlaying() {
-
-    }
-
-    @Override
-    public void onAudioFilePause() {
-
-    }
-
-    @Override
-    public void onAudioFileResume() {
-
-    }
-
-    @Override
-    public void onAudioFileStop() {
-
-    }
-
-    @Override
-    public void onAudioFileSeekComplete(int millisecond) {
-
-    }
-
-    @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        ThunderSvc.getInstance().addAudioListener(this);
+        ThunderSvc.getInstance().addAudioListener(mCallback);
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        ThunderSvc.getInstance().removeAudioListener(this);
+        ThunderSvc.getInstance().removeAudioListener(mCallback);
     }
 }

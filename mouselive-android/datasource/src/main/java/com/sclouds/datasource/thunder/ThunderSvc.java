@@ -2,16 +2,17 @@ package com.sclouds.datasource.thunder;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.util.Log;
 
 import com.google.gson.Gson;
 import com.sclouds.basedroid.LogUtils;
-import com.sclouds.common.notify.Message;
-import com.sclouds.common.notify.MessageDispatcher;
 import com.sclouds.datasource.Callback;
 import com.sclouds.datasource.TokenGetter;
+import com.sclouds.datasource.effect.EffectSvc;
 import com.sclouds.datasource.thunder.extension.EmptyExtension;
 import com.sclouds.datasource.thunder.extension.IExtension;
 import com.sclouds.datasource.thunder.mode.ThunderConfig;
+import com.thunder.livesdk.IThunderAudioFilePlayerEventCallback;
 import com.thunder.livesdk.LiveTranscoding;
 import com.thunder.livesdk.ThunderAudioFilePlayer;
 import com.thunder.livesdk.ThunderEngine;
@@ -20,7 +21,6 @@ import com.thunder.livesdk.ThunderNotification;
 import com.thunder.livesdk.ThunderRtcConstant;
 import com.thunder.livesdk.ThunderVideoCanvas;
 import com.thunder.livesdk.ThunderVideoEncoderConfiguration;
-import com.thunder.livesdk.video.ThunderPlayerMultiView;
 import com.thunder.livesdk.video.ThunderPlayerView;
 import com.thunder.livesdk.video.ThunderPreviewView;
 
@@ -45,97 +45,69 @@ public class ThunderSvc {
     private long uid;
     private long appid;
     private String appSecret;
+
     private static ThunderSvc sInstance;
     private Gson mGson = new Gson();
+
     private ThunderEngine mThunderEngine = null;
     private static volatile Callback callbackJoinChannel;
     private Callback callbackLeaveChannel;
     private IOpenMusicFileCallback callback;
     private ThunderAudioFilePlayer mediaPlayer;
     private WaterMarkAdapter mAdapter;
-    ThunderConfig thunderConfig;
+    private ThunderConfig thunderConfig;
     private List<SimpleThunderEventHandler> observers = new CopyOnWriteArrayList<>();
     private IExtension thunderExtension = new EmptyExtension();
     private ThunderVideoEncoderConfiguration videoConfig =
             new ThunderVideoEncoderConfiguration(
                     ThunderRtcConstant.ThunderPublishPlayType.THUNDERPUBLISH_PLAY_SINGLE,
                     ThunderRtcConstant.ThunderPublishVideoMode.THUNDERPUBLISH_VIDEO_MODE_HIGHQULITY);
-    private List<ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback> audioObservers =
+    private List<IThunderAudioFilePlayerEventCallback> audioObservers =
             new CopyOnWriteArrayList<>();
-    private ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback
-            mIThunderAudioFilePlayerCallback =
-            new ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback() {
-                @Override
-                public void onAudioFilePlayEnd() {
-                    for (ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback callback : audioObservers) {
-                        callback.onAudioFilePlayEnd();
-                    }
-                }
-
+    private IThunderAudioFilePlayerEventCallback mIThunderAudioFilePlayerCallback =
+            new IThunderAudioFilePlayerEventCallback() {
                 @Override
                 public void onAudioFileVolume(long volume, long currentMs, long totalMs) {
-                    for (ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback callback : audioObservers) {
+                    super.onAudioFileVolume(volume, currentMs, totalMs);
+                    LogUtils.d(TAG, "onAudioFileVolume() called with: volume = [" + volume +
+                            "], currentMs = [" + currentMs + "], totalMs = [" + totalMs + "]");
+                    for (IThunderAudioFilePlayerEventCallback callback : audioObservers) {
                         callback.onAudioFileVolume(volume, currentMs, totalMs);
                     }
                 }
 
                 @Override
-                public void onAudioFilePlayError(int errorCode) {
-                    LogUtils.d(TAG, "onAudioFilePlayError errorCode=" + errorCode);
-                    if (errorCode == 0) {
-                        //文件打开成功
-                        if (callback != null) {
-                            long totalPlayTimeMS = mediaPlayer.getTotalPlayTimeMS();
-                            callback.onOpenSuccess(totalPlayTimeMS);
-                            callback = null;
+                public void onAudioFileStateChange(int event, int errorCode) {
+                    super.onAudioFileStateChange(event, errorCode);
+                    LogUtils.d(TAG, "onAudioFileStateChange() called with: event = [" + event +
+                            "], errorCode = [" + errorCode + "]");
+
+                    if (event ==
+                            ThunderRtcConstant.ThunderAudioFilePlayerEvent.AUDIO_PLAY_EVENT_OPEN) {
+                        if (errorCode == 0) {
+                            //文件打开成功
+                            if (callback != null) {
+                                long totalPlayTimeMS = mediaPlayer.getTotalPlayTimeMS();
+                                callback.onOpenSuccess(totalPlayTimeMS);
+                                callback = null;
+                            }
+                        } else {
+                            if (callback != null) {
+                                callback.onOpenError(errorCode);
+                                callback = null;
+                            }
                         }
-                    } else {
-                        if (callback != null) {
-                            callback.onOpenError(errorCode);
-                            callback = null;
-                        }
                     }
 
-                    for (ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback callback : audioObservers) {
-                        callback.onAudioFilePlayError(errorCode);
-                    }
-                }
-
-                @Override
-                public void onAudioFilePlaying() {
-                    for (ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback callback : audioObservers) {
-                        callback.onAudioFilePlaying();
-                    }
-                }
-
-                @Override
-                public void onAudioFilePause() {
-                    for (ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback callback : audioObservers) {
-                        callback.onAudioFilePause();
-                    }
-                }
-
-                @Override
-                public void onAudioFileResume() {
-                    for (ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback callback : audioObservers) {
-                        callback.onAudioFileResume();
-                    }
-                }
-
-                @Override
-                public void onAudioFileStop() {
-                    for (ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback callback : audioObservers) {
-                        callback.onAudioFileStop();
-                    }
-                }
-
-                @Override
-                public void onAudioFileSeekComplete(int millisecond) {
-                    for (ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback callback : audioObservers) {
-                        callback.onAudioFileSeekComplete(millisecond);
+                    for (IThunderAudioFilePlayerEventCallback callback : audioObservers) {
+                        callback.onAudioFileStateChange(event, errorCode);
                     }
                 }
             };
+
+    public ThunderEngine getEngine() {
+        return mThunderEngine;
+    }
 
     public interface IOpenMusicFileCallback {
         void onOpenSuccess(long totalPlayTimeMS);
@@ -159,7 +131,6 @@ public class ThunderSvc {
     }
 
     private ThunderSvc() {
-
     }
 
     /**
@@ -183,13 +154,11 @@ public class ThunderSvc {
             mThunderEngine = ThunderEngine
                     .createEngine(context, String.valueOf(appid), senceId, mThunderEventHandler);
             thunderExtension.onCreate(mThunderEngine);
+
+
         }
         mThunderEngine.setArea(isChina ? ThunderRtcConstant.AreaType.THUNDER_AREA_DEFAULT :
                 ThunderRtcConstant.AreaType.THUNDER_AREA_FOREIGN);
-    }
-
-    public ThunderEngine getThunderEngine() {
-        return mThunderEngine;
     }
 
     /**
@@ -221,7 +190,7 @@ public class ThunderSvc {
         }
         mediaPlayer.enablePublish(true);
         mediaPlayer.enableVolumeIndication(true, 500);
-        mediaPlayer.setPlayerNotify(mIThunderAudioFilePlayerCallback);
+        mediaPlayer.setPlayerEventCallback(mIThunderAudioFilePlayerCallback);
         mediaPlayer.open(file);
     }
 
@@ -245,6 +214,18 @@ public class ThunderSvc {
         if (mediaPlayer != null) {
             mediaPlayer.setLooping(isLooping ? -1 : 0);
             mediaPlayer.play();
+        }
+    }
+
+    /**
+     * 跳转到指定的播放时间
+     *
+     * @param timeMS 需要跳转到的时间点（单位：毫秒），不应该大于总时长
+     */
+    public void seekToPlayMusic(long timeMS) {
+        LogUtils.d(TAG, "seekToPlayMusic() timeMS=" + timeMS);
+        if (mediaPlayer != null) {
+            mediaPlayer.seek(timeMS);
         }
     }
 
@@ -294,18 +275,6 @@ public class ThunderSvc {
     }
 
     /**
-     * 获取播放音量
-     */
-    @SuppressWarnings("unused")
-    @Size(min = 0, max = 100)
-    public int getPlayerVolume() {
-        LogUtils.d(TAG, "getPlayerVolume()");
-        int vol = volume;
-        LogUtils.d(TAG, "getPlayerVolume() vol=" + vol);
-        return vol;
-    }
-
-    /**
      * 设置水印
      */
     public void setVideoWatermark(WaterMarkAdapter adapter) {
@@ -352,17 +321,6 @@ public class ThunderSvc {
     }
 
     /**
-     * 创建 ThunderPlayerMultiView 的上下文必须和 ini 所传入的上下文必须一致，否则会造成内存泄漏
-     *
-     * @param context APP Context
-     * @return 目标对象
-     */
-    @SuppressWarnings("unused")
-    public ThunderPlayerMultiView createPlayMultiView(Context context) {
-        return new ThunderPlayerMultiView(context);
-    }
-
-    /**
      * 房间配置
      *
      * @param config
@@ -387,7 +345,7 @@ public class ThunderSvc {
         LogUtils.d(TAG,
                 "joinRoom() called with: token = [" + new String(token) + "], roomId = [" + roomId +
                         "], uid = [" + uid + "], callback = [" + callback + "]");
-        this.callbackJoinChannel = callback;
+        callbackJoinChannel = callback;
         int ret = mThunderEngine.joinRoom(token, String.valueOf(roomId), String.valueOf(uid));
         if (ret != 0) {
             callback.onFailed(ret);
@@ -448,7 +406,7 @@ public class ThunderSvc {
     /**
      * 本地麦克风控制
      *
-     * @param isEnable
+     * @param isEnable true-打开；false-关闭
      */
     public void toggleMicEnable(boolean isEnable) {
         LogUtils.d(TAG, "toggleMicEnable() called with: isEnable = [" + isEnable + "]");
@@ -511,9 +469,26 @@ public class ThunderSvc {
 
         mThunderEngine.startVideoPreview();
         isStartVideoPreview = true;
+
         // ofsdk 依赖 thunderboltsdk#startPreviewVideo 之后调用 registerVideoCaptureTextureObserver 注册
-        // [解藕业务:可根据需要采用其他解藕方式（路由，rxbus 等）]
-        MessageDispatcher.getInstance().broadcastMessage(Message.Type.FACE_REGISTER, null);
+        EffectSvc.getInstance().register();
+    }
+
+    /**
+     * 结束预览
+     */
+    public void stopVideoPreview() {
+        LogUtils.d(TAG,
+                "stopVideoPreview() called isStartVideoPreview=[" + isStartVideoPreview + "]");
+        if (!isStartVideoPreview) {
+            return;
+        }
+
+        mThunderEngine.stopVideoPreview();
+        isStartVideoPreview = false;
+
+        // ofsdk 依赖 thunderboltsdk#stopVideoPreview 之后调用 registerVideoCaptureTextureObserver 反注册
+        EffectSvc.getInstance().unRegister();
     }
 
     /**
@@ -536,10 +511,6 @@ public class ThunderSvc {
 
         //视频控制
         if (video) {
-            if (!isStartVideoPreview) {
-                startVideoPreview();
-            }
-
             mThunderEngine.stopLocalVideoStream(false);
         } else {
             mThunderEngine.stopLocalVideoStream(true);
@@ -556,17 +527,9 @@ public class ThunderSvc {
         LogUtils.d(TAG, "stopPublishVideoStream() called");
         //视频控制
         mThunderEngine.stopLocalVideoStream(true);
-        if (isStartVideoPreview) {
-            mThunderEngine.stopVideoPreview();
-            isStartVideoPreview = false;
-        }
 
         //音频控制
         mThunderEngine.stopLocalAudioStream(true);
-
-        // ofsdk 依赖 thunderboltsdk#stopLocalVideo 之后调用 registerVideoCaptureTextureObserver 反注册
-        // [解藕业务:可根据需要采用其他解藕方式（路由，rxbus等）]
-        MessageDispatcher.getInstance().broadcastMessage(Message.Type.FACE_UNREGISTER, null);
     }
 
     /**
@@ -594,9 +557,8 @@ public class ThunderSvc {
      * @see ThunderRtcConstant.ThunderVideoViewScaleMode
      */
     public void prepareRemoteVideo(String uid, ThunderPlayerView playerView, int scaleMode) {
-        LogUtils.d(TAG,
-                "prepareRemoteVideo() called with: uid = [" + uid + "], scaleMode = [" + scaleMode +
-                        "]");
+        Log.d(TAG, "prepareRemoteVideo() called with: uid = [" + uid + "], playerView = [" +
+                playerView + "], scaleMode = [" + scaleMode + "]");
         ThunderVideoCanvas canvas = new ThunderVideoCanvas(playerView, scaleMode, uid);
         mThunderEngine.setRemoteVideoCanvas(canvas);
     }
@@ -1213,13 +1175,13 @@ public class ThunderSvc {
     };
 
     public void addAudioListener(
-            @NonNull ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback observer) {
+            @NonNull IThunderAudioFilePlayerEventCallback observer) {
         LogUtils.d(TAG, "addAudioListener");
         audioObservers.add(observer);
     }
 
     public void removeAudioListener(
-            @NonNull ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback observer) {
+            @NonNull IThunderAudioFilePlayerEventCallback observer) {
         LogUtils.d(TAG, "removeAudioListener");
         audioObservers.remove(observer);
     }

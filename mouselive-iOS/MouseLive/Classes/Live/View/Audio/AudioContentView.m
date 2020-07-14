@@ -9,13 +9,16 @@
 #import "AudioContentView.h"
 #import "AudioCollectionViewCell.h"
 #import "AudioFlowLayout.h"
-#import "LivePresenter.h"
-#import "SYHummerManager.h"
-#import "SYThunderManagerNew.h"
+#import "LiveUserListManager.h"
+#import "AudioWhineView.h"
+#import "LiveManager.h"
 
+#define CollectionView_H ((SCREEN_WIDTH - 4)  / 4.0 * 2 + 20)
+@interface AudioContentView()<UICollectionViewDataSource,UICollectionViewDelegate,UIGestureRecognizerDelegate,UICollectionViewDelegateFlowLayout>
 
-@interface AudioContentView()<UICollectionViewDataSource,UICollectionViewDelegate,LiveProtocol,UIGestureRecognizerDelegate,UICollectionViewDelegateFlowLayout>
-
+@property (nonatomic, strong)LiveUserListManager *roomModel;
+/**上麦人员数据源*/
+@property (nonatomic, strong)NSMutableDictionary *dataDict;
 @property (nonatomic, weak) IBOutlet UIImageView *headerImageview;
 @property (nonatomic, weak) IBOutlet UIImageView *microImageView;
 @property (nonatomic, weak) IBOutlet UILabel *nickNameLB;
@@ -34,6 +37,11 @@
 @property (nonatomic, weak) IBOutlet NSLayoutConstraint *topLayouConstraint;
 @property (nonatomic, strong)NSTimer *timer;
 @property (nonatomic, strong)CAShapeLayer *shapeLayer;
+@property (nonatomic, weak) IBOutlet NSLayoutConstraint *collectionViewHeightConstraint;
+//变声view
+@property (nonatomic, strong)AudioWhineView *whineView;
+//控制页面显示
+@property (nonatomic) BOOL isAnchor;
 
 
 @end
@@ -54,12 +62,46 @@ static NSString *reuseIdentifier = @"AudioCollectionViewCell";
     return _timer;
 }
 
-- (NSMutableArray *)dataArray
+- (NSMutableDictionary *)dataDict
 {
-    if (!_dataArray) {
-        _dataArray = [[NSMutableArray alloc]init];
+    if (!_dataDict) {
+        _dataDict = [[NSMutableDictionary alloc]init];
     }
-    return _dataArray;
+    return _dataDict;
+}
+
+- (instancetype)initWithRoomId:(NSString *)roomId
+{
+   self = [super init];
+    if (self) {
+        self =  [[NSBundle mainBundle] loadNibNamed:NSStringFromClass([AudioContentView class]) owner:nil options:nil].lastObject;
+        LiveUserListManager *roomModel = [LiveUserListManager defaultManager];
+        self.roomModel = roomModel;
+        if ([roomModel.ROwner.Uid isEqualToString:LoginUserUidString]) {
+            self.isAnchor = YES;
+            [LiveUserListManager beginWriteTransaction];
+            self.roomModel.ROwner.MicEnable = YES;
+            self.roomModel.ROwner.SelfMicEnable = YES;
+            [LiveUserListManager commitWriteTransaction];
+        } else {
+            self.isAnchor = NO;
+        }
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshUserMicEnable:) name:kNotifyisMicEnable object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshAllUserMicEnable:) name:kNotifyAllMicEnable object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow) name:UIKeyboardWillShowNotification object:nil];
+         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide) name:UIKeyboardWillHideNotification object:nil];
+        [self setup];
+        [self refreshView];
+    }
+    return self;
+}
+
+- (void)keyboardWillShow {
+    self.contentView.userInteractionEnabled = NO;
+}
+
+- (void)keyboardWillHide {
+    self.contentView.userInteractionEnabled = YES;
 }
 
 + (AudioContentView *)audioContentView
@@ -71,18 +113,43 @@ static NSString *reuseIdentifier = @"AudioCollectionViewCell";
 {
     [super awakeFromNib];
     [self setup];
-    self.mircButtonBottomConstraint.constant = TabbarSafeBottomMargin + Live_Tool_H + 10;
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshUserMicEnable:) name:kNotifyisMicEnable object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshAllUserMicEnable:) name:kNotifyAllMicEnable object:nil];
-    [self.volumeSlider setThumbImage:[UIImage imageNamed:@"slider_thurk"] forState:UIControlStateNormal];
-    [self.volumeSlider setThumbImage:[UIImage imageNamed:@"slider_thurk"] forState:UIControlStateSelected];
-    [self.volumeSlider setThumbImage:[UIImage imageNamed:@"slider_thurk"] forState:UIControlStateHighlighted];
-    self.topLayouConstraint.constant = StatusBarHeight + 4.0f;
-    self.isRunningMusic = NO;
-    
 }
 
+- (BaseLiveContentView *)baseContentView
+{
+    if (!_baseContentView) {
+        _baseContentView = [[BaseLiveContentView alloc]initWithRoomid:self.roomModel.RoomId view:self];
+    
+    }
+    return _baseContentView;
+}
 
+- (AudioWhineView *)whineView
+{
+    if (!_whineView) {
+        _whineView = [AudioWhineView shareAudioWhineView];
+        [self addSubview:_whineView];
+        [_whineView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.centerX.mas_equalTo(0);
+            make.top.mas_equalTo(SCREEN_HEIGHT);
+            make.height.mas_equalTo(SCREEN_HEIGHT);
+            make.width.mas_equalTo(SCREEN_WIDTH);
+        }];
+        _whineView.hidden = YES;
+    }
+    return _whineView;
+}
+
+- (void)setBaseDelegate:(id<BaseLiveContentViewDelegate>)baseDelegate
+{
+    _baseDelegate = baseDelegate;
+    self.baseContentView.delegate = baseDelegate;
+}
+
+- (void)setDelegate:(id<AudioContentViewDelegate>)delegate
+{
+    _delegate = delegate;
+}
 
 - (void)refreshAllUserMicEnable:(NSNotification *)notification
 {
@@ -93,7 +160,7 @@ static NSString *reuseIdentifier = @"AudioCollectionViewCell";
     
     // 把所有的黄色 禁麦图片全部刷下去/刷上去
     // yes -- 刷下黄色图片； no -- 刷上黄色图片
-    for (LiveUserModel *userModel in self.dataArray) {
+    for (LiveUserModel *userModel in [self.dataDict allValues]) {
         userModel.MicEnable = enable;
         userModel.AnchorLocalLock = NO;
     }
@@ -117,7 +184,7 @@ static NSString *reuseIdentifier = @"AudioCollectionViewCell";
     }
     
     // 这里需要修改
-    LiveUserModel *userModel = [self searchLiveUserWithUid:uid];
+    LiveUserModel *userModel = [self.dataDict objectForKey:uid];
     if (userModel != nil) {
         if (found) {
             userModel.MicEnable = micEnableByAnchor;
@@ -138,7 +205,7 @@ static NSString *reuseIdentifier = @"AudioCollectionViewCell";
             }
         }
 
-        [self.contentView reloadItemsAtIndexPaths:@[[NSIndexPath indexPathForRow:[self.dataArray indexOfObject:userModel] inSection:0]]];
+        [self.contentView reloadItemsAtIndexPaths:@[[NSIndexPath indexPathForRow:[[self.dataDict allValues] indexOfObject:userModel] inSection:0]]];
     }
     
     //刷新主播麦克风状态
@@ -152,22 +219,18 @@ static NSString *reuseIdentifier = @"AudioCollectionViewCell";
     }
 }
 
-#pragma mark - 查询房间用户
-- (LiveUserModel *)searchLiveUserWithUid:(NSString *)uid
-{
-    //刷新席位
-    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"Uid == %@", uid];
-    NSArray *filteredArray = [self.dataArray filteredArrayUsingPredicate:predicate];
-    if (filteredArray.count > 0) {
-        return filteredArray.lastObject;
-    } else {
-        return nil;
-    }
-}
 
 - (void)setup
 {
+    self.mircButtonBottomConstraint.constant = TabbarSafeBottomMargin + Live_Tool_H + 10;
+    self.linkMricButton.hidden = self.isAnchor;
     
+    [self.volumeSlider setThumbImage:[UIImage imageNamed:@"slider_thurk"] forState:UIControlStateNormal];
+    [self.volumeSlider setThumbImage:[UIImage imageNamed:@"slider_thurk"] forState:UIControlStateSelected];
+    [self.volumeSlider setThumbImage:[UIImage imageNamed:@"slider_thurk"] forState:UIControlStateHighlighted];
+    self.topLayouConstraint.constant = StatusBarHeight + 4.0f;
+    self.isRunningMusic = NO;
+    self.collectionViewHeightConstraint.constant = CollectionView_H;
     UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:self.musicButton.bounds byRoundingCorners:UIRectCornerTopRight | UIRectCornerBottomRight cornerRadii:CGSizeMake(100,100)];
     CAShapeLayer *layer = [[CAShapeLayer alloc] init];
     layer.frame = self.musicButton.bounds;
@@ -194,6 +257,66 @@ static NSString *reuseIdentifier = @"AudioCollectionViewCell";
     [self.contentView reloadData];
     [UIView yy_maskViewToBounds:self.headerImageview];
     [UIView yy_maskViewToBounds:self.microImageView];
+    [self baseContentView];
+    [self bringSubviewToFront:self.linkMricButton];
+}
+
+//根据数据刷新视图
+- (void)refreshView
+{
+    [self refreshAnchorView];
+    [self refreshCollectionView];
+}
+//刷新主播头像
+- (void)refreshAnchorView
+{
+    [self.headerImageview yy_setImageWithURL:[NSURL URLWithString:self.roomModel.ROwner.Cover] placeholder:PLACEHOLDER_IMAGE];
+    if (self.roomModel.ROwner.SelfMicEnable) {
+        [self.microImageView setImage:[UIImage imageNamed:@"audio_micr_open"]];
+    } else {
+        [self.microImageView setImage:[UIImage imageNamed:@"audio_mirc_close_onme"]];
+    }
+    self.anchorRoomName.text = self.roomModel.RName;
+    self.nickNameLB.text = self.roomModel.ROwner.NickName;
+    self.headerImageview.backgroundColor = [UIColor redColor];
+    //房间人数
+    self.peopleCount = self.roomModel.onlineUserList.count;
+   
+}
+
+#pragma mark - 刷新语音房
+- (void)refreshCollectionView
+{
+    LiveUserListManager *roomModel = [LiveUserListManager defaultManager];
+    [self.dataDict removeAllObjects];
+       // 找已经上麦的人
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"Uid != %@ AND LinkUid != %@ AND LinkRoomId != %@", self.roomModel.ROwner.Uid,@"0",@"0"];
+    NSSortDescriptor *sortDescriptor = [NSSortDescriptor sortDescriptorWithKey:kUid ascending:YES];
+
+    NSArray *filteredArray = [[roomModel.onlineUserList filteredArrayUsingPredicate:predicate] sortedArrayUsingDescriptors:@[sortDescriptor]];
+    if (filteredArray.count) {
+        for (LiveUserModel *userModel in filteredArray) {
+            [self.dataDict setObject:userModel forKey:userModel.Uid];
+        }
+    }
+    [self.contentView reloadData];
+}
+
+- (void)refreshOnlineUserMircStatusWithUid:(NSString *)uid
+{
+    LiveUserModel *userModel =  [self.dataDict objectForKey:uid];
+    if (userModel) {
+        NSInteger index = [self.dataDict.allValues indexOfObject:userModel];
+         //只刷新一个cell
+         [self.contentView reloadItemsAtIndexPaths:@[[NSIndexPath indexPathForRow:index inSection:0]]];
+    } else {
+        //刷新主播头像
+        if ([LiveUserListManager defaultManager].ROwner.SelfMicEnable) {
+            [self.microImageView setImage:[UIImage imageNamed:@"audio_micr_open"]];
+        } else {
+            [self.microImageView setImage:[UIImage imageNamed:@"audio_mirc_close_onme"]];
+        }
+    }
 }
 
 - (void)setIsAnchor:(BOOL)isAnchor
@@ -210,13 +333,7 @@ static NSString *reuseIdentifier = @"AudioCollectionViewCell";
         self.volumShowState =  self.volumeBgView.hidden;
     }
 }
-#pragma mark - 刷新语音房
-- (void)refreshView
-{
-    NSSortDescriptor *firstDescriptor = [[NSSortDescriptor alloc] initWithKey:@"Uid" ascending:YES];
-    self.dataArray = [[self.dataArray sortedArrayUsingDescriptors:@[firstDescriptor]] mutableCopy];
-    [self.contentView reloadData];
-}
+
 
 #pragma mark - CollectionViewDelegate
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section
@@ -233,8 +350,9 @@ static NSString *reuseIdentifier = @"AudioCollectionViewCell";
 {
     AudioCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:reuseIdentifier forIndexPath:indexPath];
     cell.indexPath = indexPath;
-    if (indexPath.row <= self.dataArray.count - 1 && self.dataArray.count > 0) {
-        LiveUserModel *model = self.dataArray[indexPath.row];
+
+    if (indexPath.row <= self.dataDict.count - 1 && self.dataDict.count > 0) {
+        LiveUserModel *model = [self.dataDict allValues][indexPath.row];
         cell.userModel = model;
     } else {
         cell.userModel = nil;
@@ -245,35 +363,15 @@ static NSString *reuseIdentifier = @"AudioCollectionViewCell";
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
     AudioCollectionViewCell *cell = (AudioCollectionViewCell *)[collectionView cellForItemAtIndexPath:indexPath];
-    if (self.isAnchor) {
-        if (cell.userModel) {
-            LiveUserModel *model = [self searchLiveUserWithUid:cell.userModel.Uid];
-            // 主播请人下麦，发送关闭连麦的请求
-            if (model && self.closeOtherMicBlock) {
-                self.closeOtherMicBlock(model);
-            }
+    LiveUserModel *localUser = [LiveUserListManager objectForPrimaryKey:LoginUserUidString];
+    if (localUser.isAnchor || localUser.isAdmin) {
+        //不对自己操作
+        if ((![cell.userModel.Uid isEqualToString:localUser.Uid]) && cell.userModel) {
+            //显示用户管理弹框
+            self.baseContentView.userViewType = LiveUserViewTypeTwoMicStyle;
+            [self.baseContentView showUserViewWithUid:cell.userModel.Uid];
         }
     }
-}
-//- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath{
-//    return CGSizeMake(<#CGFloat width#>, <#CGFloat height#>)
-//}
-//刷新主播头像
-- (void)setRoomInfoModel:(LiveRoomInfoModel *)roomInfoModel
-{
-    _roomInfoModel = roomInfoModel;
-    [self.headerImageview yy_setImageWithURL:[NSURL URLWithString:_roomInfoModel.ROwner.Cover] placeholder:PLACEHOLDER_IMAGE];
-    if (_roomInfoModel.ROwner.SelfMicEnable) {
-        [self.microImageView setImage:[UIImage imageNamed:@"audio_micr_open"]];
-    } else {
-        [self.microImageView setImage:[UIImage imageNamed:@"audio_mirc_close_onme"]];
-    }
-    self.anchorRoomName.text = _roomInfoModel.RName;
-    self.nickNameLB.text = _roomInfoModel.ROwner.NickName;
-}
-- (void)setAudioAnchorModel:(RoomOwnerModel *)audioAnchorModel
-{
-    
 }
 
 - (void)setPeopleCount:(NSInteger)peopleCount
@@ -286,23 +384,19 @@ static NSString *reuseIdentifier = @"AudioCollectionViewCell";
 #pragma mark -播放音乐 展开收起播放条
 - (IBAction)musicClicked:(UIButton *)sender
 {
-    
     if (!self.isRunningMusic) {
-        [[SYThunderManagerNew sharedManager] openAuidoFileWithPath:[[NSBundle mainBundle]pathForResource:@"music1931" ofType:@"mp3"]];
-        [[SYThunderManagerNew sharedManager] setAudioFilePlayVolume:50];
+        [[LiveManager shareManager] openAuidoFileWithPath:[[NSBundle mainBundle]pathForResource:@"music1931" ofType:@"mp3"]];
+        [[LiveManager shareManager] setAudioFilePlayVolume:50];
         //第一次进来先不要播放
-        [[SYThunderManagerNew sharedManager] pauseAudioFile];
+        [[LiveManager shareManager] pauseAudioFile];
     }
-    
     if (!self.volumeBgView.hidden) {
         sender.selected = !sender.selected;
         //相应了block开始播放音乐了
-        if (self.musicBlock) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(audioManagerMusicPlay:)]) {
             self.isRunningMusic = YES;
-            self.musicBlock(sender.selected);
+            [self.delegate audioManagerMusicPlay:sender.selected];
         }
- 
-        
     }
     //首次点击展开音量条
     self.volumeBgView.hidden = NO;
@@ -311,7 +405,7 @@ static NSString *reuseIdentifier = @"AudioCollectionViewCell";
     [sender setImage:[UIImage imageNamed:@"music_pause"] forState:UIControlStateSelected];
     [self.musicButton.imageView.layer addSublayer:self.shapeLayer];
  
-    self.shapeLayer.strokeEnd = [SYThunderManagerNew sharedManager].currentPlayprogress;
+    self.shapeLayer.strokeEnd = [[LiveManager shareManager] currentPlayprogress];
     if (self.shapeLayer.strokeEnd == 1.0) {
         self.shapeLayer.strokeEnd = 0.1;
     }
@@ -354,39 +448,96 @@ static NSString *reuseIdentifier = @"AudioCollectionViewCell";
     return _shapeLayer;
 }
 
-
+#pragma mark - Button Action
+//调节音量
 - (IBAction)volumeSliderAction:(UISlider *)sender
 {
-    [[SYThunderManagerNew sharedManager] setAudioFilePlayVolume:sender.value];
+    [[LiveManager shareManager] setAudioFilePlayVolume:sender.value];
 }
 
 
-
+//关闭麦克风
 - (IBAction)closeBtnClicked:(UIButton *)sender
 {
-    if (self.allMicOffBlock) {
-        // TODO: 全部闭麦/开麦 -- 按钮文案需要修改
-        // 如果禁麦/开麦失败，就 GG
-        self.closeMircButton.selected = !self.closeMircButton.selected;
-        self.allMicOffBlock(![SYHummerManager sharedManager].isAllMicOff);
+    self.closeMircButton.selected = !self.closeMircButton.selected;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(audioManagerMircStatus:)]) {
+        [self.delegate audioManagerMircStatus:sender];
     }
 }
 
+//打开观众列表
 - (IBAction)peopleListBtnAction:(UIButton *)sender
 {
-    sender.selected = !sender.selected;
-    if (self.iconClickBlock) {
-        self.iconClickBlock(sender.selected);
+    if (self.delegate && [self.delegate respondsToSelector:@selector(audioLiveOpenUserList)]) {
+        [self.delegate audioLiveOpenUserList];
     }
 }
 
-
+// 关闭直播间
 - (IBAction)quitBtnAction:(UIButton *)sender
 {
-    if (self.quitBlock) {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(audioLiveCloseRoom)]) {
         self.isRunningMusic = NO;
-        self.quitBlock();
+        [self.delegate audioLiveCloseRoom];
+    }
+}
+- (IBAction)linkMircBtnAction:(UIButton *)sender
+{
+    if (sender.selected) {
+        //下麦
+        if (self.delegate && [self.delegate respondsToSelector:@selector(audioDisconnectAnchor)]) {
+            [self.delegate audioDisconnectAnchor];
+        }
+    } else {
+        //上麦
+        if (self.delegate && [self.delegate respondsToSelector:@selector(audioConnectAnchor)]) {
+            [self.delegate audioConnectAnchor];
+        }
     }
 }
 
+#pragma mark privite method
+/**显示变声视图*/
+- (void)showAudioWhine
+{
+    [self bringSubviewToFront:self.whineView];
+    self.whineView.hidden = NO;
+    self.whineView.transform = CGAffineTransformMakeTranslation(0, - SCREEN_HEIGHT);
+    
+}
+/**隐藏变声视图*/
+- (void)hidenWhineView
+{
+    [self sendSubviewToBack:self.whineView];
+    self.whineView.hidden = YES;
+    self.whineView.transform = CGAffineTransformIdentity;
+    
+}
+- (void)hiddenCurrentView
+{
+    if (!self.whineView.hidden) {
+        [self hidenWhineView];
+    }
+}
+
+- (void)updateLinkMircButtonSelectedStatus:(BOOL)selected
+{
+    self.linkMricButton.userInteractionEnabled = YES;
+    self.linkMricButton.selected = selected;
+}
+
+- (void)updateWhineViewHiddenStatus:(BOOL)hidden
+{
+    if (hidden) {
+        [self hidenWhineView];
+    } else {
+        [self showAudioWhine];
+    }
+}
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+    [self.baseContentView hiddenCurrentView];
+    [self hiddenCurrentView];
+}
 @end

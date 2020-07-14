@@ -19,11 +19,11 @@ NS_ASSUME_NONNULL_BEGIN
 @interface GobalDeviceInfo : NSObject
 
 @property (nonatomic, readonly) NSString* projectName;
-@property (nonatomic, readonly) NSString* projectVersion;
-@property (nonatomic, readonly) NSString* region;
-@property (nonatomic, readonly) NSString* language;
-@property (nonatomic, readonly) NSString* platfrom;
-@property (nonatomic, readonly) NSString* phoneVersion;
+@property (nonatomic, readonly) NSString *projectVersion;
+@property (nonatomic, readonly) NSString *region;
+@property (nonatomic, readonly) NSString *language;
+@property (nonatomic, readonly) NSString *platfrom;
+@property (nonatomic, readonly) NSString *phoneVersion;
 
 + (instancetype)sharedInstance;
 

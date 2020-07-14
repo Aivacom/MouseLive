@@ -29,7 +29,7 @@ data class Room(var RoomId: Int) : Parcelable {
     companion object {
         const val ROOM_TYPE_LIVE = 1//直播房间
         const val ROOM_TYPE_CHAT = 2//语音房间
-        const val ROOM_TYPE_KTV = 3//直播房间
+        const val ROOM_TYPE_KTV = 3//在线KTV
 
         const val RTC = 1//RTC 模式
         const val CDN = 2//CDN 模式

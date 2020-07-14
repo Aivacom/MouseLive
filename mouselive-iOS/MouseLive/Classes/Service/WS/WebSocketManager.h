@@ -18,7 +18,7 @@ typedef NS_ENUM(NSUInteger,WebSocketConnectType){
 @class WebSocketManager;
 @protocol WebSocketManagerDelegate <NSObject>
 
-- (void)webSocketDidReceiveMessageWithString:(NSString *_Nonnull)string;
+- (void)webSocketDidReceiveMessageWithString:(NSString * _Nonnull)string;
 
 - (void)webSocketDidOpen;
 

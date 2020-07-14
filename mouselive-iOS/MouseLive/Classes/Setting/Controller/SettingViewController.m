@@ -13,6 +13,8 @@
 #import "GobalViewBound.h"
 #import "LiveUserModel.h"
 #import "LogoUIView.h"
+#import "SYHomeViewController.h"
+#import "UserManager.h"
 
 
 #define     VIEW_WIDTH      [UIScreen mainScreen].bounds.size.width
@@ -35,22 +37,36 @@
     // Do any additional setup after loading the view.
     
     [self initView];
+//    [self test];
+}
+
+
+- (void)test
+{
+    UIButton *clickBtn = [[UIButton alloc]initWithFrame:CGRectMake(100, 200, 100, 100)];
+    clickBtn.backgroundColor = [UIColor redColor];
+    [self.view addSubview:clickBtn];
+    [clickBtn addTarget:self action:@selector(btnClicked) forControlEvents:UIControlEventTouchUpInside];
+    
+   
+}
+
+- (void)btnClicked
+{
+//    SYHomeViewController *vc = [[SYHomeViewController alloc]init];
+//    vc.hidesBottomBarWhenPushed = YES;
+//    [self.navigationController pushViewController:vc animated:YES];
 }
 
 - (void)initView
 {
     self.view.backgroundColor = [UIColor whiteColor];
     self.logoView.hidden = NO;
-    [self.headerImageView yy_setImageWithURL:[NSURL URLWithString:LOCAL_USER.Cover] placeholder:PLACEHOLDER_IMAGE];
-    self.nameLabel.text = LOCAL_USER.NickName;
-    self.uidLabel.text = [@"UID:" stringByAppendingString:LOCAL_USER.Uid];
-    //    [self.view addSubview:self.titleLabel];
-    //    [self.titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-    //        make.top.equalTo(self.view).offset(300);
-    //        make.left.equalTo(self.view).offset(100);
-    //        make.height.equalTo(@(50));
-    //        make.width.equalTo(@(200));
-    //    }];
+    
+    [self.headerImageView yy_setImageWithURL:[NSURL URLWithString:[UserManager shareManager].currentUser.Cover] placeholder:PLACEHOLDER_IMAGE];
+    self.nameLabel.text = [UserManager shareManager].currentUser.NickName;
+    self.uidLabel.text = [@"UID:" stringByAppendingString:[UserManager shareManager].currentUser.Uid];
+    
 }
 
 - (UIImageView *)headerImageView

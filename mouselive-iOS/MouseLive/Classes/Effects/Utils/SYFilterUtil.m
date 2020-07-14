@@ -9,8 +9,7 @@
 
 #import "SYFilterUtil.h"
 
-@implementation SYFilterUtil
-{
+@implementation SYFilterUtil {
     OFHandle _ofContext;
     OFHandle _effect;
     OF_EffectInfo _info;
@@ -23,7 +22,7 @@
     [self clearEffect];
     
     _ofContext = ofContext;
-    OF_Result result = OF_CreateEffectFromPackage(_ofContext, [effectPath UTF8String], (OFHandle*) &_effect);
+    OF_Result result = OF_CreateEffectFromPackage(_ofContext, [effectPath UTF8String], (OFHandle *) &_effect);
     if (OF_Result_Success != result) {
         return;
     }
@@ -50,8 +49,8 @@
 
 - (void)setFilterIntensity:(int)value
 {
-    OF_Param* param = [self getFilterParam];
-    OF_Paramf* paramf = param->data.paramf;
+    OF_Param *param = [self getFilterParam];
+    OF_Paramf *paramf = param->data.paramf;
     paramf->val = value / 100.0f;
     int filter = _info.filterList[0];
     OF_SetFilterParamData(_ofContext, filter, param->name, param);
@@ -67,7 +66,7 @@
 - (OF_Param *)getFilterParam
 {
     int filter = _info.filterList[0];
-    OF_Param* param = OF_NULL;
+    OF_Param *param = OF_NULL;
     OF_GetFilterParamData(_ofContext, filter, "Intensity", &param);
     return param;
 }

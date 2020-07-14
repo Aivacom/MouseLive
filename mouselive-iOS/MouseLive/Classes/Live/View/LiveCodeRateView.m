@@ -29,87 +29,110 @@
     return [[NSBundle mainBundle]loadNibNamed:NSStringFromClass(self) owner:nil options:nil].lastObject;
     
 }
-/**
- THUNDER_SDK_NETWORK_QUALITY_UNKNOWN = 0, // 质量未知
- THUNDER_SDK_NETWORK_QUALITY_EXCELLENT = 1, // 网络质量极好
- THUNDER_SDK_NETWORK_QUALITY_GOOD = 2, // 网络质量好
- THUNDER_SDK_NETWORK_QUALITY_POOR = 3, // 网络质量较好，用户感受有瑕疵但不影响沟通
- THUNDER_SDK_NETWORK_QUALITY_BAD = 4, // 网络质量一般，勉强能沟通但不顺畅
- THUNDER_SDK_NETWORK_QUALITY_VBAD = 5, // 网络质量非常差，基本不能沟通
- THUNDER_SDK_NETWORK_QUALITY_DOWN = 6, // 网络连接已断开，完全无法沟通
- */
-
-- (void)setQualityModel:(NetworkQualityStauts *)qualityModel
-{
-    _qualityModel = qualityModel;
-    NetWorkQuality *quality = [qualityModel.netWorkQualityDictionary objectForKey:@"0"];
-    switch (quality.uploadNetQuality) {
-        case THUNDER_SDK_NETWORK_QUALITY_UNKNOWN:
-            self.upQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Unknown", nil)];
-            break;
-        case THUNDER_SDK_NETWORK_QUALITY_EXCELLENT://@"网络质量:极好";
-            self.upQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Excellent", nil)];
-            
-            break;
-        case THUNDER_SDK_NETWORK_QUALITY_GOOD://@"网络质量:良好";
-            self.upQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Good", nil)];
-            
-            break;
-        case THUNDER_SDK_NETWORK_QUALITY_POOR: //@"网络质量:较好";
-            self.upQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Good", nil)];
-            
-            break;
-        case THUNDER_SDK_NETWORK_QUALITY_BAD: //Poor @"网络质量:一般";
-            self.upQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Poor", nil)];
-            
-            break;
-        case THUNDER_SDK_NETWORK_QUALITY_VBAD://Bad @"网络质量:差";
-            self.upQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Bad", nil)];
-            break;
-        case THUNDER_SDK_NETWORK_QUALITY_DOWN: //Very Bad @"网络质量:断开";
-            self.upQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Very Bad", nil)];
-            break;
-        default:
-            self.upQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Unknown", nil)];
-            break;
-    }
-    switch (quality.downloadNetQuality) {
-        case THUNDER_SDK_NETWORK_QUALITY_UNKNOWN:
-            self.downQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Unknown", nil)];
-            break;
-        case THUNDER_SDK_NETWORK_QUALITY_EXCELLENT:
-            self.downQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Excellent", nil)];
-            break;
-        case THUNDER_SDK_NETWORK_QUALITY_GOOD:
-            self.downQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Good", nil)];
-            break;
-        case THUNDER_SDK_NETWORK_QUALITY_POOR:
-            self.downQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Good", nil)];
-            break;
-        case THUNDER_SDK_NETWORK_QUALITY_BAD:
-            self.downQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Poor", nil)];
-            break;
-        case THUNDER_SDK_NETWORK_QUALITY_VBAD:
-            self.downQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Bad", nil)];
-            break;
-        case THUNDER_SDK_NETWORK_QUALITY_DOWN:
-            self.downQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Very Bad", nil)];
-            break;
-        default:
-            self.downQualityLabel.text = [[NSLocalizedString(@"Network", nil)stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Unknown", nil)];
-            break;
-    }
-    
-    self.upLabel.text = [NSString stringWithFormat:@"%@:%.0fkb",NSLocalizedString(@"Upload", nil),_qualityModel.upload];
-    self.upDetailLabel.text = [NSString stringWithFormat:@"(A:%.0fkb/ V:%.0fkb)",_qualityModel.audioUpload,_qualityModel.videoUpload];
-    
-    self.downLabel.text = [NSString stringWithFormat:@"%@:%.0fkb",NSLocalizedString(@"Download", nil),_qualityModel.download];
-    self.downDetailLabel.text = [NSString stringWithFormat:@"(A:%.0fkb/ V:%.0fkb)",_qualityModel.audioDownload,_qualityModel.videoDownload];
-}
 
 - (void)setUserDetailString:(NSString *)userDetailString
 {
     _userDetailString = userDetailString;
     self.nameLabel.text = userDetailString;
+}
+
+- (void)refreshCodeView
+{
+    NetWorkQuality *quality = self.qualityModel.netWorkQuality;
+    if ([LiveUserListManager defaultManager].RPublishMode == 1|| [[LiveUserListManager defaultManager].ROwner.Uid isEqualToString:LoginUserUidString]) {
+        
+        switch (quality.uploadNetQuality) {
+            case THUNDER_SDK_NETWORK_QUALITY_UNKNOWN:
+                self.upQualityLabel.text = [[NSLocalizedString(@"TxNetwork", @"上行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Unknown", nil)];
+                break;
+            case THUNDER_SDK_NETWORK_QUALITY_EXCELLENT://@"网络质量:极好";
+                self.upQualityLabel.text = [[NSLocalizedString(@"TxNetwork", @"上行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Excellent", nil)];
+                
+                break;
+            case THUNDER_SDK_NETWORK_QUALITY_GOOD://@"网络质量:良好";
+                self.upQualityLabel.text = [[NSLocalizedString(@"TxNetwork", @"上行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Good", nil)];
+                
+                break;
+            case THUNDER_SDK_NETWORK_QUALITY_POOR: //@"网络质量:较好";
+                self.upQualityLabel.text = [[NSLocalizedString(@"TxNetwork", @"上行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Good", nil)];
+                
+                break;
+            case THUNDER_SDK_NETWORK_QUALITY_BAD: //Poor @"网络质量:一般";
+                self.upQualityLabel.text = [[NSLocalizedString(@"TxNetwork", @"上行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Poor", nil)];
+                
+                break;
+            case THUNDER_SDK_NETWORK_QUALITY_VBAD://Bad @"网络质量:差";
+                self.upQualityLabel.text = [[NSLocalizedString(@"TxNetwork", @"上行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Bad", nil)];
+                break;
+            case THUNDER_SDK_NETWORK_QUALITY_DOWN: //Very Bad @"网络质量:断开";
+                self.upQualityLabel.text = [[NSLocalizedString(@"TxNetwork", @"上行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Very Bad", nil)];
+                break;
+            default:
+                self.upQualityLabel.text = [[NSLocalizedString(@"TxNetwork", @"上行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Unknown", nil)];
+                break;
+        }
+        switch (quality.downloadNetQuality) {
+            case THUNDER_SDK_NETWORK_QUALITY_UNKNOWN:
+                self.downQualityLabel.text = [[NSLocalizedString(@"RxNetwork", @"下行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Unknown", nil)];
+                break;
+            case THUNDER_SDK_NETWORK_QUALITY_EXCELLENT:
+                self.downQualityLabel.text = [[NSLocalizedString(@"RxNetwork", @"下行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Excellent", nil)];
+                break;
+            case THUNDER_SDK_NETWORK_QUALITY_GOOD:
+                self.downQualityLabel.text = [[NSLocalizedString(@"RxNetwork", @"下行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Good", nil)];
+                break;
+            case THUNDER_SDK_NETWORK_QUALITY_POOR:
+                self.downQualityLabel.text = [[NSLocalizedString(@"RxNetwork", @"下行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Good", nil)];
+                break;
+            case THUNDER_SDK_NETWORK_QUALITY_BAD:
+                self.downQualityLabel.text = [[NSLocalizedString(@"RxNetwork", @"下行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Poor", nil)];
+                break;
+            case THUNDER_SDK_NETWORK_QUALITY_VBAD:
+                self.downQualityLabel.text = [[NSLocalizedString(@"RxNetwork", @"下行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Bad", nil)];
+                break;
+            case THUNDER_SDK_NETWORK_QUALITY_DOWN:
+                self.downQualityLabel.text = [[NSLocalizedString(@"RxNetwork", @"下行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Very Bad", nil)];
+                break;
+            default:
+                self.downQualityLabel.text = [[NSLocalizedString(@"RxNetwork", @"下行质量")stringByAppendingString:@":"] stringByAppendingString:NSLocalizedString(@"Unknown", nil)];
+                break;
+        }
+    }
+    if (!self.qualityModel.isShowCodeDetail) {
+        self.upLabel.text = nil;
+        self.upDetailLabel.text = nil;
+        self.downLabel.text = nil;
+        self.downDetailLabel.text = nil;
+        [self mas_updateConstraints:^(MASConstraintMaker *make) {
+            if ([LiveUserListManager defaultManager].RPublishMode == 2) {
+                if ([self.userDetailString containsString:@"RoomId"]) {
+                    make.height.mas_equalTo(60);
+                } else {
+                    make.height.mas_equalTo(45);
+                }
+            } else {
+                if ([self.userDetailString containsString:@"RoomId"]) {
+                    make.height.mas_equalTo(CodeView_H - 58);
+                } else {
+                    make.height.mas_equalTo(CodeView_H - 70);
+                }
+            }
+        }];
+        
+    } else {
+        self.upLabel.text = [NSString stringWithFormat:@"%@:%.0fkb",NSLocalizedString(@"Upload", nil),self.qualityModel.upload];
+        self.upDetailLabel.text = [NSString stringWithFormat:@"(A:%.0fkb/ V:%.0fkb)",self.qualityModel.audioUpload,self.qualityModel.videoUpload];
+        
+        self.downLabel.text = [NSString stringWithFormat:@"%@:%.0fkb",NSLocalizedString(@"Download", nil),self.qualityModel.download];
+        self.downDetailLabel.text = [NSString stringWithFormat:@"(A:%.0fkb/ V:%.0fkb)",self.qualityModel.audioDownload,self.qualityModel.videoDownload];
+        [self mas_updateConstraints:^(MASConstraintMaker *make) {
+            if ([self.userDetailString containsString:@"RoomId"]) {
+                make.height.mas_equalTo(CodeView_H + 10);
+            } else {
+                make.height.mas_equalTo(CodeView_H);
+            }
+        }];
+    }
+    
 }
 @end

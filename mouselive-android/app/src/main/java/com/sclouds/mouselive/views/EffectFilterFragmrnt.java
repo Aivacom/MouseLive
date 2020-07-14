@@ -10,16 +10,15 @@ import android.view.View;
 import com.sclouds.basedroid.BaseAdapter;
 import com.sclouds.basedroid.BaseFragment;
 import com.sclouds.datasource.bean.EffectTab;
-import com.sclouds.effect.BeautyOption;
-import com.sclouds.effect.EffectManager;
-import com.sclouds.effect.consts.EffectConst;
+import com.sclouds.datasource.effect.EffectSvc;
+import com.sclouds.datasource.effect.IEffect;
+import com.sclouds.datasource.effect.bean.BeautyOption;
+import com.sclouds.datasource.effect.bean.Effect;
+import com.sclouds.datasource.effect.bean.EffectDataManager;
+import com.sclouds.datasource.event.EventEffectDowned;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.adapters.BeautyPanelAdapter;
-import com.sclouds.mouselive.bean.effect.Effect;
-import com.sclouds.mouselive.bean.effect.EffectDataManager;
 import com.sclouds.mouselive.databinding.LayoutRoomBeautyBinding;
-import com.sclouds.mouselive.event.EventEffectDowned;
-import com.sclouds.mouselive.event.EventLeaveRoom;
 import com.warkiz.widget.IndicatorSeekBar;
 import com.warkiz.widget.OnSeekChangeListener;
 import com.warkiz.widget.SeekParams;
@@ -56,7 +55,6 @@ public class EffectFilterFragmrnt extends BaseFragment<LayoutRoomBeautyBinding>
         selecteIndex = DEFAULT_VALUE;
     }
 
-
     @Nullable
     private BeautyPanelAdapter adapter;
 
@@ -86,7 +84,7 @@ public class EffectFilterFragmrnt extends BaseFragment<LayoutRoomBeautyBinding>
                 }
 
                 int selecteIndex = adapter.getSelecteIndex();
-                if (selecteIndex >= 0 && EffectManager.getIns().isFilterReady()) {
+                if (selecteIndex >= 0 && EffectSvc.getInstance().isFilterReady()) {
                     Effect effect = adapter.getDataAtPosition(selecteIndex);
                     effect.getOption().value = seekParams.progress;
                     adapter.notifyItemChanged(selecteIndex);
@@ -128,15 +126,12 @@ public class EffectFilterFragmrnt extends BaseFragment<LayoutRoomBeautyBinding>
                 switch (action) {
                     case MotionEvent.ACTION_DOWN:
                         //关闭滤镜
-                        EffectManager.getIns()
-                                .setEffectWithType(EffectConst.Effect.EFFECT_FILTER, "");
+                        EffectSvc.getInstance()
+                                .setEffectWithType(IEffect.Effect.EFFECT_FILTER, "");
                         break;
                     case MotionEvent.ACTION_UP:
                     case MotionEvent.ACTION_CANCEL:
-                        //恢复打开滤镜
-                        Effect effect = adapter.getDataAtPosition(selecteIndex);
-                        EffectManager.getIns().setEffectWithType(EffectConst.Effect.EFFECT_FILTER,
-                                effect.getPath());
+                        doCancel();
                         break;
                     default:
                         break;
@@ -144,6 +139,17 @@ public class EffectFilterFragmrnt extends BaseFragment<LayoutRoomBeautyBinding>
                 return true;
             }
         });
+    }
+
+    private void doCancel() {
+        if (selecteIndex < 0) {
+            return;
+        }
+
+        //恢复打开滤镜
+        Effect effect = adapter.getDataAtPosition(selecteIndex);
+        EffectSvc.getInstance().setEffectWithType(IEffect.Effect.EFFECT_FILTER,
+                effect.getPath());
     }
 
     @Override
@@ -194,7 +200,7 @@ public class EffectFilterFragmrnt extends BaseFragment<LayoutRoomBeautyBinding>
             effect.getOption().value = defaultValue;
             mBinding.seekEffectBeauty.setProgress(defaultValue);
 
-            EffectManager.getIns().setFilterIntensity(defaultValue);
+            EffectSvc.getInstance().setFilterIntensity(defaultValue);
         }
     }
 
@@ -226,7 +232,7 @@ public class EffectFilterFragmrnt extends BaseFragment<LayoutRoomBeautyBinding>
             }
         }
 
-        adapter = new BeautyPanelAdapter(getContext(), list, EffectConst.Effect.EFFECT_FILTER);
+        adapter = new BeautyPanelAdapter(getContext(), list, IEffect.Effect.EFFECT_FILTER);
         mBinding.rvEffectBeauty.setAdapter(adapter);
         adapter.setOnItemClickListener(this);
 
@@ -261,8 +267,8 @@ public class EffectFilterFragmrnt extends BaseFragment<LayoutRoomBeautyBinding>
             mBinding.seekEffectBeauty.setMax(option.max);
             mBinding.seekEffectBeauty.setMin(option.min);
             mBinding.seekEffectBeauty.setProgress(option.value);
-            EffectManager.getIns()
-                    .setEffectWithType(EffectConst.Effect.EFFECT_FILTER, effect.getPath());
+            EffectSvc.getInstance()
+                    .setEffectWithType(IEffect.Effect.EFFECT_FILTER, effect.getPath());
         }
         adapter.selecteItem(position, this);
         selecteIndex = position;
@@ -291,7 +297,7 @@ public class EffectFilterFragmrnt extends BaseFragment<LayoutRoomBeautyBinding>
             public boolean handleMessage(@NonNull Message msg) {
                 int progress = msg.arg1;
                 Effect effect = (Effect) msg.obj;
-                EffectManager.getIns().setFilterIntensity(progress);
+                EffectSvc.getInstance().setFilterIntensity(progress);
                 return false;
             }
         });
@@ -333,8 +339,8 @@ public class EffectFilterFragmrnt extends BaseFragment<LayoutRoomBeautyBinding>
                     mBinding.seekEffectBeauty.setMax(option.max);
                     mBinding.seekEffectBeauty.setMin(option.min);
                     mBinding.seekEffectBeauty.setProgress(option.value);
-                    EffectManager.getIns()
-                            .setEffectWithType(EffectConst.Effect.EFFECT_FILTER, effect.getPath());
+                    EffectSvc.getInstance()
+                            .setEffectWithType(IEffect.Effect.EFFECT_FILTER, effect.getPath());
                 }
                 return;
             }

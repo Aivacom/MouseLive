@@ -11,14 +11,14 @@
 
 @interface GobalViewBound()
 
-@property (nonatomic, readwrite, assign) int navBarHeight;
-@property (nonatomic, readwrite, assign) int statusBarHeight;
-@property (nonatomic, readwrite, assign) int tarBarHeight;
-@property (nonatomic, readwrite, assign) int navContentBarHeight;
-@property (nonatomic, readwrite, assign) int screenWidth;
-@property (nonatomic, readwrite, assign) int screenHeight;
-@property (nonatomic, readwrite, assign) int dataViewTitleHeight;
-@property (nonatomic, readwrite, assign) int bannerCellHeight;
+@property (nonatomic, assign, readwrite) int navBarHeight;
+@property (nonatomic, assign, readwrite) int statusBarHeight;
+@property (nonatomic, assign, readwrite) int tarBarHeight;
+@property (nonatomic, assign, readwrite) int navContentBarHeight;
+@property (nonatomic, assign, readwrite) int screenWidth;
+@property (nonatomic, assign, readwrite) int screenHeight;
+@property (nonatomic, assign, readwrite) int dataViewTitleHeight;
+@property (nonatomic, assign, readwrite) int bannerCellHeight;
 
 @end
 

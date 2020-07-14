@@ -17,7 +17,7 @@
 
 @interface SYEffectRender ()
 
-@property (nonatomic, assign, getter=isCheckSNSuccess) BOOL checkSNSuccess; // 校验 sn 是否成功
+@property (getter=isCheckSNSuccess, nonatomic, assign) BOOL checkSNSuccess; // 校验 sn 是否成功
 @property (nonatomic, assign) NSTimeInterval time;                  // 时间
 @property (nonatomic, copy) NSString *defaultBeautyEffectPath;      // 默认美颜路径
 @property (nonatomic, strong) SYBeautyUtil *beautyUtil;             // 美颜工具
@@ -459,8 +459,8 @@
     }
     static CIContext *_ciContext;
     CIImage *outputImage = [CIImage imageWithTexture:_outTexture size:CGSizeMake(width, height) flipped:YES colorSpace:NULL];
-    if( outputImage != nil) {
-        if( _ciContext == nil) {
+    if (outputImage != nil) {
+        if (_ciContext == nil) {
             _ciContext = [CIContext contextWithEAGLContext:[EAGLContext currentContext]  options:@{kCIContextWorkingColorSpace:[NSNull null]}];
         }
         [_ciContext render:outputImage toCVPixelBuffer:self->_outPixelBufferRef bounds:[outputImage extent] colorSpace:NULL];

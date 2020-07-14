@@ -169,7 +169,6 @@
     id objc = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&err];
     if (err) {
         YYLogError(@"json解析失败：%@",err);
-        [BaseConfigManager sy_logWithFormat:@"json解析失败：%@",err];
         return nil;
     }
     return objc;

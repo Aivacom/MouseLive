@@ -9,8 +9,7 @@
 
 #import "SYStickerUtil.h"
 
-@implementation SYStickerUtil
-{
+@implementation SYStickerUtil {
     OFHandle _ofContext;
     OFHandle _effect;
     OF_EffectInfo _info;
@@ -23,7 +22,7 @@
     [self clearEffect];
     
     _ofContext = ofContext;
-    OF_Result result = OF_CreateEffectFromPackage(_ofContext, [effectPath UTF8String], (OFHandle*) &_effect);
+    OF_Result result = OF_CreateEffectFromPackage(_ofContext, [effectPath UTF8String], (OFHandle *) &_effect);
     if (OF_Result_Success != result) {
         return;
     }

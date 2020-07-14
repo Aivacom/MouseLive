@@ -16,6 +16,7 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.Size;
+import androidx.recyclerview.widget.RecyclerView;
 
 /**
  * 聊天室参与人员
@@ -58,12 +59,12 @@ public class VoiceUserAdapter extends BaseAdapter<RoomUser, VoiceUserAdapter.Vie
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         RoomUser item = null;
         if (mData != null && position < mData.size()) {
             item = mData.get(position);
         }
-        holder.bind(item);
+        ((ViewHolder) holder).bind(item);
     }
 
     static class ViewHolder extends BaseAdapter.BaseViewHolder<RoomUser> {

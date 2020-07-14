@@ -7,6 +7,9 @@
 //
 #import <UIKit/UIKit.h>
 
+//数据库版本号 数据库升级
+#define BGSchemaVersion 83
+
 #pragma mark - Frame相关
 // 屏幕宽/高
 #define SCREEN_WIDTH  [UIScreen mainScreen].bounds.size.width
@@ -25,8 +28,8 @@
 // 安全区域高度
 #define TabbarSafeBottomMargin     (IS_iPhoneX ? 34.f : 0.f)
 //码率宽高
-#define CodeView_W 110
-#define CodeView_H 152
+//#define CodeView_W 135
+#define CodeView_H 162
 // 首页的选择器的宽度
 #define Live_Tool_H 50
 #define Home_Seleted_Item_W 40
@@ -75,6 +78,9 @@
 
 
 #pragma mark - 通知
+//
+#define kNotifySettingViewHidden @"kNotifySettingViewHidden"
+
 // 当前没有关注的主播, 去看热门主播
 #define kNotifyToseeBigWorld @"kNotifyToseeBigWorld"
 // 当前的直播控制器即将消失
@@ -117,5 +123,12 @@
 
 #define PLACEHOLDER_IMAGE [UIImage imageNamed:@"live_placeholder_head"]
 
-#define LoginUserUidString [NSString stringWithFormat:@"%@",[[[NSUserDefaults standardUserDefaults] dictionaryForKey:kUserInfo] objectForKey:kUid]]
+#define LoginUserUidString [NSString stringWithFormat:@"%@",[[NSUserDefaults standardUserDefaults] objectForKey:kUid]]
 #define LOCAL_USER [LiveUserModel mj_objectWithKeyValues:[[NSUserDefaults standardUserDefaults] dictionaryForKey:kUserInfo]]
+
+#define LIVE_BG_VIEW_SMALL_TOP 88
+#define LIVE_BG_VIEW_SMALL_LEFT 0
+#define LIVE_BG_VIEW_SMALL_RIGHT (self.bgView.frame.size.width) / 2
+#define LIVE_BG_VIEW_SMALL_HEIGHT @(310 * [UIScreen mainScreen].bounds.size.height / 667)
+#define LIVE_BG_VIEW_SMALL_WIDTH @((self.bgView.frame.size.width) / 2)
+

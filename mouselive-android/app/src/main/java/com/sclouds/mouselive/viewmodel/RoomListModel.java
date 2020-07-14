@@ -11,11 +11,11 @@ import com.sclouds.datasource.flyservice.http.FlyHttpSvc;
 import com.sclouds.datasource.flyservice.http.bean.RoomListBean;
 import com.sclouds.datasource.flyservice.http.network.BaseObserver;
 import com.sclouds.datasource.flyservice.http.network.CustomThrowable;
-import com.sclouds.datasource.flyservice.http.network.model.HttpResponse;
 
 import java.util.List;
 
 import androidx.annotation.NonNull;
+import androidx.core.util.ObjectsCompat;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
@@ -23,6 +23,9 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 
 /**
  * 房间列表
+ *
+ * @author chenhengfei@yy.com
+ * @since 2020/03/01
  */
 public class RoomListModel extends BaseViewModel {
 
@@ -57,14 +60,24 @@ public class RoomListModel extends BaseViewModel {
         FlyHttpSvc.getInstance().getRoomList(user.getUid(), mRoomType, 0)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new BaseObserver<HttpResponse<RoomListBean>>(getApplication()) {
+                .subscribe(new BaseObserver<RoomListBean>(getApplication()) {
                     @Override
-                    public void handleSuccess(
-                            HttpResponse<RoomListBean> roomListBeanHttpResponse) {
-                        List<Room> list = roomListBeanHttpResponse.Data.getRoomList();
+                    public void handleSuccess(@NonNull RoomListBean data) {
+                        List<Room> list = data.getRoomList();
                         if (list == null) {
                             mRooms.setValue(null);
                             return;
+                        }
+
+                        //移除房主是我的房间
+                        int index = 0;
+                        while (index < list.size()) {
+                            Room room = list.get(index);
+                            if (ObjectsCompat.equals(user, room.getROwner())) {
+                                list.remove(index);
+                                continue;
+                            }
+                            index++;
                         }
 
                         mRooms.setValue(list);

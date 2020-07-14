@@ -63,6 +63,7 @@ public class InputMessageDialog extends BottomSheetDialog {
         setOnDismissListener(new OnDismissListener() {
             @Override
             public void onDismiss(DialogInterface dialogInterface) {
+                etInput.setText("");
                 handler.removeCallbacks(delayShowInput);
             }
         });

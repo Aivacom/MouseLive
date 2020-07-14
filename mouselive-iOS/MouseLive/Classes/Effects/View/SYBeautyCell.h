@@ -15,8 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 设置名称和缩略图
 /// @param name name description
 /// @param thumb thumb description
-- (void)setName:(NSString *_Nullable)name
-          thumb:(NSString *_Nullable)thumb
+- (void)setName:(NSString * _Nullable)name
+          thumb:(NSString * _Nullable)thumb
        selected:(BOOL)selected;
 
 @end

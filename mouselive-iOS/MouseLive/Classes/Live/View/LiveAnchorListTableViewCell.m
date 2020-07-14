@@ -7,9 +7,7 @@
 //
 
 #import "LiveAnchorListTableViewCell.h"
-#import "LiveAnchorModel.h"
 #import "LiveUserModel.h"
-#import "SYHummerManager.h"
 
 @interface LiveAnchorListTableViewCell()
 
@@ -42,48 +40,33 @@
     self.roleLabel.text = nil;
 }
 
-- (void)configCellWithModel:(id)model
+- (void)configCellWithUserModel:(LiveUserModel *)model
 {
-    
     [self resetCell];
-    NSString *corver = @"";
-    NSString *nickName = @"";
-    if ([model isKindOfClass:[LiveAnchorModel class]]) {
-        LiveAnchorModel *anchorModel = (LiveAnchorModel *)model;
-        corver = anchorModel.ACover;
-        nickName = anchorModel.AName;
-        
-    } else if ([model isKindOfClass:[LiveUserModel class]]) {
-        LiveUserModel *userModel = (LiveUserModel *)model;
-        corver = userModel.Cover;
-        nickName = userModel.NickName;
-        
-        if (userModel.isAnchor) {
-            self.roleLabel.textColor = [UIColor sl_colorWithHexString:@"#0DBE9E"];
-            self.roleLabel.text =[NSString stringWithFormat:@"(%@)", NSLocalizedString(@"List_Owner",nil)];
-        }
-        else {
-            NSMutableAttributedString *str = [[NSMutableAttributedString alloc] initWithString:@""];//管理员 禁言中
-            if (userModel.isAdmin) {
-                
-                NSString *adminstr = [NSString stringWithFormat:@"(%@)", NSLocalizedString(@"List_Admin",nil)];
-                NSAttributedString *adminAttributedstr = [[NSAttributedString alloc]initWithString:adminstr attributes:@{NSForegroundColorAttributeName: [UIColor sl_colorWithHexString:@"#0DBE9E"]}];
-                [str appendAttributedString:adminAttributedstr];
-                
-            }
+    if (model.isAnchor) {
+        self.roleLabel.textColor = [UIColor sl_colorWithHexString:@"#0DBE9E"];
+        self.roleLabel.text =[NSString stringWithFormat:@"(%@)", NSLocalizedString(@"List_Owner",nil)];
+    } else {
+        NSMutableAttributedString *str = [[NSMutableAttributedString alloc] initWithString:@""];//管理员 禁言中
+        if (model.isAdmin) {
             
-            if (userModel.isMuted) {
-                NSString *mutedstr = [NSString stringWithFormat:@"(%@)", NSLocalizedString(@"Banned",nil)];
-                NSAttributedString *mutedAttributedstr = [[NSAttributedString alloc]initWithString:mutedstr attributes:@{NSForegroundColorAttributeName:  [UIColor sl_colorWithHexString:@"#FF6800"]}];
-                [str appendAttributedString:mutedAttributedstr];
-            }
+            NSString *adminstr = [NSString stringWithFormat:@"(%@)", NSLocalizedString(@"List_Admin",nil)];
+            NSAttributedString *adminAttributedstr = [[NSAttributedString alloc]initWithString:adminstr attributes:@{NSForegroundColorAttributeName: [UIColor sl_colorWithHexString:@"#0DBE9E"]}];
+            [str appendAttributedString:adminAttributedstr];
             
-            self.roleLabel.attributedText = str;
         }
+        
+        if (model.isMuted) {
+            NSString *mutedstr = [NSString stringWithFormat:@"(%@)", NSLocalizedString(@"Banned",nil)];
+            NSAttributedString *mutedAttributedstr = [[NSAttributedString alloc]initWithString:mutedstr attributes:@{NSForegroundColorAttributeName:  [UIColor sl_colorWithHexString:@"#FF6800"]}];
+            [str appendAttributedString:mutedAttributedstr];
+        }
+        
+        self.roleLabel.attributedText = str;
+       
     }
-    
-    [self.headerImageView yy_setImageWithURL:[NSURL URLWithString:corver] placeholder:PLACEHOLDER_IMAGE options:YYWebImageOptionIgnoreDiskCache completion:^(UIImage * _Nullable image, NSURL * _Nonnull url, YYWebImageFromType from, YYWebImageStage stage, NSError * _Nullable error) {
+    [self.headerImageView yy_setImageWithURL:[NSURL URLWithString:model.Cover] placeholder:PLACEHOLDER_IMAGE options:YYWebImageOptionIgnoreDiskCache completion:^(UIImage * _Nullable image, NSURL * _Nonnull url, YYWebImageFromType from, YYWebImageStage stage, NSError * _Nullable error) {
     }];
-    self.nameLabel.text = nickName;
+    self.nameLabel.text = model.NickName;
 }
 @end

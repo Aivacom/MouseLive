@@ -8,6 +8,6 @@
     android:background="@drawable/shape_room_msg_item_background"
     android:gravity="left"
     android:padding="8dp"
-    android:text="220000"
+    android:text="用户A 220000"
     android:textColor="@android:color/white"
     android:textSize="@dimen/room_msg_size" />

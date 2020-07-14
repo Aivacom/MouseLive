@@ -5,12 +5,10 @@ import android.opengl.GLES20
 import com.orangefilter.OrangeFilter
 import com.orangefilter.OrangeFilter.OF_FrameData
 import com.orangefilter.OrangeFilter.OF_Texture
-import com.sclouds.common.utils.Accelerometer
 import com.sclouds.effect_kotlin.utils.BeautyHelper
 import com.sclouds.effect_kotlin.utils.CameraUtil
 import com.sclouds.effect_kotlin.utils.FilterHelper
 import com.thunder.livesdk.video.IVideoCaptureObserver
-import com.yy.mediaframework.CameraInterface
 import com.yy.mediaframework.gles.Drawable2d
 import com.yy.mediaframework.gpuimage.custom.IGPUProcess
 import com.yy.mediaframework.gpuimage.util.GLShaderProgram
@@ -20,7 +18,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
-import java.util.*
+import java.util.Vector
 import java.util.logging.Logger
 
 /**
@@ -206,7 +204,9 @@ class EffectCaptureProcessor(venusModelPath: String?) : IGPUProcess {
     /**
      * openGl渲染，内部工具函数，业务不用关心
      */
-    private fun drawQuad(shader: GLShaderProgram?, cubeBuffer: FloatBuffer, textureBuffer: FloatBuffer) {
+    private fun drawQuad(
+            shader: GLShaderProgram?, cubeBuffer: FloatBuffer, textureBuffer: FloatBuffer
+    ) {
         cubeBuffer.position(0)
         shader?.setVertexAttribPointer("aPosition", 2, GLES20.GL_FLOAT, false, 0, cubeBuffer)
         textureBuffer.position(0)
@@ -236,7 +236,8 @@ class EffectCaptureProcessor(venusModelPath: String?) : IGPUProcess {
             if (effect.currentPath?.length!! > 0) {
                 if (File(effect.currentPath).exists()) {
                     // 从素材包文件创建特效
-                    effect.effect = OrangeFilter.createEffectFromPackage(mOfContextId, effect.currentPath)
+                    effect.effect =
+                            OrangeFilter.createEffectFromPackage(mOfContextId, effect.currentPath)
                     if (effect.effect != 0) {
                         updated = true
                     }
@@ -377,14 +378,16 @@ class EffectCaptureProcessor(venusModelPath: String?) : IGPUProcess {
                 }
 
                 // 渲染帧特效
-                val a = OrangeFilter.applyFrameBatch(mOfContextId, effectArray, mInputs, mOutputs, resultArray)
+                val a = OrangeFilter.applyFrameBatch(mOfContextId, effectArray, mInputs, mOutputs,
+                        resultArray)
                 swap(mInputTexture, mOutputTexture)
 
                 // Draw output texture.
                 GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mOldFramebuffer!![0])
                 mPassthroughShader?.useProgram()
                 mPassthroughShader
-                        ?.setUniformTexture("uTexture0", 0, mInputTexture!!.textureId, mInputTexture!!.target)
+                        ?.setUniformTexture("uTexture0", 0, mInputTexture!!.textureId,
+                                mInputTexture!!.target)
                 drawQuad(mPassthroughShader, mRectDrawable.vertexArray, mRectDrawable.texCoordArray)
                 // Restore OpenGL states.
                 GLES20.glBindTexture(mTextureTarget, 0)
@@ -563,12 +566,15 @@ class EffectCaptureProcessor(venusModelPath: String?) : IGPUProcess {
      * @param length 视频数据长度
      */
     inner class VideoCaptureWrapper : IVideoCaptureObserver {
-        override fun onCaptureVideoFrame(width: Int, height: Int, data: ByteArray, length: Int, imageFormat: Int) {
-            sLogger.severe("GPUImageBeautyOrangeFilter.onCaptureVideoFrame# mImageData$data>>mImgWidth=$width>>mImgHeight=$height")
+        override fun onCaptureVideoFrame(
+                width: Int, height: Int, data: ByteArray, length: Int, imageFormat: Int
+        ) {
+            sLogger.severe(
+                    "GPUImageBeautyOrangeFilter.onCaptureVideoFrame# mImageData$data>>mImgWidth=$width>>mImgHeight=$height")
             synchronized(mHandleLock) {
                 mImageData = data
-                mImgHeight = height
-                mImgWidth = width
+                mImgHeight = width
+                mImgWidth = height
             }
         }
     }

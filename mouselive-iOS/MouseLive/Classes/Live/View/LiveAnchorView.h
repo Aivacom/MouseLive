@@ -8,14 +8,9 @@
 
 #import <UIKit/UIKit.h>
 #import "LiveRoomInfoModel.h"
+#import "LiveUserListManager.h"
 
 NS_ASSUME_NONNULL_BEGIN
-
-//开播模式
-typedef enum {
-    PushModeType_RTC,//点击头像
-    PushModeType_CDN //点击列表
-}PushModeType;
 
 //点击类型
 typedef enum {
@@ -29,7 +24,10 @@ typedef void (^IconClickBlock)(IconClikType type,BOOL selected);
 /** 主播 */
 @property (nonatomic, strong) LiveRoomInfoModel *roomInfoModel;
 
-@property (nonatomic, assign) PushModeType pushMode;
+@property (nonatomic, strong) LiveUserListManager *roomModel;
+
+
+@property (nonatomic, assign) PublishMode publishMode;
 
 @property (nonatomic, assign) NSInteger peopleCount;
 

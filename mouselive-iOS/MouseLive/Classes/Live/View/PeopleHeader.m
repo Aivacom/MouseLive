@@ -17,7 +17,7 @@
 
 + (instancetype)shareInstance
 {
- return [[NSBundle mainBundle]loadNibNamed:NSStringFromClass(self) owner:nil options:nil].lastObject;
+    return [[NSBundle mainBundle]loadNibNamed:NSStringFromClass(self) owner:nil options:nil].lastObject;
 }
 
 - (void)awakeFromNib

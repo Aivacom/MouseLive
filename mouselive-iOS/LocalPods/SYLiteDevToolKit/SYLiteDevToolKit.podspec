@@ -13,10 +13,10 @@ Pod::Spec.new do |s|
   s.description      = <<-DESC
         SYLiteDevToolKit
                        DESC
-  s.homepage         = "https://www.sunclouds.com/"
+  s.homepage         = "https://www.jocloud.com/"
   s.license          = { :type => "MIT", :file => "LICENSE" }
   s.author           = "iPhuan"
-  s.source           = { :git => "https://www.sunclouds.com/", :tag => s.version }
+  s.source           = { :git => "https://www.jocloud.com/", :tag => s.version }
   s.platform         = :ios, '9.0'
   s.requires_arc     = true
   s.frameworks       = "Foundation", "UIKit"

@@ -1,9 +1,13 @@
 package com.sclouds.mouselive.widget;
 
 import android.content.Context;
+import android.graphics.Outline;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -11,8 +15,8 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.sclouds.datasource.bean.Room;
 import com.sclouds.datasource.bean.RoomUser;
+import com.sclouds.datasource.bean.User;
 import com.sclouds.datasource.thunder.ThunderSvc;
 import com.sclouds.mouselive.R;
 import com.thunder.livesdk.ThunderRtcConstant;
@@ -62,6 +66,16 @@ public class MyThunderPlayerView extends RelativeLayout {
         tvOwnerName = findViewById(R.id.tvOwnerName);
 
         llUser.setVisibility(GONE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            setClipToOutline(true);
+            setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), 20);
+                }
+            });
+        }
     }
 
     /**
@@ -74,7 +88,8 @@ public class MyThunderPlayerView extends RelativeLayout {
         this.UID = UID;
 
         releaseThunderPlayerView();
-        mThunderVideoView = ThunderSvc.getInstance().createPlayerView(getContext().getApplicationContext());
+        mThunderVideoView =
+                ThunderSvc.getInstance().createPlayerView(getContext().getApplicationContext());
         addView(mThunderVideoView, 0,
                 new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT));
@@ -105,11 +120,11 @@ public class MyThunderPlayerView extends RelativeLayout {
     /**
      * 设置连麦玩家信息
      *
-     * @param mRoom
+     * @param ROwner
      * @param user
      */
-    public void setLinkRoomUser(@NonNull Room mRoom, @NonNull RoomUser user) {
-        if (ObjectsCompat.equals(mRoom.getROwner(), user)) {
+    public void setLinkRoomUser(@NonNull User ROwner, @NonNull RoomUser user) {
+        if (ObjectsCompat.equals(ROwner, user)) {
             llUser.setVisibility(GONE);
         } else {
             if (ObjectsCompat.equals(user, this.user) == false) {

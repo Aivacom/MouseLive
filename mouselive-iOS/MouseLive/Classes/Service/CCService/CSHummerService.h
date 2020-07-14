@@ -32,31 +32,31 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 发送请求连麦请求 -- WS_CHAT_APPLY
 /// @param req WSInviteRequest 结构体
-- (void)sendApply:(WSInviteRequest*)req complete:(SendComplete)complete;
+- (void)sendApply:(WSInviteRequest *)req complete:(SendComplete)complete;
 
 /// 发送接受连麦请求 -- WS_CHAT_ACCEPT
 /// @param req WSInviteRequest 结构体
-- (void)sendAccept:(WSInviteRequest*)req complete:(SendComplete)complete;
+- (void)sendAccept:(WSInviteRequest *)req complete:(SendComplete)complete;
 
 /// 发送拒绝连麦请求 -- WS_CHAT_REJECT
 /// @param req WSInviteRequest 结构体
-- (void)sendReject:(WSInviteRequest*)req complete:(SendComplete)complete;
+- (void)sendReject:(WSInviteRequest *)req complete:(SendComplete)complete;
 
 /// 发送取消连麦请求 -- WS_CHAT_CANCEL
 /// @param req WSInviteRequest 结构体
-- (void)sendCancel:(WSInviteRequest*)req complete:(SendComplete)complete;
+- (void)sendCancel:(WSInviteRequest *)req complete:(SendComplete)complete;
 
 /// 发送挂断连麦请求 -- WS_CHAT_HANGUP
 /// @param req WSInviteRequest 结构体
-- (void)sendHangup:(WSInviteRequest*)req complete:(SendComplete)complete;
+- (void)sendHangup:(WSInviteRequest *)req complete:(SendComplete)complete;
 
 /// 发送自己开麦/闭麦连麦请求 -- WS_CHAT_MIC_ENABLE
 /// @param req WSMicOffRequest 结构体
-- (void)sendMicEnable:(WSMicOffRequest*)req complete:(SendComplete)complete;
+- (void)sendMicEnable:(WSMicOffRequest *)req complete:(SendComplete)complete;
 
 /// 发送进入房间的请求
 /// @param req WSRoomRequest 结构体
-- (void)sendJoinRoom:(WSRoomRequest*)req complete:(SendComplete)complete;
+- (void)sendJoinRoom:(WSRoomRequest *)req complete:(SendComplete)complete;
 
 /// 切到后台
 - (void)handleAppDidBecomeActive;

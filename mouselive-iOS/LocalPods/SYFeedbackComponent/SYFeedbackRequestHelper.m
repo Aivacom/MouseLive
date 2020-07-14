@@ -33,8 +33,7 @@
     
     
     NSString *logFile = feedbackManager.logFilePath;
-    
-    // 创建临时文件
+     // 创建临时文件
     NSString *zipPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"feedback.zip"];
     if ([[NSFileManager defaultManager] fileExistsAtPath:zipPath]) {
         [[NSFileManager defaultManager] removeItemAtPath:zipPath error:nil];
@@ -106,8 +105,11 @@
     SYLog(@"feedback post data:%@", postData);
     
     void (^multipartFormBlock)(id<AFMultipartFormData>) = ^(id<AFMultipartFormData> formData) {
+     
+        
         // 上传日志文件
         [formData appendPartWithFormData:[postData dataUsingEncoding:NSUTF8StringEncoding] name:@"nyy"];
+       
         
         if (zipPath) {
             NSData *zipData = [NSData dataWithContentsOfFile:zipPath];
@@ -124,6 +126,7 @@
                 [[NSFileManager defaultManager] removeItemAtPath:zipPath error:nil];
             }
         }
+         
     };
     
     [[AFHTTPSessionManager manager] POST:feedbackManager.requestUrl parameters:nil constructingBodyWithBlock:multipartFormBlock progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {

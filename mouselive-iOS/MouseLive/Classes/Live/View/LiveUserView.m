@@ -7,8 +7,13 @@
 //
 
 #import "LiveUserView.h"
+#import "LiveUserListManager.h"
 
 @interface LiveUserView()
+
+@property (nonatomic, weak) IBOutlet UIView *bottomBgView;
+@property (nonatomic, weak) IBOutlet UIView *leftLine;
+@property (nonatomic, weak) IBOutlet UIView *rightLine;
 /** 头像*/
 @property (nonatomic, weak) IBOutlet UIImageView *coverView;
 /** 昵称*/
@@ -19,19 +24,16 @@
 @property (nonatomic, weak) IBOutlet UIButton *riserBtn;
 /** 禁言*/
 @property (nonatomic, weak) IBOutlet UIButton *shutupBtn;
-/** 剔出*/
-@property (nonatomic, weak) IBOutlet UIButton *outBtn;
-@property (nonatomic, weak) IBOutlet UIView *bottomBgView;
-@property (nonatomic, weak) IBOutlet UIView *leftLine;
-@property (nonatomic, weak) IBOutlet UIView *rightLine;
 
 /**语音房上麦 下麦分割线*/
-
 @property (nonatomic, weak) IBOutlet UIView *centerLine;
 /**闭麦*/
 @property (nonatomic, weak) IBOutlet UIButton *closeMircBtn;
 /**下麦*/
 @property (nonatomic, weak) IBOutlet UIButton *downMircBtn;
+/** 剔出*/
+@property (nonatomic, weak) IBOutlet UIButton *outBtn;
+
 
 @end
 
@@ -66,40 +68,70 @@
 
 - (IBAction)closeBtnClicked:(UIButton *)sender
 {
-    if (self.closeBlock) {
-        self.closeBlock();
-    }
+    self.hidden  = YES;
 }
 
 - (IBAction)managerBtnAction:(UIButton *)sender
 {
-    if (self.managementBlock) {
-        if (self.model.isAdmin) {
-            self.managementBlock(self.model, ManagementUserTypeRemoveAdmin,sender);
-        }
-        else {
-            self.managementBlock(self.model, ManagementUserTypeAddAdmin,sender);
+    self.hidden = YES;
+    LiveUserModel *localUser = [LiveUserListManager objectForPrimaryKey:LoginUserUidString];
+    if (localUser.isAdmin || localUser.isAnchor) {
+        if (self.managementBlock) {
+            if (self.model.isAdmin) {
+                //降管理员
+                self.managementBlock(self.model, ManagementUserTypeRemoveAdmin);
+            } else {
+                self.managementBlock(self.model,ManagementUserTypeAddAdmin);
+                //升管理员
+            }
         }
     }
+  
 }
-//禁言
+//解禁言 禁言
 - (IBAction)shutupBtnClicked:(id)sender
 {
-    if (self.managementBlock) {
-        if (self.model.isMuted) {
-            self.managementBlock(self.model, ManagementUserTypeUnmute,sender);
-        }
-        else {
-            self.managementBlock(self.model, ManagementUserTypeMute,sender);
+    self.hidden = YES;
+    [self muteOrUnmute];
+    
+    
+}
+
+//解禁言 禁言
+- (void)muteOrUnmute
+{
+    LiveUserModel *localUser = [LiveUserListManager objectForPrimaryKey:LoginUserUidString];
+    if (localUser.isAdmin || localUser.isAnchor) {
+        if (self.managementBlock) {
+            if (self.model.isMuted) {
+                //解禁言
+                self.managementBlock(self.model, ManagementUserTypeUnmute);
+            } else {
+                //禁言
+                self.managementBlock(self.model, ManagementUserTypeMute);
+            }
         }
     }
+ 
 }
 
 - (IBAction)kickBtnClicked:(id)sender
 {
-    if (self.managementBlock) {
-        self.managementBlock(self.model, ManagementUserTypeKick,sender);
+    self.hidden = YES;
+    [self kickOutUser:sender];
+    
+}
+
+//踢出
+- (void)kickOutUser:(UIButton *)sender
+{
+    LiveUserModel *localUser = [LiveUserListManager objectForPrimaryKey:LoginUserUidString];
+    if (localUser.isAdmin || localUser.isAnchor) {
+        if (self.managementBlock) {
+            self.managementBlock(self.model, ManagementUserTypeKick);
+        }
     }
+
 }
 
 - (void)setModel:(LiveUserModel *)model
@@ -107,69 +139,71 @@
     _model = model;
     [self.coverView yy_setImageWithURL:[NSURL URLWithString:model.Cover] placeholder:PLACEHOLDER_IMAGE];
     self.nickNameLabel.text = model.NickName;
-    //视频聊天房
-    if (self.type != LiveTypeAudio) {
+    [self updateButtonStatus];
+    if (self.viewTyle == LiveUserViewTypeThreeStyle) {
+           //升管 禁言 踢出
+        self.shutupBtn.selected = model.isMuted;
+        self.riserBtn.selected = self.model.isAdmin;
+    } else if (self.viewTyle == LiveUserViewTypeTwoMicStyle){
+        [self.closeMircBtn setTitle:NSLocalizedString(@"Mic On",nil)  forState:UIControlStateNormal];
+        [self.closeMircBtn setTitle:NSLocalizedString(@"Mic Off",nil)  forState:UIControlStateSelected];
+        [self.downMircBtn setTitle:NSLocalizedString(@"Off Seat",nil)  forState:UIControlStateNormal];
+        // 闭麦 开麦
+        self.closeMircBtn.selected = model.MicEnable;
+    } else if (self.viewTyle == LiveUserViewTypeTwoAdminStyle) {
+        [self.closeMircBtn setTitle:NSLocalizedString(@"Ban",nil)  forState:UIControlStateNormal];
+        //@"解言"
+        [self.closeMircBtn setTitle:NSLocalizedString(@"Unban",nil) forState:UIControlStateSelected];
+        //右按钮 "踢出"
+        [self.downMircBtn setTitle:NSLocalizedString(@"Kick",nil) forState:UIControlStateNormal];
+        self.closeMircBtn.selected = self.model.isMuted;
+    }
+}
+
+- (IBAction)closeMirClicked:(UIButton *)sender
+{
+    self.hidden = YES;
+    if (self.viewTyle == LiveUserViewTypeTwoMicStyle) {
+        LiveUserModel *localUser = [LiveUserListManager objectForPrimaryKey:LoginUserUidString];
+        if (localUser.isAdmin || localUser.isAnchor) {
+            if (self.managementBlock) {
+                int micType = ManagementUserTypeCloseMirc;
+                if (!self.model.MicEnable) {
+                    // 开麦
+                    micType = ManagementUserTypeOpenMirc;
+                }
+                self.managementBlock(self.model, micType);
+            }
+        }
+    } else if (self.viewTyle == LiveUserViewTypeTwoAdminStyle) {
+        //管理员禁言 解禁
+        [self muteOrUnmute];
         
-        // 如果全体禁言，以哪个优先级高？？？？
-        //主播 升管 禁言 踢出
-        if (self.isAnchor) {
-            if (self.model.isMuted) {
-                //解禁
-                self.shutupBtn.selected = YES;
-                
-            }
-            else {
-                //禁言
-                self.shutupBtn.selected = NO;
-            }
-            
-            if (self.model.isAdmin) {
-                //降管
-                self.riserBtn.selected = YES;
-                
-            }
-            else {
-                //升管
-                self.riserBtn.selected = NO;
-            }
-        }
-        //管理员
-        if (self.isAdmin) {
-            //改变左右按钮文字
-            //左按钮
-            //@"禁言"
-            [self.closeMircBtn setTitle:NSLocalizedString(@"Ban",nil)  forState:UIControlStateNormal];
-            //@"解言"
-            [self.closeMircBtn setTitle:NSLocalizedString(@"Unban",nil) forState:UIControlStateSelected];
-            //右按钮 "踢出"
-            [self.downMircBtn setTitle:NSLocalizedString(@"Kick",nil) forState:UIControlStateNormal];
-            if (self.model.isMuted) {
-                //解禁
-                self.closeMircBtn.selected = YES;
-                
-            }
-            else {
-                //禁言
-                self.closeMircBtn.selected = NO;
-            }
-        }
-    } else {
-         [self.closeMircBtn setTitle:NSLocalizedString(@"Mic On",nil)  forState:UIControlStateNormal];
-         [self.closeMircBtn setTitle:NSLocalizedString(@"Mic Off",nil)  forState:UIControlStateSelected];
-         [self.downMircBtn setTitle:NSLocalizedString(@"Off Seat",nil)  forState:UIControlStateNormal];
-        if (model.MicEnable) {
-            self.closeMircBtn.selected = YES;  // 闭麦
-        } else {
-            self.closeMircBtn.selected = NO; // 开麦
-        }
     }
 }
 
 
-- (void)setType:(LiveType)type
+- (IBAction)downMircClicked:(UIButton *)sender
 {
-    _type = type;
-    if (type == LiveTypeAudio) {
+    self.hidden = YES;
+    if (self.viewTyle == LiveUserViewTypeTwoMicStyle) {
+        LiveUserModel *localUser = [LiveUserListManager objectForPrimaryKey:LoginUserUidString];
+        if (localUser.isAdmin || localUser.isAnchor) {
+            if (self.managementBlock) {
+                self.managementBlock(self.model, ManagementUserTypeDownMirc);
+            }
+        }
+    } else if(self.viewTyle == LiveUserViewTypeTwoAdminStyle || self.viewTyle == LiveUserViewTypeThreeStyle) {
+        //踢出成员
+        [self kickOutUser:sender];
+        
+    }
+}
+
+- (void)updateButtonStatus
+{
+    LiveUserModel *localUser = [LiveUserListManager objectForPrimaryKey:LoginUserUidString];
+    if (self.viewTyle == LiveUserViewTypeTwoMicStyle || self.viewTyle == LiveUserViewTypeTwoAdminStyle) {
         self.centerLine.hidden = NO;
         self.closeMircBtn.hidden = NO;
         self.downMircBtn.hidden = NO;
@@ -179,71 +213,16 @@
         self.outBtn.hidden = YES;
         self.riserBtn.hidden = YES;
         self.shutupBtn.hidden = YES;
-    } else if (type == LiveTypeVideo) {
-
-        if (self.isAnchor) {
-            self.centerLine.hidden = YES;
-            self.closeMircBtn.hidden = YES;
-            self.downMircBtn.hidden = YES;
-
-            self.leftLine.hidden  = NO;
-            self.rightLine.hidden = NO;
-            self.outBtn.hidden = NO;
-            self.riserBtn.hidden = NO;
-            self.shutupBtn.hidden = NO;
-        }
-
-        if (self.isAdmin) {
-            self.centerLine.hidden = NO;
-            self.closeMircBtn.hidden = NO;
-            self.downMircBtn.hidden = NO;
-
-            self.leftLine.hidden  = YES;
-            self.rightLine.hidden = YES;
-            self.outBtn.hidden = YES;
-            self.riserBtn.hidden = YES;
-            self.shutupBtn.hidden = YES;
-        }
+    } else if (self.viewTyle == LiveUserViewTypeThreeStyle) {
+        self.centerLine.hidden = YES;
+        self.closeMircBtn.hidden = YES;
+        self.downMircBtn.hidden = YES;
         
+        self.leftLine.hidden  = NO;
+        self.rightLine.hidden = NO;
+        self.outBtn.hidden = NO;
+        self.riserBtn.hidden = NO;
+        self.shutupBtn.hidden = NO;
     }
 }
-- (IBAction)closeMirClicked:(UIButton *)sender
-{
-    if (_type == LiveTypeAudio) {
-        if (self.managementBlock) {
-            int micType = ManagementUserTypeCloseMirc;
-            if (!self.closeMircBtn.selected) {
-                // 开麦
-                micType = ManagementUserTypeOpenMirc;
-            }
-            self.closeMircBtn.selected = !self.closeMircBtn.selected;
-            self.managementBlock(self.model, micType,sender);
-        }
-    } else {
-        //管理员禁言 解禁
-        if (self.managementBlock) {
-            if (self.model.isMuted) {
-                self.managementBlock(self.model, ManagementUserTypeUnmute,sender);
-            }
-            else {
-                self.managementBlock(self.model, ManagementUserTypeMute,sender);
-            }
-        }
-    }
-}
-
-- (IBAction)downMircClicked:(UIButton *)sender
-{
-    if (_type == LiveTypeAudio) {
-        if (self.managementBlock) {
-            self.managementBlock(self.model, ManagementUserTypeDownMirc,sender);
-        }
-    } else {
-        //踢出
-        if (self.managementBlock) {
-            self.managementBlock(self.model, ManagementUserTypeKick,sender);
-        }
-    }
-}
-
 @end

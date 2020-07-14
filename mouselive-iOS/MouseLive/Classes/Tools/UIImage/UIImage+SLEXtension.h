@@ -57,7 +57,7 @@ NS_ASSUME_NONNULL_BEGIN
  *
  *  @return 图片
  */
-+ (UIImage*)yy_gradientImageWithBounds:(CGRect)bounds andColors:(NSArray*)colors andGradientType:(GradientDirection)gradientType;
++ (UIImage *)yy_gradientImageWithBounds:(CGRect)bounds andColors:(NSArray *)colors andGradientType:(GradientDirection)gradientType;
 @end
 
 NS_ASSUME_NONNULL_END

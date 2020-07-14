@@ -135,7 +135,7 @@ static MainViewController * _instance;
 - (NSArray *)vcClassArray
 {
     if (!_vcClassArray) {
-        _vcClassArray = @[@"HomeViewController",@"SettingViewController",@"PublishViewController",@"SettingViewController"];
+        _vcClassArray = @[@"SYHomeViewController",@"FeedBackViewController"];
     }
     return _vcClassArray;
 }
@@ -144,7 +144,7 @@ static MainViewController * _instance;
 {
     if (!_vcTitleArray) {
 
-        _vcTitleArray = @[ NSLocalizedString(@"Live", nil), NSLocalizedString(@"Storie", nil), NSLocalizedString(@"Feedback", nil), NSLocalizedString(@"Me", nil)];
+        _vcTitleArray = @[ NSLocalizedString(@"Live", nil),  NSLocalizedString(@"Feedback", nil)];
     }
     return _vcTitleArray;
 }
@@ -152,7 +152,7 @@ static MainViewController * _instance;
 - (NSArray *)vcItemArray
 {
     if (!_vcItemArray) {
-        _vcItemArray = @[@"toolbar_live", @"toolbar_video", @"toolbar_feedback", @"toolbar_mine"];
+        _vcItemArray = @[@"toolbar_live", @"toolbar_feedback"];
     }
     return _vcItemArray;
 }
@@ -160,7 +160,7 @@ static MainViewController * _instance;
 - (NSArray *)vcSelItemArray
 {
     if (!_vcSelItemArray) {
-        _vcSelItemArray = @[@"toolbar_live_sel", @"toolbar_video_sel", @"toolbar_feedback_sel", @"toolbar_mine_sel"];
+        _vcSelItemArray = @[@"toolbar_live_sel", @"toolbar_feedback_sel"];
     }
     return _vcSelItemArray;
 }

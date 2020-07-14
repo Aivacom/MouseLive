@@ -11,16 +11,18 @@
 #import "ThunderEngine.h"
 #import "SYVideoCanvas.h"
 #import "MixVideoConfig.h"
+#import "WaterMarkAdapter.h"
 
 @interface SYThunderManagerNew : NSObject
-@property (nonatomic, readonly, strong) ThunderEngine *engine;            // SDK引擎
-@property (nonatomic, readonly, strong) SYVideoCanvas *localVideoCanvas;  // 视频视图
-@property (nonatomic, readonly, strong) NSString *logPath;                // 日志路径
-@property (nonatomic, readonly, copy) NSString *appId;                    // AppId
+@property (nonatomic, strong, readonly) ThunderEngine *engine;            // SDK引擎
+@property (nonatomic, strong, readonly) SYVideoCanvas *localVideoCanvas;  // 视频视图
+@property (nonatomic, strong, readonly) NSString *logPath;                // 日志路径
+@property (nonatomic, copy, readonly) NSString *appId;                    // AppId
 @property (nonatomic, readonly) NSString *localUid;                           // 本地用户uid
-@property (nonatomic, readonly, assign) ThunderPublishVideoMode publishMode;        // 视频编码类型
-@property (nonatomic,assign) CGFloat currentPlayprogress; //当前播放进度
+@property (nonatomic, assign, readonly) ThunderPublishVideoMode publishMode;        // 视频编码类型
+@property (nonatomic, assign) CGFloat currentPlayprogress; //当前播放进度
 
+@property (nonatomic,strong,readwrite) WaterMarkAdapter* waterMarkAdapter;
 
 + (instancetype)sharedManager;
 
@@ -30,13 +32,6 @@
 
 /// 销毁SDK
 - (void)destroyEngine;
-
-/// 加入房间
-/// @param roomId 要加入 roomid
-/// @param uid 用户 uid
-/// @param haveVideo 是否有 video
-/// @param pushUrl 推流 CDN 的 url
-- (int)joinRoom:(NSString *)roomId uid:(NSString *)uid haveVideo:(BOOL)haveVideo pushUrl:(NSString *)pushUrl;
 
 /// 启动配置
 /// @param haveVideo 是否是 video
@@ -68,31 +63,10 @@
 /// @param voice 音效，查看 ThunderRtcVoiceChangerMode。 默认是关闭的
 - (void)setVoiceChanger:(ThunderRtcVoiceChangerMode)voice;
 
-/// 关闭本地视频，包含视频采集和视频流推送
-/// @param disabled yes - 关闭推流；no - 打开推流
-- (void)disableLocalVideo:(BOOL)disabled;
-
 /// 关闭接收远程视频流
 /// @param uid 远程 uid
 /// @param disabled yes - 关闭；no - 打开
 - (void)disableRemoteVideo:(NSString *)uid disabled:(BOOL)disabled;
-
-/// 关闭本地音频流推送
-/// @param disabled yes - 关闭推流；no - 打开推流
-/// @param haveVideo yes - 有 video；no - 没有 video
-- (void)disableLocalAudio:(BOOL)disabled haveVideo:(BOOL)haveVideo;
-
-/// 关闭接收远程音频流
-/// @param uid 远程 uid
-/// @param disabled yes - 关闭；no - 打开
-- (void)disableRemoteAudio:(NSString *)uid disabled:(BOOL)disabled;
-
-/// 恢复远程用户的音频流和视频流
-/// @param uid 远程 uid
-- (void)recoveryRemoteStream:(NSString *)uid;
-
-/// SDK退出房间后依然会保持之前停止流的状态，所以退出房间时对所有流进行恢复
-- (void)recoveryAllRemoteStream;
 
 // 请求token -- 是否有用？
 - (void)requestTokenWithRoomId:(NSString *)roomId Uid:(NSString *)uid completionHandler:(void (^)(BOOL success))completionHandler;
@@ -138,7 +112,8 @@
 /// 设置水印
 /// @param url 水印图片的地址，必须是 PNG
 /// @param rect 水印图片的大小和位置
-- (void)setVideoWatermarkWithUrl:(NSURL * _Nonnull)url rect:(CGRect)rect;
+- (void)setVideoWatermarkWithThunderImage:(ThunderImage * _Nonnull)thunderImage;
+
 
 /// 耳返开关
 /// @param enabled YES 打开；NO 关闭
@@ -161,5 +136,21 @@
 /// 设置本地视频预处理回调接口，不用在移除注册，在调用离开房间的时候，在调用 thunder 引擎的移除
 /// @param delegate 本地视频帧预处理接口，可用于自定义的美颜等处理。
 - (void)registerVideoCaptureFrameObserver:(nullable id<ThunderVideoCaptureFrameObserver>)delegate;
+
+#pragma mark - New API
+
+/// 关闭本地音频流推送
+/// @param enabled yes - 打开推流；no - 关闭推流
+- (void)enableLocalAudioStream:(BOOL)enabled;
+
+- (void)disableLocalAudioCapture:(BOOL)disabled;
+
+- (void)setupLocalUser:(NSString * _Nonnull)uid videoView:(UIView * _Nonnull)view;
+
+- (void)setupRemoteUser:(NSString * _Nonnull)uid videoView:(UIView * _Nullable)view;
+
+- (void)setMirrorPreview:(BOOL)preview publish:(BOOL)publish;
+
+- (void)joinMediaRoom:(NSString * _Nonnull)roomId uid:(NSString * _Nonnull)uid roomType:(LiveType)roomType;
 
 @end

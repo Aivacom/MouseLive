@@ -96,27 +96,15 @@ static NSInteger CONDITION;
 {
     __weak typeof (self) weakSelf = self;
     dispatch_sync(self.taskQueue, ^{
-        int index = -1;
-        NSMutableArray* removeArray = [[NSMutableArray alloc] init];
-        for (NSInteger i = 0; i < weakSelf.taskArray.count; i++) {
-            NSMutableDictionary *dic = (NSMutableDictionary *)weakSelf.taskArray[i];
-            if ([(NSNumber *)[dic valueForKey:g_TaskId] intValue] != [taskId intValue]) {
-                [removeArray addObject:@(i)];
-            }
-            else {
-                index = (int)i;
+        NSMutableDictionary* task = weakSelf.taskArray.firstObject;
+        while (task) {
+            if ([(NSNumber *)[task valueForKey:g_TaskId] intValue] != [taskId intValue]) {
+                [weakSelf.taskArray removeObject:task];
+                task = weakSelf.taskArray.firstObject;
+            } else {
+                [weakSelf.taskArray removeObject:task];
                 break;
             }
-        }
-        
-        // 删除前面的数据
-        for (NSInteger k = 0; k < removeArray.count; k++) {
-            [weakSelf.taskArray removeObjectAtIndex:[removeArray[k] intValue]];
-        }
-        
-        // 完成当前的数据
-        if (index != -1) {
-            [weakSelf.taskArray removeObjectAtIndex:index];
         }
     });
     

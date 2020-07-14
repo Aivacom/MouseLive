@@ -56,6 +56,10 @@ public class ProgressDialog extends DialogFragment {
                     }
                 }
 
+                if (isAdded()) {
+                    return false;
+                }
+
                 if (isShowing()) {
                     return false;
                 }

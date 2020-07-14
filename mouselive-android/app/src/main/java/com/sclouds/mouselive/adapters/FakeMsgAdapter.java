@@ -56,21 +56,22 @@ public class FakeMsgAdapter extends BaseAdapter<FakeMessage, FakeMsgAdapter.View
         protected void bind(FakeMessage item) {
             User userModel = item.getUser();
             if (item.getMessageType() == FakeMessage.MessageType.Join) {
-                tvMsg.setText(getShowName(userModel) + " " + item.getMsg());
+                tvMsg.setText(formatMessage(userModel, item.getMsg()));
                 tvMsg.setTextColor(
                         ContextCompat.getColor(tvMsg.getContext(), R.color.msg_user_other));
             } else if (item.getMessageType() == FakeMessage.MessageType.Msg) {
-                String name = getShowName(userModel);
                 String msg = item.getMsg();
-                if (ObjectsCompat.equals(mine, userModel)) {
+                if (ObjectsCompat.equals(mine, userModel)
+                        || ObjectsCompat.equals(owner, userModel)) {
                     tvMsg.setTextColor(
                             ContextCompat.getColor(tvMsg.getContext(), R.color.msg_user_mime));
-                    tvMsg.setText(mContext.getString(R.string.msg_text_mine, msg));
-                } else if (ObjectsCompat.equals(owner, userModel)) {
-                    tvMsg.setTextColor(
-                            ContextCompat.getColor(tvMsg.getContext(), R.color.msg_user_mime));
-                    tvMsg.setText(getShowName(userModel) + " " + item.getMsg());
+                    tvMsg.setText(formatMessage(userModel, msg));
                 } else {
+                    String name = userModel.getNickName();
+                    if (TextUtils.isEmpty(name)) {
+                        name = String.valueOf(userModel.getUid());
+                    }
+
                     SpannableString ss = new SpannableString(name + " " + msg);
                     ss.setSpan(new ForegroundColorSpan(ContextCompat.getColor(tvMsg.getContext(),
                             R.color.msg_user_mime)), 0, name.length(),
@@ -85,7 +86,7 @@ public class FakeMsgAdapter extends BaseAdapter<FakeMessage, FakeMsgAdapter.View
                 if (userModel == null) {
                     tvMsg.setText(item.getMsg());
                 } else {
-                    tvMsg.setText(getShowName(userModel) + " " + item.getMsg());
+                    tvMsg.setText(formatMessage(userModel, item.getMsg()));
                 }
                 tvMsg.setTextColor(
                         ContextCompat.getColor(tvMsg.getContext(), R.color.msg_user_mime));
@@ -96,11 +97,15 @@ public class FakeMsgAdapter extends BaseAdapter<FakeMessage, FakeMsgAdapter.View
             }
         }
 
-        private String getShowName(User user) {
-            if (TextUtils.isEmpty(user.getNickName())) {
-                return String.valueOf(user.getUid());
+        private String formatMessage(User user, String msg) {
+            if (ObjectsCompat.equals(mine, user)) {
+                return mContext.getString(R.string.msg_text_mine, msg);
             } else {
-                return user.getNickName();
+                if (TextUtils.isEmpty(user.getNickName())) {
+                    return String.format("%s %s", String.valueOf(user.getUid()), msg);
+                } else {
+                    return String.format("%s %s", user.getNickName(), msg);
+                }
             }
         }
     }

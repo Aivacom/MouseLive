@@ -42,6 +42,9 @@
                 <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="none" translatesAutoresizingMaskIntoConstraints="NO" id="mJ0-oj-gEw">
                     <rect key="frame" x="0.0" y="176" width="534" height="284"/>
                     <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="284" id="mmv-Bn-Vjv"/>
+                    </constraints>
                     <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="rtp-JH-Xsr">
                         <size key="itemSize" width="50" height="50"/>
                         <size key="headerReferenceSize" width="0.0" height="0.0"/>
@@ -104,15 +107,18 @@
                         <action selector="closeBtnClicked:" destination="iN0-l3-epB" eventType="touchUpInside" id="KdJ-bC-slk"/>
                     </connections>
                 </button>
-                <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="JKO-EB-nMg">
-                    <rect key="frame" x="462" y="408" width="64" height="32"/>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="JKO-EB-nMg">
+                    <rect key="frame" x="462" y="328" width="64" height="32"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="32" id="4L0-j8-QjR"/>
                         <constraint firstAttribute="width" constant="64" id="LmM-we-6Ex"/>
                     </constraints>
                     <fontDescription key="fontDescription" name="PingFangSC-Regular" family="PingFang SC" pointSize="14"/>
                     <state key="normal" title="上麦" backgroundImage="audio_link_mirc"/>
-                    <state key="selected" title="下麦" backgroundImage="audio_mircdown"/>
+                    <state key="selected" title="下麦"/>
+                    <connections>
+                        <action selector="linkMircBtnAction:" destination="iN0-l3-epB" eventType="touchUpInside" id="tVP-3r-Q5Y"/>
+                    </connections>
                 </button>
                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="eqy-ZL-s6a">
                     <rect key="frame" x="8" y="28" width="0.0" height="0.0"/>
@@ -164,12 +170,11 @@
                 <constraint firstItem="mJ0-oj-gEw" firstAttribute="top" secondItem="tkd-Sn-Iwq" secondAttribute="bottom" constant="20" id="AjI-S7-KuZ"/>
                 <constraint firstItem="Sh7-fP-JxL" firstAttribute="leading" secondItem="MN8-Vy-yzT" secondAttribute="trailing" id="BUa-qi-h88"/>
                 <constraint firstItem="Sh7-fP-JxL" firstAttribute="top" secondItem="eqy-ZL-s6a" secondAttribute="top" id="Cll-bg-LGO"/>
-                <constraint firstAttribute="bottom" secondItem="mJ0-oj-gEw" secondAttribute="bottom" id="EuU-GA-JBU"/>
                 <constraint firstItem="JX3-I7-3RC" firstAttribute="bottom" secondItem="qCn-0l-cvq" secondAttribute="bottom" constant="-8" id="Iu3-vx-j9B"/>
                 <constraint firstItem="X2s-xg-Rhb" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="1" id="KLH-S1-Wad"/>
                 <constraint firstItem="tkd-Sn-Iwq" firstAttribute="top" secondItem="JX3-I7-3RC" secondAttribute="bottom" constant="8" id="LdB-gE-r4V"/>
                 <constraint firstItem="xhB-B0-jPm" firstAttribute="bottom" secondItem="X2s-xg-Rhb" secondAttribute="bottom" id="Ley-TT-PdC"/>
-                <constraint firstAttribute="bottom" secondItem="JKO-EB-nMg" secondAttribute="bottom" constant="20" id="Pvy-pn-QwL"/>
+                <constraint firstAttribute="bottom" secondItem="JKO-EB-nMg" secondAttribute="bottom" constant="100" id="Pvy-pn-QwL"/>
                 <constraint firstItem="JX3-I7-3RC" firstAttribute="top" secondItem="MN8-Vy-yzT" secondAttribute="bottom" constant="2" id="RLd-yA-y3O"/>
                 <constraint firstItem="mJ0-oj-gEw" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" id="TMP-0T-ifj"/>
                 <constraint firstItem="JX3-I7-3RC" firstAttribute="trailing" secondItem="Po3-5d-WMU" secondAttribute="trailing" constant="-10" id="Tmg-Bg-vei"/>
@@ -194,6 +199,7 @@
             <connections>
                 <outlet property="anchorRoomName" destination="eqy-ZL-s6a" id="5O1-eg-qlW"/>
                 <outlet property="closeMircButton" destination="mUt-gB-PiH" id="Yxl-s0-Nbv"/>
+                <outlet property="collectionViewHeightConstraint" destination="mmv-Bn-Vjv" id="BQK-gr-ElH"/>
                 <outlet property="contentView" destination="mJ0-oj-gEw" id="QE2-gp-5lh"/>
                 <outlet property="headerImageview" destination="JX3-I7-3RC" id="oFr-ME-fP7"/>
                 <outlet property="linkMricButton" destination="JKO-EB-nMg" id="4L5-Cm-Hf4"/>
@@ -206,7 +212,7 @@
                 <outlet property="volumeBgView" destination="xhB-B0-jPm" id="BE3-aM-wIj"/>
                 <outlet property="volumeSlider" destination="Xtx-BY-mz5" id="nRq-7I-XZl"/>
             </connections>
-            <point key="canvasLocation" x="21.739130434782609" y="77.678571428571431"/>
+            <point key="canvasLocation" x="-210" y="42"/>
         </view>
     </objects>
     <resources>
@@ -214,7 +220,6 @@
         <image name="audio_holder" width="58" height="58"/>
         <image name="audio_link_mirc" width="64" height="32"/>
         <image name="audio_micr_open" width="16" height="16"/>
-        <image name="audio_mircdown" width="64" height="32"/>
         <image name="audio_music" width="26" height="26"/>
         <image name="btn_close" width="30" height="30"/>
         <image name="live_userlist" width="30" height="30"/>

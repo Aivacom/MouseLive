@@ -8,12 +8,14 @@
 
 #import <UIKit/UIKit.h>
 #import "LiveUserListView.h"
-
+#import "LiveUserModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface LiveAnchorListTableViewCell : UITableViewCell
-- (void)configCellWithModel:(id)model;
+
+//刷新cell
+- (void)configCellWithUserModel:(LiveUserModel *)model;
 @end
 
 NS_ASSUME_NONNULL_END

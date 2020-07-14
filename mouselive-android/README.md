@@ -1,132 +1,156 @@
-# MouseLive-android
+# MouseLive-Android
+Solutions for Pan-Entertainment Scenarios [中文](./README_zh.md)
 
-鼠年，泛娱乐直播项目，android
+# Overview 
+The solution is designed for Video Live Streaming and Audio Chat. You can use Thunder SDK, Hummer SDK and Beauty SDK to implement the functions below in your project.
+- Video Live Streaming：including live broadcasting, multiplayer online viewing, multi-person text chat, video linking, mute, video beauty, video filter, video sticker, gesture display, etc.
+- Audio Chat: including multi-person voice chat, multi-person text chat, voice change, becoming an anchor, people kicking, etc.
 
-# 产品概述
-泛娱乐包含2大模块：直播模块和聊天室模块。
-- 直播模块：可实现直播开播、多人在线观看、多人文字聊天、视频连麦、禁言、视频美颜、视频滤镜、视频贴图、手势显示等功能。
-- 聊天室模块：可实现多人语音聊天、多人文字聊天、变声、抢麦、踢人等功能。
+> Note：
+>
+> - Thunderbolt SDK: Mainly refers to control of audio and video. [Quick Integration](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/integration_and_start/integration_and_start_android.html).
+> - Hummer SDK: Mainly refers to the notification of user entering/exiting a room and the transmission of room messages. [Quick Integration](https://docs.aivacom.com/cloud/en/product_category/rtm_service/chatroom/integration_and_start/integration_and_start_android.html).
+> - Beauty SDK: See details in [README](./effect/README.md).
 
-# 关键特性
+# Integrate SDK
+1. Go to [Jocloud](https://www.jocloud.com/en/reg) to register an account and create your own project to get the AppID.
+2. Add the following line in **allprojects-repositories** under **build.gradle** file in your project.
+    ```
+    maven {url "http://nexus.sunclouds.com:8081/nexus/content/groups/public/"}
+    ```
 
-# 工程介绍
-此工程主要演示如何用Thunder和Hummer 2个SDK实现直播和聊天室功能，以及视频美颜功能。
-- Thunder SDK：主要对音视频的控制。[在线文档](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=PRO_DES)
-- Hummer SDK：主要是对房间类用户进出通知，以及房间类消息的传输。[在线文档](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=105&typeCode=PRO_DES)
-- 美颜SDK：请看 effect 下[README](./effect/README.md) 文档
-
-
-# 集成
-##### 1.去[尚云平台](https://www.sunclouds.com/)注册账号，并创建自己的工程项目，获取到 AppID。
-##### 2.添加maven地址，在工程父目录下找到build.gradle，然后在allprojects-repositories中增加以下代码。
-```
-    maven { url "http://nexus.sunclouds.com:8081/nexus/content/groups/public/" }
-```
-
-##### 3.引入Thunder 和 Hummer包，在相应Module下找到build.gradle，在dependencies中增加以下代码。
-```
-    //ThunderBolt
+3. Import Thunderbolt and Hummer SDK packages.
+    Add the following line in **dependencies** under **build.gradle** file of the corresponding Module.
+    ```
+    //Thunderbolt
     implementation "com.rtc.thunder:thunderbolt:${thunder_version}"
 
     //Hummer
     implementation "com.hummer.im:core:${hummer_version}"
     implementation "com.hummer.im:chatroom:${hummer_version}"
-```
-- 相应SDK版本
+    ```
+    SDK version
 
-|SDK|版本|
+    |SDK|Version|
+    |:----|:----|
+    |Thunderbolt|2.8.2|
+    |Hummer|2.6.109|
+
+4. Set the code 'com.sclouds.mouselive.Consts' with corresponding values.
+
+> Note:
+>
+> **App ID** mode: Thunderbolt and Hummer SDK will skip the token verification, which is applicable to situations with low security requirements.
+>
+> **Token** mode: Thunderbolt and Hummer SDK will verify the token and the APP_SECRET is required. If the authentication expires or fails, the service is invalid. This mode is applicable to situations with high security requirements.
+>- You can configure the AppID/Token mode in [Console](https://console.aivacom.com/#/manager/dashboard).
+![Image](./doc/pic/appid_token_en.png)
+>- Please ensure that Appid is configured in the project path 'com.sclouds.mouselive.Consts'.
+>- If it is Token mode, be sure to fill in the **APP_SECRET** value. If it is AppId mode, you can not fill in the **APP_SECRET** value.
+
+# API Calling Flow
+#### Thunderbolt Sequence Diagram
+![Image](./doc/pic/泛娱乐时序图.png)
+
+#### Hummer Sequence Diagram
+![Image](./doc/pic/聊天室.png)
+
+### Video Live Streaming
+- Main APIs
+
+|API|Description|
 |:----|:----|
-|thunder_version|2.7.17|
-|hummer_version|2.6.107|
+|[createEngine](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginecreateengine)|Initialization (one process can only instantiate one)|
+|[setArea](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetarea)|Set country/region|
+|[setMediaMode](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetmediamode)|Set media mode|
+|[setRoomMode](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetroommode)|Set room mode|
+|[setAudioConfig](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetaudioconfig)|Set audio mode|
+|[setAudioSourceType](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetaudiosourcetype)|Set audio publishing mode|
+|[setVideoEncoderConfig](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetvideoencoderconfig)|Set video encoding parameters|
+|[joinRoom](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginejoinroom)|Join a room, it is an asynchronous API and [onJoinRoomSuccess](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/notification.html#thundereventhandleronjoinroomsuccess) should be listened to|
+|[stopLocalAudioStream](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginestoplocalaudiostream)|Audio publish (disable Mic)|
+|[startVideoPreview](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginestartvideopreview)|Enable local video preview|
+|[stopLocalVideoStream](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginestoplocalvideostream)|Stop/resume sending local video streams|
+|[setLocalVideoCanvas](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetlocalvideocanvas)|Set the local video render view|
+|[setRemoteVideoCanvas](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetremotevideocanvas)|Set the remote video rendering view to view the image of the subscribed remote user|
+|[addSubscribe](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderengineaddsubscribe)|Subscribe to a specific user’s streams across rooms|
+|[removeSubscribe](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderengineremovesubscribe)|Cancel cross-room subscription|
+|[switchFrontCamera](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderengineswitchfrontcamera)|To switch to the front/rear camera, [startVideoPreview](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginestartvideopreview) needs to be called after preview is turned on, and the front camera is used by default|
+|[setLocalVideoMirrorMode](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetlocalvideomirrormode)|Set the local video mirroring mode, which only works for the front camera; by default, the rear camera cannot be mirrored when previewing or streaming, and for the front-facing camera, it is mirrored when previewing and not mirrored when streaming|
+|[setEnableInEarMonitor](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetenableinearmonitor)|Enable/disable ear monitoring|
+|[setVoiceChanger](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetvoicechanger)|Set voice change mode|
+|[leaveRoom](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderengineleaveroom)|Exit a room, it is an asynchronous API and [onLeaveRoom](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/notification.html#thundereventhandleronleaveroom) should be listened to|
+|[destroyEngine](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginedestroyengine) |Destroy object|
 
-# 开发
-### 直播
-- 视频功能-Thunder主要API
+#### Sequence Diagram
+![Image](./doc/pic/表演PK.png)
 
-|API|说明|
+### Audio Room
+- Main APIs
+
+|API|Description|
 |:----|:----|
-|[createEngine](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#createEngine) |初始化（建议只创建一次，不要创建多个），其中包括接口回调[ThunderEventHandler](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderEventHandler%E6%8E%A5%E5%8F%A3%E7%B1%BB)。|
-|[setArea](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setArea)|初始化-设置地区|
-|[setMediaMode](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setMediaMode)|配置-媒体模式|
-|[setRoomMode](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setRoomMode)|配置-房间模式|
-|[setAudioConfig](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setAudioConfig)|配置-音频模式|
-|[setAudioSourceType](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setAudioSourceType)|配置-音频开播模式|
-|[setVideoEncoderConfig](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setVideoEncoderConfig)|配置-视频开播参数|
-|[joinRoom](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#joinRoom)|功能-加入房间，此接口是异步接口，需要监控ThunderEventHandler中[onJoinRoomSuccess](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#onJoinRoomSuccess)。|
-|[stopLocalAudioStream](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#stopLocalAudioStream)|功能-音频推流开关（闭麦功能）|
-|[startVideoPreview](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#startVideoPreview)|功能-本地视频预览开关|
-|[stopLocalVideoStream](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#stopLocalVideoStream)|功能-视频推流开关|
-|[setLocalVideoCanvas](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setLocalVideoCanvas)|功能-设置本地视图，设置此窗口，则可以看到我的视频画面|
-|[setRemoteVideoCanvas](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setRemoteVideoCanvas)|功能-设置远端视频的渲染视图，设置此窗口，则可以看到远端订阅的对应uid的流的画面|
-|[addSubscribe](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#addSubscribe)|功能-跨房间订阅（2个主播PK功能）|
-|[removeSubscribe](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#removeSubscribe)|功能-取消跨房间订阅|
-|[switchFrontCamera](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#switchFrontCamera)|功能-切到前/后置摄像头，需要在开启预览后[startVideoPreview](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#startVideoPreview)调用不调用该方法时引擎默认启动前置摄像头|
-|[setLocalVideoMirrorMode](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setLocalVideoMirrorMode)|功能-设置本地视频镜像模式，只对前置摄像头生效，后置摄像头不生效，后置摄像头固定预览推流都不镜像，前置摄像头默认预览镜像推流不镜像|
-|[setEnableInEarMonitor](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setEnableInEarMonitor)|功能-打开关闭耳返|
-|[setVoiceChanger](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setVoiceChanger)|功能-设置变声模式|
-|[leaveRoom](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#leaveRoom)|功能-离开房间，此接口是异步接口，需要监控ThunderEventHandler中[onLeaveRoom](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#onLeaveRoom)。|
+|[createEngine](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginecreateengine) |Initialization (one process can only instantiate one)|
+|[setArea](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetarea)|Set country/region|
+|[setMediaMode](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetmediamode)|Set media mode|
+|[setRoomMode](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetroommode)|Set room mode|
+|[setAudioConfig](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetaudioconfig)|Set audio mode|
+|[setAudioSourceType](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetaudiosourcetype)|Set audio publishing mode|
+|[joinRoom](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginejoinroom)|Join a room, it is an asynchronous API and [onJoinRoomSuccess](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/notification.html#thundereventhandleronjoinroomsuccess) should be listened to|
+|[stopLocalAudioStream](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginestoplocalaudiostream)|Audio publish (disable Mic)|
+|[setEnableInEarMonitor](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetenableinearmonitor)|Enable/disable ear monitoring|
+|[setVoiceChanger](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginesetvoicechanger)|Set voice change mode|
+|[leaveRoom](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderengineleaveroom)|Exit a room, it is an asynchronous API and [onLeaveRoom](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/notification.html#thundereventhandleronleaveroom) should be listened to|
+|[destroyEngine](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginedestroyengine) |Destroy object|
 
-![流程图](./doc/pic/flow_live.png)
+- Audio Music play API-ThunderAudioFilePlayer
 
-### 聊天室
-- 音频功能-Thunder主要API
-
-|API|说明|
+|API|Description|
 |:----|:----|
-|[createEngine](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#createEngine)|初始化，其中包括[ThunderEventHandler](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderEventHandler%E6%8E%A5%E5%8F%A3%E7%B1%BB)。|
-|[setArea](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setArea)|初始化-设置地区|
-|[setMediaMode](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setMediaMode)|配置-媒体模式|
-|[setRoomMode](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setRoomMode)|配置-房间模式|
-|[setAudioConfig](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setAudioConfig)|配置-音频模式|
-|[setAudioSourceType](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setAudioSourceType)|配置-音频开播模式|
-|[joinRoom](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#joinRoom)|功能-加入房间，此接口是异步接口，需要监控ThunderEventHandler中[onJoinRoomSuccess](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#onJoinRoomSuccess)。|
-|[stopLocalAudioStream](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#stopLocalAudioStream)|功能-音频推流开关（闭麦功能）|
-|[setEnableInEarMonitor](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setEnableInEarMonitor)|功能-打开关闭耳返|
-|[setVoiceChanger](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#setVoiceChanger)|功能-设置变声模式|
-|[leaveRoom](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#leaveRoom)|功能-离开房间，此接口是异步接口，需要监控ThunderEventHandler中[onLeaveRoom](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#onLeaveRoom)。|
+|[createAudioFilePlayer](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginecreateaudiofileplayer)|Initialization|
+|[enablePublish](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderaudiofileplayerenablepublish)|Whether to use the currently playing file as a live accompaniment|
+|[enableVolumeIndication](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderaudiofileplayerenablevolumeindication)|Enable the callback of audio file playback volume|
+|[setPlayerNotify](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderaudiofileplayersetplayernotify)|Set the callback of audio player|
+|[open](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderaudiofileplayeropen)|Open the file to be played, supporting file formats: mp3, aac, wav. This interface is asynchronous operation, you need to set [setPlayerEventCallback](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_audio_interaction/api/Android/v2.8.0/function.html#thunderaudiofileplayersetplayernotify) callback, and then Listen to [onAudioFileStateChange](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_audio_interaction/api/Android/v2.8.0/notification.html#ithunderaudiofileplayereventcallbackonaudiofilestatechange), when the event is [AUDIO_PLAY_EVENT_OPEN](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_audio_interaction/api/Android/v2.8.0/function.html#thunderrtcconstantthunderaudiofileplayerevent), errorCode is [AUDIO_PLAYER_STATUS_SUCCESS](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_audio_interaction/api/Android/v2.8.0/function.html#thunderrtcconstantthunderaudiofileplayererrorcode) Only if the file is successfully opened|
+|[getTotalPlayTimeMS](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderaudiofileplayergettotalplaytimems)|Get the total play time of files, you need to call the open interface first and listen to [onAudioFileStateChange](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_audio_interaction/api/Android/v2.8.0/notification.html#ithunderaudiofileplayereventcallbackonaudiofilestatechange) callback, after successfully opening the file, go to use this interface to obtain data.|
+|[setLooping](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderaudiofileplayersetlooping)|Sets times of loop playbacks|
+|[play](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderaudiofileplayerplay)|Start playing|
+|[resume](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderaudiofileplayerresume)|Resume playing|
+|[pause](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderaudiofileplayerpause)|Pause playback|
+|[stop](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderaudiofileplayerstop)|Stop play|
+|[setPlayVolume](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderaudiofileplayersetplayvolume)|Set volume|
 
-- 音频功能-音乐文件播放API-ThunderAudioFilePlayer
+#### Sequence Diagram
+![Image](./doc/pic/语聊房.png)
 
-|API|说明|
-|:----|:----|
-|[createAudioFilePlayer](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderAudioFilePlayer)|初始化|
-|[enablePublish](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderAudioFilePlayer)|配置-是否将当前播放的文件作为直播伴奏使用|
-|[enableVolumeIndication](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderAudioFilePlayer)|配置-打开文件播放音量回调|
-|[setPlayerNotify](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderAudioFilePlayer)|配置-播放回调接口|
-|[open](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderAudioFilePlayer)|配置-打开需要播放的文件，支持文件格式：mp3、aac、wav。此接口是异步操作，需要先设置接口回调setPlayerNotify，然后在ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback中监控onAudioFilePlayError，当errorCode==0时，表示文件打开成功。|
-|[getTotalPlayTimeMS](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderAudioFilePlayer)|配置-获取文件的总播放时长，需要先open，并且onAudioFilePlayError回调成功打开之后才能获取到数据。|
-|[setLooping](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderAudioFilePlayer)|配置-设置循环播放次数|
-|[play](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderAudioFilePlayer)|功能-开始播放|
-|[resume](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderAudioFilePlayer)|功能-继续播放|
-|[pause](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderAudioFilePlayer)|功能-暂停播放|
-|[stop](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderAudioFilePlayer)|功能-停止播放|
-|[setPlayVolume](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=Android&version=2.7.0#ThunderAudioFilePlayer)|功能-设置音量|
+# FAQ
+### Q: Why can't I see other's video?
+- Check if the AppID is correct.
+- Check if the startVideoPreview and stopLocalVideoStream are correctly set.
+- Check if setRemoteVideoCanvas is set and the other's uid is correct.
+- Check the room number on both sides. If you subscribe across rooms (different room numbers), you need to use addSubscribe and set the uid of the other party correctly.
 
-# 常见问题
-### Q：为什么看不到对方视频？
-- 检查一下AppId是否正确。
-- 检查一下对方startVideoPreview和stopLocalVideoStream是否设置，值是否正确。
-- 检查一下自己setRemoteVideoCanvas是否设置，并且对方uid是否正确。
-- 检查一下2边房间号，如果是跨房间订阅（不同房间号），需要设置addSubscribe，并且正确的设置对方uid。
+### Q: Why can't I hear the other's voice?
+- Check if the AppID is correct.
+- Check if the parameter "stop" of stopLocalAudioStream is correctly set.
+- Check if other's mobile phone is mute.
+- Check if the both sides have joined the same room.
 
-### Q：为什么听不到对方声音？
-- 检查一下AppId是否正确。
-- 检查一下对方stopLocalAudioStream是否设置，参数是stop，值是否正确。
-- 检查一下自己手机音量，是否是静音模式。
-- 检查一下2边是否joinRoom成功，并且检查是否是同一个房间号。
+### Q: Why can't I hear the background music?
+- Check if the AppID is correct.
+- Check if the parameter “stop” of stopLocalAudioStream is correctly set.
+- Check if other's mobile phone is mute.
+- Check if the both sides have joined the same room
+- Check if the parameter "sourceType" of setAudioSourceType is set to THUNDER_PUBLISH_MODE_MIX.
+- Check if the parameter "enable" of enablePublish is set to "true".
 
-### Q：为什么我这边播放音乐文件，对方听不到？
-- 检查一下AppId是否正确。
-- 检查一下自己stopLocalAudioStream是否设置，参数是stop，值是否正确。
-- 检查一下对方手机音量，是否是静音模式。
-- 检查一下2边是否joinRoom成功，并且检查是否是同一个房间号。
-- 检查一下自己setAudioSourceType，是否设置成THUNDER_PUBLISH_MODE_MIX。
-- 检查一下自己enablePublish，是否设置成true。
+### Q: Why can't I receive the callback IThunderAudioFilePlayerEventCallback?
+- Check if setPlayerEventCallback is set.
+- Check if enableVolumeIndication is set.
 
-### Q：为什么我收不到ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback回调
-- 检查一下是否设置setPlayerNotify回掉。
-- 检查一下是否设置enableVolumeIndication。
+### Q: Why can’t I join the room (joinRoom)?
+- Check if the AppID is correct.
+- Check the [error code](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_audio_interaction/api/Android/v2.8.0/code.html) returned by joinRoom to see the cause.
 
-### Q：为什么joinRoom一直失败？
-- 检查一下AppId是否正确。
-- 检查一下joinRoom返回的错误码，然后对应代码中的ThunderRet，查看具体原因。
+### Q: Why is playing audio files not looping?
+- Check if setLooping(-1) is called after the file is opened via onAudioFileStateChange.

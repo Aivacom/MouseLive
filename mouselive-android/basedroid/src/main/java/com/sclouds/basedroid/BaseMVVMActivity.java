@@ -5,7 +5,6 @@ import android.text.TextUtils;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.Nullable;
-import androidx.databinding.DataBindingUtil;
 import androidx.databinding.ViewDataBinding;
 import androidx.lifecycle.Observer;
 
@@ -16,9 +15,8 @@ import androidx.lifecycle.Observer;
  * @since 2020年2月20日
  */
 public abstract class BaseMVVMActivity<B extends ViewDataBinding, M extends BaseViewModel>
-        extends BaseActivity {
+        extends BaseActivity<B> {
     protected M mViewModel;
-    protected B mBinding;
 
     @CallSuper
     @Override
@@ -31,11 +29,6 @@ public abstract class BaseMVVMActivity<B extends ViewDataBinding, M extends Base
     @Override
     protected void initData() {
         mViewModel.initData();
-    }
-
-    @Override
-    protected void setCustomContentView() {
-        mBinding = DataBindingUtil.setContentView(this, getLayoutResId());
     }
 
     protected abstract M iniViewModel();

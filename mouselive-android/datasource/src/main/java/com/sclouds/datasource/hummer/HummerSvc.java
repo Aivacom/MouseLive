@@ -17,6 +17,7 @@ import com.hummer.im.model.chat.Message;
 import com.hummer.im.model.chat.contents.Text;
 import com.hummer.im.model.id.ChatRoom;
 import com.hummer.im.service.Channel;
+import com.hummer.im.service.ChannelStateService;
 import com.hummer.im.service.ChatService;
 import com.sclouds.basedroid.LogUtils;
 import com.sclouds.datasource.Callback;
@@ -100,6 +101,9 @@ public class HummerSvc implements HMR.TokenInvalidListener {
         chatlisteners.remove(l);
     }
 
+    private boolean isIni = false;
+    private boolean isHummerConnected = false;
+
     /**
      * SDK 初始化
      *
@@ -107,18 +111,23 @@ public class HummerSvc implements HMR.TokenInvalidListener {
      */
     @MainThread
     public void ini(@NonNull Context context, long appid, String appScret) {
-        LogUtils.d(TAG, "ini() called");
-        HMR.init(context, appid);
+        LogUtils.d(TAG, "ini() called isIni= [" + isIni + "]");
+        if (isIni) {
+            return;
+        }
         this.appId = appid;
         this.appScret = appScret;
+        this.isHummerConnected = false;
+
+        HMR.init(context, appid);
+        HMR.getService(ChannelStateService.class).addChannelStateListener(mChannelStateListener);
+        HMR.addStateListener(mStateListener);
+
         mServiceImpl = HMR.getService(ChatRoomService.class);
         mChatService = HMR.getService(ChatService.class);
         mServiceImpl.addListener(roomHandler);
         mServiceImpl.addMemberListener(roomHandler);
-        HMR.addStateListener((fromState, toState) -> Log
-                .d(TAG, "onUpdateHummerState() called with: fromState = [" +
-                        fromState + "], toState = [" + toState + "]"));
-
+        isIni = true;
     }
 
     private RoomHandler roomHandler = new RoomHandler();
@@ -127,18 +136,34 @@ public class HummerSvc implements HMR.TokenInvalidListener {
             Collections.synchronizedSet(new HashSet<>());
     private Set<IMessageListener> chatlisteners =
             Collections.synchronizedSet(new HashSet<>());
+    private ChannelStateService.ChannelStateListener mChannelStateListener =
+            new ChannelStateService.ChannelStateListener() {
+                @Override
+                public void onUpdateChannelState(ChannelStateService.ChannelState fromState,
+                                                 ChannelStateService.ChannelState toState) {
+                    LogUtils.d(TAG,
+                            "onUpdateChannelState() called with: fromState = [" + fromState +
+                                    "], toState = [" + toState + "]");
+                }
+            };
+    private HMR.StateListener mStateListener = new HMR.StateListener() {
+        @Override
+        public void onUpdateHummerState(HMR.State fromState, HMR.State toState) {
+            LogUtils.d(TAG, "onUpdateHummerState() called with: fromState = [" + fromState +
+                    "], toState = [" + toState + "]");
+        }
+    };
 
     class RoomHandler implements ChatRoomService.ChatRoomListener, ChatRoomService.MemberListener {
 
         @Override
         public void onBasicInfoChanged(@NonNull ChatRoom chatRoom,
                                        @NonNull Map<ChatRoomInfo.BasicInfoType, String> propInfo) {
-            //TODO SDK层BUG
-            // if (chatRoom.equals(channel)) {
-            for (IRoomListener l : roomlisteners) {
-                l.onBasicInfoChanged(chatRoom, propInfo);
+            if (chatRoom.equals(channel)) {
+                for (IRoomListener l : roomlisteners) {
+                    l.onBasicInfoChanged(chatRoom, propInfo);
+                }
             }
-            // }
         }
 
         @Override

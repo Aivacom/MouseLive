@@ -9,8 +9,7 @@
 
 #import "SYBeautyUtil.h"
 
-@implementation SYBeautyUtil
-{
+@implementation SYBeautyUtil {
     OFHandle _ofContext;
     OFHandle _effect;
     OF_EffectInfo _info;
@@ -30,7 +29,7 @@
 - (void)loadEffect:(OFHandle)ofContext effectPath:(NSString *)effectPath
 {
     _ofContext = ofContext;
-    OF_Result result = OF_CreateEffectFromPackage(_ofContext, [effectPath UTF8String], (OFHandle*) &_effect);
+    OF_Result result = OF_CreateEffectFromPackage(_ofContext, [effectPath UTF8String], (OFHandle *) &_effect);
     if (OF_Result_Success != result) {
         return;
     }
@@ -87,7 +86,7 @@
 {
     int filter = _info.filterList[filterIndex];
     const char *name = [filterName UTF8String];
-    OF_Param* param = OF_NULL;
+    OF_Param *param = OF_NULL;
     OF_GetFilterParamData(_ofContext, filter, name, &param);
     return param;
 }

@@ -10,8 +10,9 @@
 #import "CCService.h"
 #import "WSService.h"
 #import <NSObject+YYModel.h>
-#import "HttpService.h"
 #import "SYAppInfo.h"
+
+
 
 @interface CSWSService () <WSServiceDelegate>
 
@@ -46,8 +47,7 @@
 {
     YYLogDebug(@"[MouseLive-CSWSService] leaveRoom entry");
     self.roomReq = nil;
-    [HttpService sy_httpRequestCancelWithArray:self.taskArray];
-    
+    [[SYHttpService shareInstance]cancelAllRequest];
     [[WSService sharedInstance] removeObserver:self];
     [[WSService sharedInstance] close];
     YYLogDebug(@"[MouseLive-CSWSService] leaveRoom exit");
@@ -176,19 +176,16 @@
         kUid:@(localUid.longLongValue),
         kUStatus:@(appState)
     };
-    
-    int taskId = [HttpService sy_httpRequestWithType:SYHttpRequestKeyType_SetStatus params:params success:^(int taskId, id  _Nullable respObjc) {
-        [self.taskArray removeObject:@(taskId)];
+    SYHttpService *httpClient  = [SYHttpService shareInstance];
+    [httpClient sy_httpRequestWithType:SYHttpRequestKeyType_SetStatus params:params success:^(NSString *taskId,id  _Nullable respObjc) {
         NSString *code = [NSString stringWithFormat:@"%@",respObjc[kCode]];
         if ([code isEqualToString:ksuccessCode]) {
             YYLogDebug(@"MouseLive-CSWSService] sendAppStateToServer SYHttpRequestKeyType_GetUserInfo success!!!");
         }
-    } failure:^(int taskId, id  _Nullable respObjc, NSString * _Nullable errorCode, NSString * _Nullable errorMsg) {
-        [self.taskArray removeObject:@(taskId)];
-        YYLogDebug(@"MouseLive-CSWSService] sendAppStateToServer SYHttpRequestKeyType_GetUserInfo failed, errorCode:%@, errorMsg:%@", errorCode, errorMsg);
+    } failure:^(NSString *taskId, NSError *error) {
+        YYLogDebug(@"MouseLive-CSWSService] sendAppStateToServer SYHttpRequestKeyType_GetUserInfo failed, error:%@",error);
     }];
     
-    [self.taskArray addObject:@(taskId)];
 }
 
 #pragma mark -- 这些操作都应该拿到外面去做

@@ -25,9 +25,7 @@ public interface IRoomView extends IBaseView {
 
     void onVideoStop(@NonNull RoomUser user);
 
-    void onAudioStart(@NonNull RoomUser user);
-
-    void onAudioStop(@NonNull RoomUser user);
+    void onMemberMicStatusChanged(@NonNull RoomUser user);
 
     void onPlayVolumeIndication(@NonNull RoomUser user);
 
@@ -42,4 +40,6 @@ public interface IRoomView extends IBaseView {
     void onMemberChatStart(@NonNull RoomUser user);
 
     void onMemberChatStop(@NonNull RoomUser user);
+
+    void onMessage(@NonNull FakeMessage message);
 }

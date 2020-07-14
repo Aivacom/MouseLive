@@ -1,157 +1,167 @@
-# MouseLive-iOS
+# MouseLive-IOS
+Solutions for Pan-Entertainment Scenarios [中文](./README_zh.md)
 
-鼠年，泛娱乐直播项目，iOS
+# Overview 
+The solution is designed for Video Live Streaming and Audio Chat. You can use Thunder SDK, Hummer SDK and Beauty SDK to implement the functions below in your project.
+- Video Live Streaming：including live broadcasting, multiplayer online viewing, multi-person text chat, video linking, mute, video beauty, video filter, video sticker, gesture display, etc.
+- Audio Chat: including multi-person voice chat, multi-person text chat, voice change, becoming an anchor, people kicking, etc.
 
-# 产品概述
-泛娱乐包含2大模块：直播模块和聊天室模块。
-- 直播模块：可实现直播开播、魔法(美白+滤镜+手势+贴图)，多人在线观看、多人文字聊天、视频连麦、禁言等功能。
-- 聊天室模块：可实现多人语音聊天、多人文字聊天、变声、抢麦、踢人等功能。
+> Note：
+>
+> - Thunderbolt SDK: Mainly refers to control of audio and video. [Quick Integration](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/integration_and_start/integration_and_start_ios.html).
+> - Hummer SDK: Mainly refers to the notification of user entering/exiting a room and the transmission of room messages. [Quick Integration](https://docs.aivacom.com/cloud/en/product_category/rtm_service/chatroom/integration_and_start/integration_and_start_ios.html).
 
-# 关键特性
+# Integrated SDK
+1. Go to [Jocloud](https://www.jocloud.com/en/reg) to register an account and create your own project to get the AppID.
+2. Install CocoaPods. Enter the following command line in Terminal:
+    ```sh
+    brew install cocoapods
+    ```
+    If you have installed CocoaPods and Homebrew in your system, you can skip this step.
+    If Terminal displays -bash: brew: command not found, you need to install Homebrew before entering the command line. For details, see [Document](https://brew.sh/index.html).
+3. Create a Podfile.
+    ```sh
+    pod init
+    ```
+4. Add references to ThunderBolt SDK and Hummer SDK
+Open the Podfile text file and modify the file to the following content. Note that "YourApp" is your Target name, you need to add the source and SDK versions.
+    ```python
+    # Uncomment the next line to define a global platform for your project
+    platform :ios, '9.0'
 
-# 工程介绍
-此工程主要演示如何用Thunder和Hummer 2个SDK实现直播和聊天室功能。
-- Thunder SDK：主要对音视频的控制。[在线文档](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=PRO_DES)
-- Hummer SDK：主要是对房间类用户进出通知，以及房间类消息的传输。[在线文档](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=105&typeCode=PRO_DES)
-- 美颜 SDK：[接入文档](./Doc/beauty/readme.md)
+    source'https://github.com/CocoaPods/Specs.git'#Add item
+    source'https://github.com/yyqapm/specs.git'#Add item
+    target'YourApp' do
+    # Uncomment the next line if you're using Swift or would like to use dynamic frameworks
+    # use_frameworks!
 
-# 申请
+    # Pods for YourApp
+    pod'Hummer/ChatRoom', '2.6.107' #Add item, '2.6.107' is the Hummer SDK version number, please modify according to the specific imported version number
+    pod'thunder','2.7.0' #Add item, '2.7.0' is thunderbolt sdk version number, please modify according to the specific imported version number
 
-- 去[尚云平台](https://www.sunclouds.com/)注册账号，并创建自己的工程项目，获取到 AppID，并在 SYAppInfo.m 中替换申请的 AppID
-- token 请在 SYToken.m 下修改
-- 美颜根据工程 bundle id 申请 license + 鉴权字串，并在 SYAppInfo.m 中替换 kOFSDKSerialNumber
-- 需求 CDN 推流，并在 SYAppInfo.m 中替换 kCDNRtmpPushUrl 和 kCDNRtmpPullUrl
+    end
+    ```
 
-# 集成
-##### 1. 安装 CocoaPods。在 Terminal 里输入以下命令行：
-```sh
-brew install cocoapods
-```
-- 如果你已在系统中安装了 CocoaPods 和 Homebrew，可以跳过这一步。
-- 如果 Terminal 显示 -bash: brew: command not found，则需要先安装 Homebrew，再输入该命令行。详见 [Homebrew 安装方法](https://brew.sh/index.html)。
-##### 2.创建 Podfile 文件。
-```sh
-pod init
-```
-##### 3.添加ThunderBolt SDK 和Hummer SDK的引用
-打开 Podfile 文本文件，修改文件为如下内容。注意 “YourApp” 是你的 Target 名称，需要添加source和sdk版本。
+    SDK version
 
-```python
-# Uncomment the next line to define a global platform for your project
-platform :ios, '9.0'
+    |SDK|Version|
+    |:----|:----|
+    |Thunder|2.7.0|
+    |Hummer|2.6.107|
 
-source 'https://github.com/CocoaPods/Specs.git'#添加项
-source 'https://github.com/yyqapm/specs.git'#添加项
-target 'YourApp' do
-  # Uncomment the next line if you're using Swift or would like to use dynamic frameworks
-  # use_frameworks!
+5. Set the code 'MouseLive/Common/SYAppInfo.m' with corresponding values.
 
-  # Pods for YourApp
-  pod 'Hummer/ChatRoom', '2.6.107'       #添加项，'2.6.107'是Hummer sdk版本号, 请根据具体导入的版本号进行修改
-  pod 'thunder','2.7.0' #添加项，'2.7.0'是thunderbolt sdk版本号, 请根据具体导入的版本号进行修改
+> Note:
+>
+> **App ID** mode: Hummer and Thunder SDK will skip the token verification, which is applicable to situations with low security requirements.
+>
+> **Token** mode: Hummer and Thunder SDK will verify the token and the APP_SECRET is required. If the authentication expires or fails, the service is invalid. This mode is applicable to situations with high security requirements.
+>- You can configure the AppID/Token mode in [Console](https://console.aivacom.com/#/manager/dashboard).
+![Image](./Doc/pic/appid_token_en.png)
+>- Please ensure that Appid is configured in the project path 'MouseLive/Common/SYAppInfo.m'.
+>- If it is Token mode, be sure to fill in the **APP_SECRET** value. If it is AppId mode, you can not fill in the **APP_SECRET** value.
 
-end
-```
+# API Calling Flow
+#### Thunderbolt Sequence Diagram
+![Image](./Doc/pic/泛娱乐时序图.png)
 
-**4.相应SDK版本**
+#### Hummer Sequence Diagram
+![Image](./Doc/pic/聊天室.png)
 
-| SDK             | 版本    |
-| :-------------- | :------ |
-| thunder_version | 2.7.0   |
-| hummer_version  | 2.6.107 |
+### Video Live Streaming
+- Main APIs
 
-# 开发
-### 直播
-- 视频功能-Thunder主要API
+|API|Description|
+|:----|:----|
+| [createEngine](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginecreateenginesceneiddelegate) | Initialization (one process can only instantiate one) |
+| [setArea](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetarea) | Set country/region|
+| [setMediaMode](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetmediamode) | Set media mode|
+| [setRoomMode](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetroommode) | Set room mode|
+| [setAudioConfig](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetaudioconfigcommutmodescenariomode) | Set audio mode |
+| [setAudioSourceType](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetaudiosourcetype) | Set audio publishing mode|
+| [setVideoEncoderConfig](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetvideoencoderconfig) | Set video encoding parameters|
+| [joinRoom](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginejoinroomroomnameuid) |Join a room, it is an asynchronous API and [onJoinRoomSuccess](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/notification.html#thundereventhandleronjoinroomsuccess) should be listened to|
+| [stopLocalAudioStream](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginestoplocalaudiostream) |Audio publish (disable Mic)|
+| [startVideoPreview](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginestartvideopreview) | Enable local video preview|
+| [stopLocalVideoStream](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginestoplocalvideostream) |Stop/resume sending local video streams|
+| [setLocalVideoCanvas](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetlocalvideocanvas) | Set the local video render view|
+| [setRemoteVideoCanvas](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetremotevideocanvas) | Set the remote video rendering view to view the image of the subscribed remote user|
+| [addSubscribe](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderengineaddsubscribeuid) |Subscribe to a specific user’s streams across rooms|
+| [removeSubscribe](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderengineremovesubscribeuid) |Cancel cross-room subscription|
+| [switchFrontCamera](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderengineswitchfrontcamera) |To switch to the front/rear camera, [startVideoPreview](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/Android/v2.8.0/function.html#thunderenginestartvideopreview) needs to be called after preview is turned on, and the front camera is used by default|
+| [setLocalVideoMirrorMode](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetlocalvideomirrormode) | Set the local video mirroring mode, which only works for the front camera; by default, the rear camera cannot be mirrored when previewing or streaming, and for the front-facing camera, it is mirrored when previewing and not mirrored when streaming|
+| [setEnableInEarMonitor](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetenableinearmonitor) | Enable/disable ear monitoring|
+| [setVoiceChanger](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetvoicechanger)| Set voice change mode              |
+| [leaveRoom](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderengineleaveroom) |Exit a room, it is an asynchronous API and [onLeaveRoomWithStats](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/notification.html#thundereventdelegatethunderengineonleaveroomwithstats) should be listened to|
 
-| API                                                          | 说明                                                         |
-| :----------------------------------------------------------- | :----------------------------------------------------------- |
-| [createEngine](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#createEngine) | 创建 ThunderEngine 实例并初始化 |
-| [setArea](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setArea) | 设置用户国家区域                                              |
-| [setMediaMode](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setMediaMode) | 配置-媒体模式                                                |
-| [setRoomMode](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setRoomMode) | 配置-房间模式                                                |
-| [setAudioConfig](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setAudioConfig) | 配置-音频模式                                                |
-| [setAudioSourceType](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setAudioSourceType) | 配置-音频开播模式                                            |
-| [setVideoEncoderConfig](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setVideoEncoderConfig) | 配置-视频开播参数                                            |
-| [joinRoom](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#joinRoom) | 功能-加入房间，此接口是异步接口，需要监控ThunderEventHandler中[onJoinRoomSuccess](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#onJoinRoomSuccess)。 |
-| [stopLocalAudioStream](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#stopLocalAudioStream) | 功能-音频推流开关（闭麦功能）                                |
-| [startVideoPreview](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#startVideoPreview) | 功能-本地视频预览开关                                        |
-| [stopLocalVideoStream](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#stopLocalVideoStream) | 功能-视频推流开关                                            |
-| [setLocalVideoCanvas](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setLocalVideoCanvas) | 功能-设置本地视图，设置此窗口，则可以看到我的视频画面        |
-| [setRemoteVideoCanvas](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setRemoteVideoCanvas) | 功能-设置远端视频的渲染视图，设置此窗口，则可以看到远端订阅的对应uid的流的画面 |
-| [addSubscribe](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#addSubscribe) | 功能-跨房间订阅（2个主播PK功能）                             |
-| [removeSubscribe](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#removeSubscribe) | 功能-取消跨房间订阅                                          |
-| [switchFrontCamera](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#switchFrontCamera) | 功能-切到前/后置摄像头，需要在开启预览后[startVideoPreview](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#startVideoPreview)调用不调用该方法时引擎默认启动前置摄像头 |
-| [setLocalVideoMirrorMode](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setLocalVideoMirrorMode) | 功能-设置本地视频镜像模式，只对前置摄像头生效，后置摄像头不生效，后置摄像头固定预览推流都不镜像，前置摄像头默认预览镜像推流不镜像 |
-| [setEnableInEarMonitor](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setEnableInEarMonitor) | 功能-打开关闭耳返                                            |
-| [setVoiceChanger](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setVoiceChanger)| 功能-设置变声模式                                            |
-| [leaveRoom](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#leaveRoom) | 功能-离开房间，此接口是异步接口，需要监控ThunderEventHandler中[onLeaveRoomWithStats](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#onLeaveRoomWithStats)。 |
+#### Sequence Diagram
+![Image](./Doc/pic/表演PK.png)
 
-### 聊天室
-- 音频功能-Thunder主要API
+### Chat Room
+- Main APIs
 
-| API                                                          | 说明                                                         |
-| :----------------------------------------------------------- | :----------------------------------------------------------- |
-| [createEngine](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#createEngine) | 初始化引擎 |
-| [setArea](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setArea) | 初始化-设置地区                                              |
-| [setMediaMode](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setMediaMode) | 配置-媒体模式                                                |
-| [setRoomMode](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setRoomMode) | 配置-房间模式                                                |
-| [setAudioConfig](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setAudioConfig) | 配置-音频模式                                                |
-| [setAudioSourceType](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setAudioSourceType) | 配置-音频开播模式                                            |
-| [joinRoom](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#joinRoom) | 功能-加入房间，此接口是异步接口，需要监控ThunderEventHandler中[onJoinRoomSuccess](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#onJoinRoomSuccess)。 |
-| [stopLocalAudioStream](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#stopLocalAudioStream) | 功能-音频推流开关（闭麦功能）                                |
-| [setEnableInEarMonitor](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setEnableInEarMonitor) | 功能-打开关闭耳返                                            |
-| [setVoiceChanger](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#setVoiceChanger) | 功能-设置变声模式                                            |
-| [leaveRoom](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#leaveRoom) | 功能-离开房间，此接口是异步接口，需要监控ThunderEventHandler中[onLeaveRoomWithStats](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#onLeaveRoomWithStats)。 |
+|API|Description|
+|:----|:----|
+| [createEngine](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginecreateenginesceneiddelegate) | Initialization (one process can only instantiate one) |
+| [setArea](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetarea) | Set region |
+| [setMediaMode](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetmediamode) | Set Media Mode |
+| [setRoomMode](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetroommode) | Set Room mode |
+| [setAudioConfig](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetaudioconfigcommutmodescenariomode) | Set Audio mode |
+| [setAudioSourceType](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetaudiosourcetype) | Set Audio broadcast mode |
+| [joinRoom](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginejoinroomroomnameuid) | Join the room, this interface is asynchronous interface, need to monitor ThunderEventHandler [onJoinRoomSuccess](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/notification.html#thundereventdelegatethunderengineonjoinroomsuccesswithuidelapsed)。 |
+| [stopLocalAudioStream](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginestoplocalaudiostream) | Audio push switch (close wheat function) |
+| [setEnableInEarMonitor](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetenableinearmonitor) | Enable/disable ear monitoring |
+| [setVoiceChanger](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginesetvoicechanger) | Set voice change mode |
+| [leaveRoom](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderengineleaveroom) | Exit a room, it is an asynchronous API and [onLeaveRoomWithStats](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/notification.html#thundereventdelegatethunderengineonleaveroomwithstats) should be listened to|
 
-- 音频功能-音乐文件播放API-ThunderAudioFilePlayer
+- Audio Music play API-ThunderAudioFilePlayer
 
-| API                                                          | 说明                                                         |
-| :----------------------------------------------------------- | :----------------------------------------------------------- |
-| [createAudioFilePlayer](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#createAudioFilePlayer) | 创建文件播放 [ThunderAudioFilePlayer](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#ThunderAudioFilePlayer) 对象                                                       |
-| [enablePublish](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#ThunderAudioFilePlayer)  | 配置-是否将当前播放的文件作为直播伴奏使用                    |
-| [enableVolumeIndication](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#ThunderAudioFilePlayer) | 配置-打开文件播放音量回调                                    |
-| [onAudioFilePlaying](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#ThunderAudioFilePlayer) | 配置-播放回调接口                                            |
-| [open](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#ThunderAudioFilePlayer)  | 配置-打开需要播放的文件，支持文件格式：mp3、aac、wav。此接口是异步操作，onAudioFilePlaying，然后在ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback中监控onAudioFilePlayError，当errorCode==0时，表示文件打开成功。 |
-| [getTotalPlayTimeMS](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#ThunderAudioFilePlayer)  | 配置-获取文件的总播放时长，需要先open，并且onAudioFilePlayError回调成功打开之后才能获取到数据。 |
-| [setLooping](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#ThunderAudioFilePlayer) | 配置-设置循环播放次数                                        |
-| [play](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#ThunderAudioFilePlayer)  | 功能-开始播放                                                |
-| [resume](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#ThunderAudioFilePlayer)| 功能-继续播放                                                |
-| [pause](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#ThunderAudioFilePlayer) | 功能-暂停播放                                                |
-| [stop](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#ThunderAudioFilePlayer) | 功能-停止播放                                                |
-| [setPlayVolume](https://www.sunclouds.com/cloud/v2/developer/doc.htm?serviceId=102&typeCode=API_DOC&title=iOS&version=2.7.0#ThunderAudioFilePlayer)  | 功能-设置音量                                                |
+|API|Description|
+|:----|:----|
+| [createAudioFilePlayer](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderenginecreateaudiofileplayer) | Initialization                                         |
+| [enablePublish](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderaudiofileplayerenablepublish)  | Set Whether to use the currently playing file as a live accompaniment |
+| [enableVolumeIndication](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderaudiofileplayerenablevolumeindicationinterval) | Set open file playback volume callback |
+| [onAudioFilePlaying](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/notification.html#thunderaudiofileplayerdelegateonaudiofileplaying) | Set playback callback interface   |
+| [open](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderaudiofileplayeropen)  | Open the file to be played, supporting file formats: mp3, aac, wav. This interface is an asynchronous operation, you need to set [setPlayerDelegate](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_audio_interaction/api/iOS/v2.8.0/function.html#thunderaudiofileplayersetplayerdelegate) callback first, and then Listen [onAudioFileStateChange](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_audio_interaction/api/iOS/v2.8.0/notification.html#thunderaudiofileplayerdelegateonaudiofilestatechangeeventerrorcode), when the event is [AUDIO_PLAY_EVENT_OPEN](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_audio_interaction/api/iOS/v2.8.0/notification.html#thunderaudiofileplayerevent), errorCode is [AUDIO_PLAYER_STATUS_SUCCESS](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_audio_interaction/api/iOS/v2.8.0/notification.html#thunderaudiofileplayererrorcode) Only if the file is successfully opened|
+| [getTotalPlayTimeMS](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderaudiofileplayergettotalplaytimems)  |To get the total playing time of the file, you need to call the open interface first and listen to [onAudioFileStateChange](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_audio_interaction/api/Android/v2.8.0/notification.html#ithunderaudiofileplayereventcallbackonaudiofilestatechange) callback, after successfully opening the file, go to use this interface to obtain data.|
+| [setLooping](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderaudiofileplayersetlooping) | Set Set the number of loops   |
+| [play](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderaudiofileplayerplay)  | Start playing                          |
+| [resume](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderaudiofileplayerresume)| Resume playing                         |
+| [pause](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderaudiofileplayerpause) | Pause playback                         |
+| [stop](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderaudiofileplayerstop) | Stop play                              |
+| [setPlayVolume](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_video_interaction/api/iOS/v2.7.0/function.html#thunderaudiofileplayersetplayvolume)  | Set volume |
 
-# 常见问题
-### Q：为什么看不到对方视频？
-- 检查一下AppId是否正确。
-- 检查一下对方startVideoPreview和stopLocalVideoStream是否设置，值是否正确。
-- 检查一下自己setRemoteVideoCanvas是否设置，并且对方uid是否正确。
-- 检查一下2边房间号，如果是跨房间订阅（不同房间号），需要设置addSubscribe，并且正确的设置对方uid。
+#### Sequence Diagram
+![Image](./Doc/pic/语聊房.png)
 
-### Q：为什么听不到对方声音？
-- 检查一下AppId是否正确。
-- 检查一下对方stopLocalAudioStream是否设置，参数是stop，值是否正确。
-- 检查一下自己手机音量，是否是静音模式。
-- 检查一下2边是否joinRoom成功，并且检查是否是同一个房间号。
+# FAQ
+### Q: Why can't I see other's video?
+- Check if the AppID is correct.
+- Check if the startVideoPreview and stopLocalVideoStream are correctly set.
+- Check if setRemoteVideoCanvas is set and the other's uid is correct.
+- Check the room number on both sides. If you subscribe across rooms (different room numbers), you need to use addSubscribe and set the uid of the other party correctly.
 
-### Q：为什么我这边播放音乐文件，对方听不到？
-- 检查一下AppId是否正确。
-- 检查一下自己stopLocalAudioStream是否设置，参数是stop，值是否正确。
-- 检查一下对方手机音量，是否是静音模式。
-- 检查一下2边是否joinRoom成功，并且检查是否是同一个房间号。
-- 检查一下自己setAudioSourceType，是否设置成THUNDER_PUBLISH_MODE_MIX。
-- 检查一下自己enablePublish，是否设置成true。
+### Q: Why can't I hear the other's voice?
+- Check if the AppID is correct.
+- Check if the parameter "stop" of stopLocalAudioStream is correctly set.
+- Check if other's mobile phone is mute.
+- Check if the both sides have joined the same room.
 
-### Q：为什么我收不到ThunderAudioFilePlayer.IThunderAudioFilePlayerCallback回调
-- 检查一下是否设置onAudioFilePlaying回掉。
-- 检查一下是否设置enableVolumeIndication。
+### Q: Why can't I hear the background music?
+- Check if the AppID is correct.
+- Check if the parameter “stop” of stopLocalAudioStream is correctly set.
+- Check if other's mobile phone is mute.
+- Check if the both sides have joined the same room
+- Check if the parameter "sourceType" of setAudioSourceType is set to THUNDER_PUBLISH_MODE_MIX.
+- Check if the parameter "enable" of enablePublish is set to "true".
 
-### Q：为什么joinRoom一直失败？
-- 检查一下AppId是否正确。
-- 检查一下joinRoom返回的错误码，然后对应代码中的ThunderRet，查看具体原因。
+### Q: Why can't I receive the callback ThunderAudioFilePlayerDelegate?
+- Check if setPlayerDelegate is set.
+- Check if enableVolumeIndication is set.
 
-### Q：为什么播放音频文件循环播放？
-- 检查一下在onAudioFilePlayError回调中设置setLooping:-1。
+### Q: Why can’t I join the room (joinRoom)?
+- Check if the AppID is correct.
+- Check the [error code](https://docs.aivacom.com/cloud/en/product_category/rtc_service/rt_audio_interaction/api/iOS/v2.8.0/code.html) returned by joinRoom to see the cause.
 
-### Q：什么时候设置setMediaMode和setRoomMode？
-- 要在joinRoom前设置。
+### Q: Why is playing audio files not looping?
+- Check if setLooping(-1) is called after the file is opened via onAudioFileStateChange.

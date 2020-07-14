@@ -136,7 +136,6 @@
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_marginBottom="70dp"
-            android:background="@drawable/shape_room_msg_item_background"
             android:padding="8dp"
             app:layout_constraintBottom_toTopOf="@+id/il_bottom_bar"
             app:layout_constraintEnd_toEndOf="@+id/ivLeave" />

@@ -2,22 +2,28 @@ package com.sclouds.mouselive.viewmodel;
 
 import android.app.Application;
 import android.os.Build;
+import android.text.TextUtils;
 
 import com.sclouds.basedroid.BaseViewModel;
 import com.sclouds.basedroid.IBaseView;
+import com.sclouds.basedroid.ToastUtil;
 import com.sclouds.basedroid.Tools;
 import com.sclouds.datasource.TokenGetter;
+import com.sclouds.datasource.bean.EffectTab;
 import com.sclouds.datasource.bean.User;
 import com.sclouds.datasource.database.DatabaseSvc;
+import com.sclouds.datasource.effect.bean.EffectDataManager;
 import com.sclouds.datasource.flyservice.http.FlyHttpSvc;
 import com.sclouds.datasource.flyservice.http.network.BaseObserver;
 import com.sclouds.datasource.flyservice.http.network.CustomThrowable;
-import com.sclouds.datasource.flyservice.http.network.model.HttpResponse;
 import com.sclouds.datasource.hummer.HummerSvc;
 import com.sclouds.mouselive.Consts;
-import com.sclouds.mouselive.utils.SampleSingleObserver;
+import com.sclouds.mouselive.R;
+import com.sclouds.mouselive.utils.SimpleSingleObserver;
 import com.sclouds.mouselive.views.SettingFragment;
+import com.sclouds.mouselive.views.dialog.EffectPanDialog;
 
+import java.util.List;
 import java.util.UUID;
 
 import androidx.annotation.NonNull;
@@ -25,7 +31,13 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.preference.PreferenceManager;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 
-public class MainViewModel extends BaseViewModel {
+/**
+ * 首页
+ *
+ * @author chenhengfei@yy.com
+ * @since 2020/03/01
+ */
+public class MainViewModel extends BaseViewModel<IBaseView> {
 
     public static final int ERROR_NET = 1;
     public static final int ERROR_LOGIN_USER = ERROR_NET + 1;
@@ -78,20 +90,17 @@ public class MainViewModel extends BaseViewModel {
                         Consts.APP_SECRET)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new BaseObserver<HttpResponse<User>>(getApplication()) {
+                .subscribe(new BaseObserver<User>(getApplication()) {
                     @Override
-                    public void handleSuccess(HttpResponse<User> response) {
-                        if (response.Data == null) {
-                            hideLoading();
-                            mLiveDataError.postValue(ERROR_LOGIN_USER);
-                            return;
+                    public void handleSuccess(@NonNull User user) {
+                        // 本地缓存用户信息
+                        DatabaseSvc.getIntance().insertUser(user);
+                        // 如果是appid模式，则服务器端下发的token是无效的token，不需要保存，hummer和thunder直接传入空的字符串就可以了
+                        if (!TextUtils.isEmpty(Consts.APP_SECRET)) {
+                            TokenGetter.updateToken(user.getToken());
                         }
 
-                        // 本地缓存用户信息
-                        User user = response.Data;
-                        DatabaseSvc.getIntance().insertUser(user);
-                        TokenGetter.updateToken(user.getToken());
-
+                        loadEffectList(0);
                         loginHummer(user);
                     }
 
@@ -99,6 +108,27 @@ public class MainViewModel extends BaseViewModel {
                         super.handleError(e);
                         hideLoading();
                         mLiveDataError.postValue(ERROR_LOGIN_USER);
+                    }
+                });
+    }
+
+    private void loadEffectList(int retryCount) {
+        FlyHttpSvc.getInstance().getEffectList(EffectPanDialog.TAG_VERSION)
+                .observeOn(AndroidSchedulers.mainThread())
+                .compose(bindToLifecycle())
+                .subscribe(new BaseObserver<List<EffectTab>>(getApplication()) {
+                    @Override
+                    public void handleSuccess(@NonNull List<EffectTab> data) {
+                        EffectDataManager.getIns().loadData(getApplication(), data);
+                    }
+
+                    public void handleError(CustomThrowable e) {
+                        super.handleError(e);
+                        if (retryCount <= 3) {
+                            loadEffectList(retryCount + 1);
+                        } else {
+                            ToastUtil.showToast(getApplication(), R.string.magic_load_data_fail);
+                        }
                     }
                 });
     }
@@ -114,7 +144,7 @@ public class MainViewModel extends BaseViewModel {
                         user.getToken())
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<Integer>() {
+                .subscribe(new SimpleSingleObserver<Integer>() {
                     @Override
                     public void onSuccess(Integer integer) {
                         hideLoading();

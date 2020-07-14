@@ -36,7 +36,7 @@
 - (instancetype)init
 {
     self = [super init];
-    if(self){
+    if (self) {
         self.reConnectTime = 0;
         self.isActivelyClose = NO;
         self.sendDataArray = [[NSMutableArray alloc] init];
@@ -70,7 +70,7 @@
 - (void)initHeartBeat
 {
     //心跳没有被关闭
-    if(self.heartBeatTimer) {
+    if (self.heartBeatTimer) {
         return;
     }
     [self destoryHeartBeat];
@@ -86,9 +86,9 @@
     //和服务端约定好发送什么作为心跳标识，尽可能的减小心跳包大小
     __weak typeof (self) weakSelf = self;
     dispatch_main_async_safe(^{
-        if(weakSelf.webSocket.readyState == SR_OPEN){
+        if (weakSelf.webSocket.readyState == SR_OPEN) {
             // 发送心跳包
-            YYLogDebug(@"[MouseLive-WSService] 发送ping数据");
+//            YYLogDebug(@"[MouseLive-WSService] 发送ping数据");
             [weakSelf sendPing:nil];
         }
     });
@@ -99,8 +99,7 @@
 {
     __weak typeof (self) weakSelf = self;
     dispatch_main_async_safe(^{
-        if(weakSelf.heartBeatTimer)
-        {
+        if (weakSelf.heartBeatTimer) {
             [weakSelf.heartBeatTimer invalidate];
             weakSelf.heartBeatTimer = nil;
         }
@@ -115,8 +114,7 @@
     self.isActivelyClose = YES;
     self.isConnect = NO;
     self.connectType = WebSocketConnectTypeDefault;
-    if(self.webSocket)
-    {
+    if (self.webSocket) {
         [self.webSocket close];
         _webSocket = nil;
     }
@@ -131,8 +129,7 @@
 - (void)sendDataToServer:(NSString *)data
 {
     // 只有长连接OPEN开启状态才能调 send 方法，不然会Crash
-    if(self.webSocket.readyState == SR_OPEN && self.connectType != WebSocketConnectTypeDisconnect)
-    {
+    if (self.webSocket.readyState == SR_OPEN && self.connectType != WebSocketConnectTypeDisconnect) {
         [_webSocket send:data]; //发送数据
     }
     else {
@@ -183,10 +180,10 @@
         return;
     }
     
-    if(self.isActivelyClose){
+    if (self.isActivelyClose) {
         self.connectType = WebSocketConnectTypeDefault;
     }
-    else{
+    else {
         self.connectType = WebSocketConnectTypeDisconnect;
     }
     
@@ -202,7 +199,7 @@
 ///ping
 - (void)webSocket:(SRWebSocket *)webSocket didReceivePong:(NSData *)pongData
 {
-    YYLogDebug(@"[MouseLive-WSService] 接受pong数据--> %@",pongData);
+//    YYLogDebug(@"[MouseLive-WSService] 接受pong数据--> %@",pongData);
 }
 
 ///接收消息

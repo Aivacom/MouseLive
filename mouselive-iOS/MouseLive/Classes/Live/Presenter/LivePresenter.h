@@ -11,15 +11,19 @@
 #import "LiveDefaultConfig.h"
 #import "RoomOwnerModel.h"
 #import "LiveUserInfoList.h"
+#import "RLMLiveRoomModel.h"
 
 @protocol LivePresenterDelegate <NSObject>
-
-- (void)audienceJoinChatRoom:(id)data;
+//成功获取chatId
+- (void)successGetChatId:(id)data;
 //公聊区 主播创建聊天室
-- (void)successChatRoom:(id)data withType:(LiveType)type;
+- (void)successChatRoom:(id)data withType:(RoomType)type;
+//新版方法
+- (void)successChatRoom:(RLMLiveRoomModel *)roomModel;
+- (void)successJoinRoom:(RLMLiveRoomModel *)roomModel;
+- (void)liveViewRoomInfo:(LiveRoomInfoModel *)roomInfo UserListDataSource:(NSArray <LiveUserModel *> *)data;
 
-- (void)liveViewRoomInfo:(LiveRoomInfoModel*)roomInfo UserListDataSource:(NSArray <LiveUserModel *>*)data;
-- (void)liveViewAnchorListDataSource:(NSArray <LiveAnchorModel *>*)data;
+- (void)liveViewAnchorListDataSource:(NSArray <LiveAnchorModel *> *)data;
 
 - (void)liveUserData:(LiveUserModel *)user;
 //创建房间失败
@@ -34,7 +38,7 @@
 - (void)refreshLiveStatusWithLinkUid:(NSString * _Nullable)uid;
 
 //请求出错
-- (void)requestError:(NSString *_Nullable)errorMessage;
+- (void)requestError:(NSString * _Nullable)errorMessage;
 //主播已经停播
 - (void)liveStatusIsStop;
 
@@ -47,30 +51,32 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<LivePresenterDelegate> delegate;
 
-@property (nonatomic, readonly, assign) BOOL isRunningMirc; // 正在连麦
+@property (nonatomic, assign, readonly) BOOL isRunningMirc; // 正在连麦
 
-@property (nonatomic, readonly, assign) BOOL isOwner; // 房主
+@property (nonatomic, assign, readonly) BOOL isOwner; // 房主
 
-@property (nonatomic, readonly, assign) BOOL isWheat; // 连麦者
+@property (nonatomic, assign, readonly) BOOL isWheat; // 连麦者
 
 @property (nonatomic, strong) NSDictionary *params;
 
 + (LivePresenter *)shareInstance;
+/** 用户列表 */
+//重新请求roominfo
+- (void)fetchRoomInfoWithType:(RoomType)type config:(LiveDefaultConfig *)config;
 /// 获取切回前台的直播配置信息
 /// @param completionHandler 处理回调，返回 最新的配置信息
-//- (void)fetchRoomInfoWithCompletionHandler:(SYFetchRoomInfoCompletionHandler)completionHandler;
 
-/** 用户列表 */
-- (void)fetchRoomInfoWithType:(LiveType)type config:(LiveDefaultConfig *)config success:(SYNetServiceSuccessBlock)success failure:(SYNetServiceFailBlock)failure;
+- (void)fetchRoomInfoWithType:(RoomType)type config:(LiveDefaultConfig *)config success:(SYNetServiceSuccessBlock)success failure:(SYNetServiceFailBlock)failure;
 /**主播pk列表*/
-- (void)fetchAnchorListWithType:(LiveType)type config:(LiveDefaultConfig *)config success:(SYNetServiceSuccessBlock)success failure:(SYNetServiceFailBlock)failure;
+- (void)fetchAnchorListWithType:(RoomType)type config:(LiveDefaultConfig *)config success:(SYNetServiceSuccessBlock)success failure:(SYNetServiceFailBlock)failure;
 //请求用户信息
 - (void)fetchUserDataWithUid:(NSString *)uid  success:(SYNetServiceSuccessBlock)success failure:(SYNetServiceFailBlock)failure;
 
-- (void)fetchChatRoomWithType:(LiveType)type params:(NSDictionary *)params;
+- (void)fetchChatRoomWithType:(RoomType)type params:(NSDictionary *)params;
 
 - (void)fetchSetchatIdWithParams:(NSDictionary *)params;
 - (void)fetchGetchatIdWithParams:(NSDictionary *)params;
+
 
 - (void)destory;
 @end

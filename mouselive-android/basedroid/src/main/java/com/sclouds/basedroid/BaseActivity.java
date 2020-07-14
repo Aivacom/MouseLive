@@ -15,6 +15,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.widget.Toolbar;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ViewDataBinding;
 import pub.devrel.easypermissions.EasyPermissions;
 
 /**
@@ -23,8 +25,10 @@ import pub.devrel.easypermissions.EasyPermissions;
  * @author chenhengfei@yy.com
  * @since 2020年2月20日
  */
-public abstract class BaseActivity extends RxAppCompatActivity implements IBaseView {
+public abstract class BaseActivity<B extends ViewDataBinding> extends RxAppCompatActivity
+        implements IBaseView {
 
+    public B mBinding;
     private ProgressDialog mProgressDialog = null;
 
     @Override
@@ -51,7 +55,7 @@ public abstract class BaseActivity extends RxAppCompatActivity implements IBaseV
     }
 
     protected void setCustomContentView() {
-        setContentView(getLayoutResId());
+        mBinding = DataBindingUtil.setContentView(this, getLayoutResId());
     }
 
     private void setStatusBar() {

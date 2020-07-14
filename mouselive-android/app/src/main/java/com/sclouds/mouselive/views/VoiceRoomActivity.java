@@ -25,7 +25,6 @@ import com.sclouds.datasource.flyservice.funws.FunWSClientHandler;
 import com.sclouds.datasource.flyservice.funws.FunWSSvc;
 import com.sclouds.datasource.flyservice.http.FlyHttpSvc;
 import com.sclouds.datasource.flyservice.http.network.BaseObserver;
-import com.sclouds.datasource.flyservice.http.network.model.HttpResponse;
 import com.sclouds.datasource.hummer.HummerSvc;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.adapters.FakeMsgAdapter;
@@ -35,7 +34,7 @@ import com.sclouds.mouselive.bean.PublicMessage;
 import com.sclouds.mouselive.databinding.ActivityVoiceRoomBinding;
 import com.sclouds.mouselive.utils.BluetoothMonitorReceiver;
 import com.sclouds.mouselive.utils.RoomQueueAction;
-import com.sclouds.mouselive.utils.SampleSingleObserver;
+import com.sclouds.mouselive.utils.SimpleSingleObserver;
 import com.sclouds.mouselive.view.IRoomView;
 import com.sclouds.mouselive.viewmodel.VoiceRoomViewModel;
 import com.sclouds.mouselive.views.dialog.InputMessageDialog;
@@ -118,8 +117,10 @@ public class VoiceRoomActivity
         roomUserHeader = findViewById(R.id.ruhMaster);
 
         //房间信息列表
-        mBinding.rvMsg.setLayoutManager(new LinearLayoutManager(
-                this, LinearLayoutManager.VERTICAL, false));
+        LinearLayoutManager msgLLayoutManager = new LinearLayoutManager(
+                this, LinearLayoutManager.VERTICAL, false);
+        msgLLayoutManager.setStackFromEnd(true);
+        mBinding.rvMsg.setLayoutManager(msgLLayoutManager);
         mMsgAdapter =
                 new FakeMsgAdapter(this, DatabaseSvc.getIntance().getUser(), room.getROwner());
         mBinding.rvMsg.setAdapter(mMsgAdapter);
@@ -149,6 +150,9 @@ public class VoiceRoomActivity
                 }
 
                 RoomUser user = mVoiceAdapter.getDataAtPosition(position);
+                if (ObjectsCompat.equals(user, mine)) {
+                    return;
+                }
                 showUserMenuDialog(user, position);
             }
         });
@@ -380,7 +384,7 @@ public class VoiceRoomActivity
         HummerSvc.getInstance().setAllMicEnable(newValue)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))
-                .subscribe(new SampleSingleObserver<Boolean>() {
+                .subscribe(new SimpleSingleObserver<Boolean>() {
                     @Override
                     public void onSuccess(Boolean aBoolean) {
                         setRoomMic(newValue, 0);
@@ -393,9 +397,9 @@ public class VoiceRoomActivity
         FlyHttpSvc.getInstance().setRoomMic(room.getRoomId(), room.getRType(), enable)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))
-                .subscribe(new BaseObserver<HttpResponse<String>>(this) {
+                .subscribe(new BaseObserver<String>(this) {
                     @Override
-                    public void handleSuccess(HttpResponse<String> stringHttpResponse) {
+                    public void handleSuccess(@NonNull String data) {
                         hideLoading();
                     }
 
@@ -644,7 +648,8 @@ public class VoiceRoomActivity
                     mBinding.rvMsg.smoothScrollToPosition(mMsgAdapter.getItemCount() - 1);
 
                     PublicMessage message =
-                            new PublicMessage(mine.getNickName(), mine.getUid(), msg,
+                            new PublicMessage(mine.getNickName(), String.valueOf(mine.getUid()),
+                                    msg,
                                     FakeMessage.MessageType.Msg);
                     HummerSvc.getInstance().sendChatRoomMessage(mGson.toJson(message)).subscribe();
                 }
@@ -719,19 +724,8 @@ public class VoiceRoomActivity
     }
 
     @Override
-    public void onAudioStart(@NotNull RoomUser user) {
-        LogUtils.d(TAG, "onAudioStart() called with: user = [" + user + "]");
-        if (ObjectsCompat.equals(user, mViewModel.getOwnerUser())) {
-            roomUserHeader.setOwnerUserInfo(user);
-        } else {
-            mVoiceAdapter.refreshUser(user);
-        }
-        refreshMicView();
-    }
-
-    @Override
-    public void onAudioStop(@NotNull RoomUser user) {
-        LogUtils.d(TAG, "onAudioStop() called with: user = [" + user + "]");
+    public void onMemberMicStatusChanged(@NonNull RoomUser user) {
+        LogUtils.d(TAG, "onMemberMicStatusChanged() called with: user = [" + user + "]");
         if (ObjectsCompat.equals(user, mViewModel.getOwnerUser())) {
             roomUserHeader.setOwnerUserInfo(user);
         } else {
@@ -770,15 +764,6 @@ public class VoiceRoomActivity
             }
         }
 
-        if (user.isNoTyping()) {
-            mMsgAdapter.addItem(new FakeMessage(user, getString(R.string.user_mute),
-                    FakeMessage.MessageType.Notice));
-        } else {
-            mMsgAdapter.addItem(new FakeMessage(user, getString(R.string.user_unmute),
-                    FakeMessage.MessageType.Notice));
-        }
-        mBinding.rvMsg.smoothScrollToPosition(mMsgAdapter.getItemCount() - 1);
-
         //处理成员列表数据刷新
         if (memberDialog != null && memberDialog.isShowing()) {
             memberDialog.onMemberUpdated(mViewModel.getMembers());
@@ -788,15 +773,6 @@ public class VoiceRoomActivity
     @Override
     public void onRoleChanged(@NonNull RoomUser user) {
         LogUtils.d(TAG, "onRoleChanged() called with: user = [" + user + "]");
-        if (user.getRoomRole() == RoomUser.RoomRole.Admin) {
-            mMsgAdapter.addItem(new FakeMessage(user, getString(R.string.user_add_role),
-                    FakeMessage.MessageType.Notice));
-        } else if (user.getRoomRole() == RoomUser.RoomRole.Spectator) {
-            mMsgAdapter.addItem(new FakeMessage(user, getString(R.string.user_remove_role),
-                    FakeMessage.MessageType.Notice));
-        }
-        mBinding.rvMsg.smoothScrollToPosition(mMsgAdapter.getItemCount() - 1);
-
         //处理成员列表数据刷新
         if (memberDialog != null && memberDialog.isShowing()) {
             memberDialog.onMemberUpdated(mViewModel.getMembers());
@@ -850,6 +826,12 @@ public class VoiceRoomActivity
         if (ObjectsCompat.equals(user, mViewModel.getMine())) {
             onNomalStatus();
         }
+    }
+
+    @Override
+    public void onMessage(@NonNull FakeMessage message) {
+        mMsgAdapter.addItem(message);
+        mBinding.rvMsg.smoothScrollToPosition(mMsgAdapter.getItemCount() - 1);
     }
 
     @Override
@@ -934,8 +916,10 @@ public class VoiceRoomActivity
             if (mine == null) {
                 return;
             }
-            PublicMessage message = new PublicMessage(mine.getNickName(), mine.getUid(),
-                    getString(R.string.owner_leave_monment), FakeMessage.MessageType.Notice);
+            PublicMessage message =
+                    new PublicMessage(mine.getNickName(), String.valueOf(mine.getUid()),
+                            getString(R.string.owner_leave_monment),
+                            FakeMessage.MessageType.Notice);
             HummerSvc.getInstance().sendChatRoomMessage(mGson.toJson(message)).subscribe();
         }
     };

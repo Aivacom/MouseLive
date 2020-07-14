@@ -16,10 +16,10 @@ import com.sclouds.basedroid.LogUtils;
 import com.sclouds.basedroid.util.AppUtil;
 import com.sclouds.datasource.flyservice.http.FlyHttpSvc;
 import com.sclouds.datasource.flyservice.http.network.FileObserver;
-import com.sclouds.effect.consts.EffectConst;
 import com.sclouds.mouselive.R;
-import com.sclouds.mouselive.bean.effect.Effect;
-import com.sclouds.mouselive.event.EventEffectDowned;
+import com.sclouds.datasource.event.EventEffectDowned;
+import com.sclouds.datasource.effect.IEffect;
+import com.sclouds.datasource.effect.bean.Effect;
 import com.sclouds.mouselive.viewmodel.BaseRoomViewModel;
 import com.trello.rxlifecycle3.android.FragmentEvent;
 import com.trello.rxlifecycle3.components.support.RxFragment;
@@ -32,7 +32,6 @@ import java.util.List;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
-
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 
@@ -43,7 +42,7 @@ public class BeautyPanelAdapter extends BaseAdapter<Effect, BeautyPanelAdapter.V
 
     private int selecteIndex = -1;
 
-    private String type = EffectConst.Effect.EFFECT_BEAUTY;
+    private String type = IEffect.Effect.EFFECT_BEAUTY;
 
     public BeautyPanelAdapter(Context context, List<Effect> data, String type) {
         super(context, data);
@@ -95,7 +94,7 @@ public class BeautyPanelAdapter extends BaseAdapter<Effect, BeautyPanelAdapter.V
                 loadingView.setVisibility(View.GONE);
                 backgoundView.setVisibility(View.GONE);
 
-                if (type.equals(EffectConst.Effect.EFFECT_STICKER)) {
+                if (type.equals(IEffect.Effect.EFFECT_STICKER)) {
                     Glide.with(mContext).load(R.mipmap.ic_effect_forbid).apply(roundOptions)
                             .into(imageView);
                     layoutParams
@@ -112,7 +111,7 @@ public class BeautyPanelAdapter extends BaseAdapter<Effect, BeautyPanelAdapter.V
                     textView.setTextColor(Color.parseColor("#FFFFFF"));
                 }
             } else {
-                if (type.equals(EffectConst.Effect.EFFECT_STICKER)) {
+                if (type.equals(IEffect.Effect.EFFECT_STICKER)) {
                     layoutParams
                             .setMargins(AppUtil.dip2px(5), AppUtil.dip2px(15), AppUtil.dip2px(5),
                                     0);

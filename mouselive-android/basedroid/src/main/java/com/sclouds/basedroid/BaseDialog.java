@@ -30,16 +30,16 @@ public abstract class BaseDialog extends RxAppCompatDialogFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        initBundle(getArguments());
         initView(view);
-    }
-
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
         initData();
     }
 
-    public abstract void initView(View view);
+    public void initBundle(@Nullable Bundle bundle) {
+
+    }
+
+    public abstract void initView(@NonNull View view);
 
     public abstract void initData();
 

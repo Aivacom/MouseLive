@@ -1,10 +1,9 @@
 package com.sclouds.mouselive.widget;
 
 import android.content.Context;
-import android.graphics.Color;
+import android.os.Build;
 import android.util.AttributeSet;
-import android.util.TypedValue;
-import android.view.ViewGroup;
+import android.view.LayoutInflater;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -13,7 +12,9 @@ import com.sclouds.mouselive.R;
 import com.thunder.livesdk.ThunderNotification;
 import com.thunder.livesdk.ThunderRtcConstant;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 /**
  * 网络码率日志界面封装
@@ -23,8 +24,6 @@ import androidx.annotation.Nullable;
  */
 public class NetinfoLLayout extends LinearLayout {
 
-    static String txq;
-    static String rxq;
     static String strNetQuality1;
     static String strNetQuality2;
     static String strNetQuality3;
@@ -33,6 +32,7 @@ public class NetinfoLLayout extends LinearLayout {
     static String strNetQuality6;
     static String strNetUnknow;
 
+    private TextView roomid;
     private TextView uid;
     private TextView name;
 
@@ -44,63 +44,47 @@ public class NetinfoLLayout extends LinearLayout {
     private TextView rxQuality;//下行
     private TextView rxQualityM;//下行
 
-    private int textSize = 0;
-
     public NetinfoLLayout(Context context) {
         super(context);
-        init();
+        init(context);
     }
 
     public NetinfoLLayout(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        init();
+        init(context);
     }
 
     public NetinfoLLayout(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+        init(context);
     }
 
-    private void init() {
-        textSize = getResources().getDimensionPixelSize(R.dimen.room_contributions_text_size);
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public NetinfoLLayout(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+        init(context);
+    }
 
+    private void init(Context context) {
+        LayoutInflater.from(context).inflate(R.layout.layout_room_user_info, this);
+        setBackgroundResource(R.drawable.shape_room_msg_item_background);
         setOrientation(VERTICAL);
 
-        uid = createTextView();
-        addView(uid, ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        name = createTextView();
-        addView(name, ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
+        roomid = findViewById(R.id.tvRoomId);
+        this.roomid.setVisibility(GONE);
+
+        uid = findViewById(R.id.tvUID);
+        name = findViewById(R.id.tvName);
 
         //上行
-        txnetQuality = createTextView();
-        addView(txnetQuality, ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-
-        txQuality = createTextView();
-        addView(txQuality, ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-
-        txQualityM = createTextView();
-        addView(txQualityM, ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
+        txnetQuality = findViewById(R.id.tvTxNetQuality);
+        txQuality = findViewById(R.id.tvTxQuality);
+        txQualityM = findViewById(R.id.tvTxQualityM);
 
         //下行
-        rxnetQuality = createTextView();
-        addView(rxnetQuality, ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-
-        rxQuality = createTextView();
-        addView(rxQuality, ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-
-        rxQualityM = createTextView();
-        addView(rxQualityM, ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-
-        txq = getContext().getString(R.string.bitrates_up);
-        rxq = getContext().getString(R.string.bitrates_down);
+        rxnetQuality = findViewById(R.id.tvRxNetQuality);
+        rxQuality = findViewById(R.id.tvRxQuality);
+        rxQualityM = findViewById(R.id.tvRxQualityM);
 
         strNetQuality1 = getContext().getString(R.string.net_quality1);
         strNetQuality2 = getContext().getString(R.string.net_quality2);
@@ -118,27 +102,35 @@ public class NetinfoLLayout extends LinearLayout {
         this.rxQualityM.setVisibility(GONE);
     }
 
-    private TextView createTextView() {
-        TextView txt = new TextView(getContext());
-        txt.setTextColor(Color.WHITE);
-        txt.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
-        txt.setPadding(0, 5, 0, 5);
-        return txt;
+    public void setRoomInfo(@Nullable String roomId) {
+        if (roomId == null) {
+            roomid.setVisibility(GONE);
+            roomid.setText(getContext().getString(R.string.info_roomid, ""));
+        } else {
+            roomid.setVisibility(VISIBLE);
+            roomid.setText(getContext().getString(R.string.info_roomid, roomId));
+        }
     }
 
-    public void setUser(User user) {
-        uid.setText(String.valueOf(user.getUid()));
+    public void setUser(@NonNull User user) {
+        uid.setText(getContext().getString(R.string.info_uid, String.valueOf(user.getUid())));
         name.setText(user.getNickName());
     }
 
+    /**
+     * 网络质量
+     *
+     * @param txquality 上行
+     * @param rxquality 下行
+     */
     public void setNetworkInfo(int txquality, int rxquality) {
         this.txnetQuality.setVisibility(VISIBLE);
         this.rxnetQuality.setVisibility(VISIBLE);
 
         this.txnetQuality
-                .setText(getContext().getString(R.string.net_quality, getQuality(txquality)));
+                .setText(getContext().getString(R.string.net_tx_quality, getQuality(txquality)));
         this.rxnetQuality
-                .setText(getContext().getString(R.string.net_quality, getQuality(rxquality)));
+                .setText(getContext().getString(R.string.net_rx_quality, getQuality(rxquality)));
     }
 
     private String getQuality(int quality) {
@@ -161,8 +153,17 @@ public class NetinfoLLayout extends LinearLayout {
         }
     }
 
+    /**
+     * 房间码率
+     *
+     * @param stats 码率
+     */
     public void setRoomStats(@Nullable ThunderNotification.RoomStats stats) {
         if (stats == null) {
+            this.txQuality.setVisibility(GONE);
+            this.txQualityM.setVisibility(GONE);
+            this.rxQuality.setVisibility(GONE);
+            this.rxQualityM.setVisibility(GONE);
             return;
         }
 
@@ -182,5 +183,15 @@ public class NetinfoLLayout extends LinearLayout {
         this.rxQualityM.setText(getContext()
                 .getString(R.string.bitrates_m, stats.rxAudioBitrate / 8192,
                         stats.rxVideoBitrate / 8192));
+    }
+
+    public void resetView() {
+        this.txnetQuality.setVisibility(GONE);
+        this.rxnetQuality.setVisibility(GONE);
+
+        this.txQuality.setVisibility(GONE);
+        this.txQualityM.setVisibility(GONE);
+        this.rxQuality.setVisibility(GONE);
+        this.rxQualityM.setVisibility(GONE);
     }
 }

@@ -18,13 +18,13 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol SYPlayerDelegate <NSObject>
 @optional
 
-- (void)onError:(SYPlayer*)player errorModel:(AVPErrorModel *)errorModel;
+- (void)onError:(SYPlayer *)player errorModel:(AVPErrorModel *)errorModel;
 
-- (void)onPlayEvent:(SYPlayer*)player eventType:(AVPEventType)eventType;
+- (void)onPlayEvent:(SYPlayer *)player eventType:(AVPEventType)eventType;
 
-- (void)onPlayerStatusChanged:(SYPlayer*)player oldStatus:(AVPStatus)oldStatus newStatus:(AVPStatus)newStatus;
+- (void)onPlayerStatusChanged:(SYPlayer *)player oldStatus:(AVPStatus)oldStatus newStatus:(AVPStatus)newStatus;
 
-- (void)onVideoSizeChanged:(SYPlayer*)player size:(CGSize)size;
+- (void)onVideoSizeChanged:(SYPlayer *)player size:(CGSize)size;
 
 @end
 
@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property(nonatomic, weak) id<SYPlayerDelegate> delegate;
 
-@property(nonatomic, readonly) UIView* playView;
+@property(nonatomic, readonly) UIView *playView;
 
 // Video Size
 @property(nonatomic, readonly) CGSize size;
@@ -49,7 +49,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)destory;
 
-- (void)upadteUrl: (NSString*)url;
+- (void)upadteUrl: (NSString *)url;
 
 // set render mode for video
 - (void)setRenderMode: (AVPScalingMode)mode;

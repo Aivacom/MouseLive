@@ -11,18 +11,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-//extern NSString * const LiveCellTitle;          // 房间 title
-//extern NSString * const LiveCellRoomId;          // 房间 id
-//extern NSString * const LiveCellTitle;          // 房间 title
-//extern NSString * const LiveCellTitle;          // 房间 title
 
 @interface LiveCollectionCell : UICollectionViewCell
 
-@property (nonatomic,strong)LiveRoomInfoModel *roomModel;
-
-- (void)click;
-
-
+@property (nonatomic, strong)LiveRoomInfoModel *roomModel;
 
 @end
 

@@ -13,7 +13,7 @@
 @interface SYTokenRequestParams : NSObject
 
 @property (nonatomic, assign) NSUInteger validTime;      // 鉴权有效期，单位秒。默认30分钟
-@property (nonatomic, copy) NSString *requestUrl;        // token请求接口url，默认https://webapi.sunclouds.com/webservice/app/v2/auth/genToken
+@property (nonatomic, copy) NSString *requestUrl;        // token请求接口url，默认https://webapi.jocloud.com/webservice/app/v2/auth/genToken
 
 @property (nonatomic, copy) NSString *appId;
 @property (nonatomic, copy) NSString *uid;              // 用户uid

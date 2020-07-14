@@ -31,7 +31,7 @@
     }
     _ofContext = ofContext;
     OFHandle effect = OF_INVALID_HANDLE;
-    OF_Result result = OF_CreateEffectFromPackage(_ofContext, [effectPath UTF8String], (OFHandle*) &effect);
+    OF_Result result = OF_CreateEffectFromPackage(_ofContext, [effectPath UTF8String], (OFHandle *) &effect);
     if (OF_Result_Success != result) {
         return;
     }

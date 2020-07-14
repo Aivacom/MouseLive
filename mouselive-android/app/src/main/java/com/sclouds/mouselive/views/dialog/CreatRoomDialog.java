@@ -13,12 +13,12 @@ import com.sclouds.datasource.database.DatabaseSvc;
 import com.sclouds.datasource.flyservice.http.FlyHttpSvc;
 import com.sclouds.datasource.flyservice.http.network.BaseObserver;
 import com.sclouds.datasource.flyservice.http.network.CustomThrowable;
-import com.sclouds.datasource.flyservice.http.network.model.HttpResponse;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.adapters.CreateRoomAdapter;
 import com.sclouds.mouselive.databinding.LayoutCreateRoomBinding;
 import com.trello.rxlifecycle3.android.FragmentEvent;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -120,11 +120,10 @@ public class CreatRoomDialog extends BaseDataBindDialog<LayoutCreateRoomBinding>
         FlyHttpSvc.getInstance().createRoom(user, room)
                 .compose(bindUntilEvent(FragmentEvent.DESTROY))
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new BaseObserver<HttpResponse<Room>>(getContext()) {
+                .subscribe(new BaseObserver<Room>(getContext()) {
                     @Override
-                    public void handleSuccess(HttpResponse<Room> response) {
+                    public void handleSuccess(@NonNull Room room) {
                         hideLoading();
-                        Room room = response.Data;
                         callback.onCreateRoom(room);
                         dismiss();
                     }

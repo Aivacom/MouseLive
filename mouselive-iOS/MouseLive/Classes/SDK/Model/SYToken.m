@@ -51,10 +51,11 @@
         kUid:@(self.localUid.longLongValue),
         kValidTime:@(self.validTime),
     };
-    
-    [HttpService sy_httpRequestWithType:SYHttpRequestKeyType_GetToken params:params success:^(int taskId, id  _Nullable respObjc) {
-        NSNumber *code = [respObjc objectForKey:kCode];
-        if (![code isEqualToNumber:[NSNumber numberWithInt:[ksuccessCode intValue]]]) {
+    SYHttpService *httpClient = [[SYHttpService alloc]init];
+    [httpClient sy_httpRequestWithType:SYHttpRequestKeyType_GetToken params:params success:^(NSString *taskId, id  _Nullable respObjc) {
+        NSDictionary *respObj = (NSDictionary *)respObjc;
+        NSString *code = [NSString stringWithFormat:@"%@",respObj[kCode]];
+        if ([code isEqualToString:ksuccessCode]) {
             YYLogError(@"[MouseLive-Token] 1 updateToken GetError!!!");
             if (complete) {
                 complete(self.thToken, [NSError errorWithDomain:@"Get token from http error" code:-1 userInfo:nil]);
@@ -67,13 +68,14 @@
                 complete(self.thToken, nil);
             }
         }
-    } failure:^(int taskId, id  _Nullable respObjc, NSString * _Nullable errorCode, NSString * _Nullable errorMsg) {
-        YYLogDebug(@"[MouseLive-Token] updateToken, errorCode:%@, errorMsg:%@", errorCode, errorMsg);
+    } failure:^(NSString *taskId, NSError *error) {
+        YYLogDebug(@"[MouseLive-Token] updateToken, error:%@",error);
         if (complete) {
-            complete(self.thToken, [NSError errorWithDomain:errorMsg code:-1 userInfo:nil]);
+            complete(self.thToken, error);
         }
     }];
     YYLogDebug(@"[MouseLive-Token] updateToken exit");
+    
 }
 
 @end

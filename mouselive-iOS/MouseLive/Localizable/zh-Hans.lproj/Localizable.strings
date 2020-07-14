@@ -18,7 +18,7 @@
 "Ban All" = "全部禁言";
 "Banned" = "禁言中";
 "Broadcast ended." = "房主直播已结束";
-"Broadcaster will be right back." = "主播暂时离开一下下，很快回来哦！";
+"Broadcaster will be right back." = "【主播暂时离开一下下，很快回来哦！】";
 "Broadcasters" = "在线主播";
 "Commentary" = "赛事解说";
 "Connect" = "上麦";
@@ -46,7 +46,8 @@
 "Mirror" = "镜像";
 "Mute All" = "全部闭麦";
 "Mute" = "禁言";
-"Network" = "网络质量";
+"TxNetwork" = "上行质量";
+"RxNetwork" = "下行质量";
 "No.1" = "1号麦";
 "No.2" = "2号麦";
 "No.3" = "3号麦";
@@ -62,15 +63,17 @@
 "List_Owner" = "主播";//观众列表的禁言用Ban，语音房闭麦用Mute
 "Please Choose a Room Type to Broadcast" = "请选择开播类型，创建属于自己的房间";
 "Please kindly let us know your concerns." = "请输入反馈内容";
+"Feedback success." = "反馈成功";
+"Feedback failed." = "反馈失败";
 "Poor" = "一般";
 "Reject" = "拒绝";
-"Seats are full." = "座位已满，已拒绝";
+"Seats are full." = "座位已满";
 "The remote user is not available for connection." = "对面主播正在连麦中，请稍后再试";
-"Solutions for Pan-Entertainment Scenarios" = "尚云娱乐直播解决方案";
+"Solutions for Pan-Entertainment Scenarios" = "聚联云泛娱乐直播解决方案";
 "Sports/Games Commentary" = "球赛游戏 赛事解说";
 "Storie" = "小视频";
 "Submit" = "提交反馈";
-"SunClouds provides low latency, high quality video and audio livestreaming SDK and chatroom SDK. Try the features in the liveroom and let us know if you like it!" = "尚云提供低延时高质量音视频SDK，以及实时聊天SDK。点击房间内的按钮试试吧！喜欢就联系我们!";
+"Jocloud provides low latency, high quality video and audio streaming SDK and chatroom SDK. Try the features in the live room and know more about us via www.jocloud.com." = "聚联云提供低延时高质量音视频SDK，以及实时聊天SDK。点击房间内的按钮试试吧！ 访问官网www.jocloud.com了解更多~";
 "Switch" = "切换镜头";
 "Reconnecting to internet, please wait." = "网络异常，请检查网络连接";
 "Seats are full" = "座位已满";
@@ -105,6 +108,7 @@
 "Talk_Me" = "我 ";
 "is kicked" = "被踢出房间";
 "Video_Disconnect" = " 断开 ";
+"Login failed, please try again" = "登陆失败，请重新登录！";
 
 "OK" = "确定";
 "Ear on" = "耳返开启";

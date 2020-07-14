@@ -17,7 +17,6 @@ import com.google.gson.Gson;
 import com.sclouds.basedroid.BaseMVVMActivity;
 import com.sclouds.basedroid.LogUtils;
 import com.sclouds.basedroid.ToastUtil;
-import com.sclouds.common.utils.Accelerometer;
 import com.sclouds.datasource.bean.Anchor;
 import com.sclouds.datasource.bean.Room;
 import com.sclouds.datasource.bean.RoomUser;
@@ -36,7 +35,7 @@ import com.sclouds.mouselive.bean.PublicMessage;
 import com.sclouds.mouselive.databinding.ActivityLivingRoomBinding;
 import com.sclouds.mouselive.utils.BluetoothMonitorReceiver;
 import com.sclouds.mouselive.utils.RoomQueueAction;
-import com.sclouds.mouselive.utils.SampleSingleObserver;
+import com.sclouds.mouselive.utils.SimpleSingleObserver;
 import com.sclouds.mouselive.view.IRoomView;
 import com.sclouds.mouselive.viewmodel.LivingRoomViewModel;
 import com.sclouds.mouselive.views.dialog.EffectPanDialog;
@@ -47,6 +46,7 @@ import com.sclouds.mouselive.views.dialog.RoomMembersDialog;
 import com.sclouds.mouselive.views.dialog.RoomPKMembersDialog;
 import com.sclouds.mouselive.views.dialog.RoomSharpnessDialog;
 import com.sclouds.mouselive.views.dialog.WaitingDialog;
+import com.sclouds.mouselive.widget.LiveDecoration;
 import com.thunder.livesdk.ThunderNotification;
 import com.trello.rxlifecycle3.android.ActivityEvent;
 
@@ -95,8 +95,6 @@ public class LivingRoomActivity
 
     private Room room;
 
-    private Accelerometer mAccelerometer;
-
     public static void startActivity(Context context, Room room) {
         Intent intent = new Intent(context, LivingRoomActivity.class);
         intent.putExtra(EXTRA_ROOM, room);
@@ -106,8 +104,6 @@ public class LivingRoomActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mAccelerometer = new Accelerometer(this);
-        mAccelerometer.start();
     }
 
     @Override
@@ -151,6 +147,7 @@ public class LivingRoomActivity
         //房间信息列表
         LinearLayoutManager msgLLayoutManager = new LinearLayoutManager(
                 this, LinearLayoutManager.VERTICAL, false);
+        msgLLayoutManager.setStackFromEnd(true);
         mBinding.rvMsg.setLayoutManager(msgLLayoutManager);
         mMsgAdapter =
                 new FakeMsgAdapter(this, DatabaseSvc.getIntance().getUser(), room.getROwner());
@@ -159,8 +156,9 @@ public class LivingRoomActivity
                 FakeMessage.MessageType.Top));
 
         //视频
+        mBinding.rvPreview.addItemDecoration(new LiveDecoration(this));
         mBinding.rvPreview.setLayoutManager(linearLayoutManager);
-        mLiveAdapter = new LiveAdapter(this, room);
+        mLiveAdapter = new LiveAdapter(this, room.ROwner);
         mBinding.rvPreview.setAdapter(mLiveAdapter);
 
         mViewModel.setSurfaceHolder(mBinding.cdnView.getHolder());
@@ -191,6 +189,9 @@ public class LivingRoomActivity
             onLoadPlayertatus();
         }
         setRoomInfo(room);
+
+        RoomUser owner = mViewModel.getOwnerUser();
+        mLiveAdapter.addItem(owner);
     }
 
     /**
@@ -239,6 +240,10 @@ public class LivingRoomActivity
         mViewModel.mLiveDataRoomInfo.observe(this, new Observer<Room>() {
             @Override
             public void onChanged(@NonNull Room room) {
+                if (isShowInfo) {
+                    mBinding.infoOwen.setRoomInfo(String.valueOf(room.getRoomId()));
+                }
+
                 RoomUser mine = mViewModel.getMine();
                 if (mine == null) {
                     return;
@@ -333,9 +338,13 @@ public class LivingRoomActivity
             @Override
             public void onChanged(@NonNull ThunderNotification.RoomStats roomStats) {
                 if (isShowInfo) {
-                    mBinding.infoOwen.setRoomStats(roomStats);
-                    mBinding.infoMine.setRoomStats(roomStats);
-                    mBinding.infoLink.setRoomStats(roomStats);
+                    if (mViewModel.isRoomOwner()) {
+                        mBinding.infoOwen.setRoomStats(roomStats);
+                    } else if (mViewModel.isInChating()) {
+                        mBinding.infoLink.setRoomStats(roomStats);
+                    } else {
+                        mBinding.infoMine.setRoomStats(roomStats);
+                    }
                 }
             }
         });
@@ -395,7 +404,6 @@ public class LivingRoomActivity
             return;
         }
 
-        mLiveAdapter.setRoom(room);
         mBinding.tvRoomName.setText(room.getRName());
         updateNumView(room.getRCount());
 
@@ -408,7 +416,6 @@ public class LivingRoomActivity
         }
         refreshInfoView();
 
-        RoomUser owner = mViewModel.getOwnerUser();
         RequestOptions requestOptions = new RequestOptions()
                 .circleCrop()
                 .placeholder(R.mipmap.default_user_icon)
@@ -416,7 +423,6 @@ public class LivingRoomActivity
         Glide.with(mBinding.ivRoomOwner.getContext()).load(room.getROwner().getCover())
                 .apply(requestOptions)
                 .into(mBinding.ivRoomOwner);
-        mLiveAdapter.addItem(owner);
 
         if (mViewModel.isRoomOwner()) {
             mBinding.ivLianMai.setVisibility(View.GONE);
@@ -591,10 +597,10 @@ public class LivingRoomActivity
                     mBinding.rvMsg.smoothScrollToPosition(mMsgAdapter.getItemCount() - 1);
 
                     PublicMessage message =
-                            new PublicMessage(mine.getNickName(), mine.getUid(), msg,
-                                    FakeMessage.MessageType.Msg);
+                            new PublicMessage(mine.getNickName(), String.valueOf(mine.getUid()),
+                                    msg, FakeMessage.MessageType.Msg);
                     HummerSvc.getInstance().sendChatRoomMessage(mGson.toJson(message)).subscribe(
-                            new SampleSingleObserver<Boolean>() {
+                            new SimpleSingleObserver<Boolean>() {
                                 @Override
                                 public void onSuccess(Boolean aBoolean) {
 
@@ -706,11 +712,15 @@ public class LivingRoomActivity
                     requestWaitingDialog.dismiss();
 
                     if (aType == BasePacket.EV_CC_CHAT_ACCEPT) {
-                        RoomUser roomUser =
-                                new RoomUser(targetUID, targetRID, RoomUser.UserType.Remote);
-                        roomUser.setNickName(user.getAName());
-                        roomUser.setCover(user.getACover());
-                        mViewModel.onMemberChatStart(roomUser);
+                        mViewModel.getUserSync(targetRID, targetUID)
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .compose(bindToLifecycle())
+                                .subscribe(new SimpleSingleObserver<RoomUser>() {
+                                    @Override
+                                    public void onSuccess(RoomUser user) {
+                                        mViewModel.onMemberChatStart(user);
+                                    }
+                                });
                     } else if (aType == BasePacket.EV_CC_CHAT_REJECT) {
                         ToastUtil.showToast(LivingRoomActivity.this,
                                 R.string.room_refult_lianmai_request);
@@ -819,14 +829,8 @@ public class LivingRoomActivity
     }
 
     @Override
-    public void onAudioStart(@NonNull RoomUser user) {
-        LogUtils.d(TAG, "onAudioStart() called with: user = [" + user + "]");
-        refreshMicView();
-    }
-
-    @Override
-    public void onAudioStop(@NonNull RoomUser user) {
-        LogUtils.d(TAG, "onAudioStop() called with: user = [" + user + "]");
+    public void onMemberMicStatusChanged(@NonNull RoomUser user) {
+        LogUtils.d(TAG, "onMemberMicStatusChanged() called with: user = [" + user + "]");
         refreshMicView();
     }
 
@@ -876,15 +880,6 @@ public class LivingRoomActivity
             }
         }
 
-        if (user.isNoTyping()) {
-            mMsgAdapter.addItem(new FakeMessage(user, getString(R.string.user_mute),
-                    FakeMessage.MessageType.Notice));
-        } else {
-            mMsgAdapter.addItem(new FakeMessage(user, getString(R.string.user_unmute),
-                    FakeMessage.MessageType.Notice));
-        }
-        mBinding.rvMsg.smoothScrollToPosition(mMsgAdapter.getItemCount() - 1);
-
         //处理成员列表数据刷新
         if (memberDialog != null && memberDialog.isShowing()) {
             memberDialog.onMemberUpdated(mViewModel.getMembers());
@@ -894,15 +889,6 @@ public class LivingRoomActivity
     @Override
     public void onRoleChanged(@NonNull RoomUser user) {
         LogUtils.d(TAG, "onRoleChanged() called with: user = [" + user + "]");
-        if (user.getRoomRole() == RoomUser.RoomRole.Admin) {
-            mMsgAdapter.addItem(new FakeMessage(user, getString(R.string.user_add_role),
-                    FakeMessage.MessageType.Notice));
-        } else if (user.getRoomRole() == RoomUser.RoomRole.Spectator) {
-            mMsgAdapter.addItem(new FakeMessage(user, getString(R.string.user_remove_role),
-                    FakeMessage.MessageType.Notice));
-        }
-        mBinding.rvMsg.smoothScrollToPosition(mMsgAdapter.getItemCount() - 1);
-
         //处理成员列表数据刷新
         if (memberDialog != null && memberDialog.isShowing()) {
             memberDialog.onMemberUpdated(mViewModel.getMembers());
@@ -936,6 +922,13 @@ public class LivingRoomActivity
     @Override
     public void onMemberChatStart(@NonNull RoomUser user) {
         LogUtils.d(TAG, "onMemberChatStart() called with: user = [" + user + "]");
+        if (user.getRoomId() == mViewModel.getRoom().getRoomId()) {
+            //同一个房间不需要显示房间号
+            mBinding.infoLink.setRoomInfo(null);
+        } else {
+            mBinding.infoLink.setRoomInfo(String.valueOf(user.getRoomId()));
+        }
+
         mBinding.infoLink.setUser(user);
         mLiveAdapter.addItem(user);
         onLiveChatingStatus();
@@ -946,6 +939,12 @@ public class LivingRoomActivity
         LogUtils.d(TAG, "onMemberChatStop() called with: user = [" + user + "]");
         mLiveAdapter.deleteItem(user);
         onLiveNomalStatus();
+    }
+
+    @Override
+    public void onMessage(@NonNull FakeMessage message) {
+        mMsgAdapter.addItem(message);
+        mBinding.rvMsg.smoothScrollToPosition(mMsgAdapter.getItemCount() - 1);
     }
 
     private void onRequestPK(@NonNull RoomUser user) {
@@ -1012,6 +1011,10 @@ public class LivingRoomActivity
         mBinding.infoOwen.setVisibility(View.GONE);
         mBinding.infoLink.setVisibility(View.GONE);
 
+        mBinding.infoMine.resetView();
+        mBinding.infoOwen.resetView();
+        mBinding.infoLink.resetView();
+
         if (isShowInfo) {
             mBinding.infoOwen.setVisibility(View.VISIBLE);
 
@@ -1046,7 +1049,6 @@ public class LivingRoomActivity
         lp.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
         lp.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
         lp.topToBottom = ConstraintLayout.LayoutParams.UNSET;
-
         mBinding.rvPreview.setLayoutManager(linearLayoutManager);
         mBinding.rvPreview.scrollToPosition(0);
 
@@ -1171,8 +1173,10 @@ public class LivingRoomActivity
                 return;
             }
 
-            PublicMessage message = new PublicMessage(mine.getNickName(), mine.getUid(),
-                    getString(R.string.owner_leave_monment), FakeMessage.MessageType.Notice);
+            PublicMessage message =
+                    new PublicMessage(mine.getNickName(), String.valueOf(mine.getUid()),
+                            getString(R.string.owner_leave_monment),
+                            FakeMessage.MessageType.Notice);
             HummerSvc.getInstance().sendChatRoomMessage(mGson.toJson(message)).subscribe();
         }
     };
@@ -1193,7 +1197,6 @@ public class LivingRoomActivity
         hideLoading();
         closeInputMessageDialog();
         unregisterReceiver(bleListenerReceiver);
-        mAccelerometer.stop();
         mHandler.removeCallbacks(mRunnableBackground);
         mHandler = null;
         mViewModel.setSurfaceHolder(null);

@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol TaskQueueWaitForCompleteDelegate <NSObject>
 
-- (void)executeWithReq:(NSNumber*)req object:(id)object;
+- (void)executeWithReq:(NSNumber *)req object:(id)object;
 
 @end
 
@@ -23,9 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)stop;
 
 // return taskId
-- (NSNumber*)addTaskWithObject:(id)object delegate:(id<TaskQueueWaitForCompleteDelegate>)delegate;
+- (NSNumber *)addTaskWithObject:(id)object delegate:(id<TaskQueueWaitForCompleteDelegate>)delegate;
 
-- (void)completeTask:(NSNumber*)taskId;
+- (void)completeTask:(NSNumber *)taskId;
 
 @end
 

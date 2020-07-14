@@ -3,6 +3,7 @@ package com.sclouds.mouselive.viewmodel;
 import android.annotation.SuppressLint;
 import android.app.Application;
 import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 
 import com.google.gson.Gson;
@@ -24,33 +25,30 @@ import com.sclouds.datasource.business.pkg.BasePacket;
 import com.sclouds.datasource.business.pkg.MicPacket;
 import com.sclouds.datasource.business.pkg.RoomPacket;
 import com.sclouds.datasource.database.DatabaseSvc;
+import com.sclouds.datasource.event.EventDeleteRoom;
+import com.sclouds.datasource.event.EventLeaveRoom;
 import com.sclouds.datasource.flyservice.funws.FunWSClientHandler;
 import com.sclouds.datasource.flyservice.funws.FunWSSvc;
+import com.sclouds.datasource.flyservice.funws.SimpleObserver;
 import com.sclouds.datasource.flyservice.funws.listener.WSRoomListener;
 import com.sclouds.datasource.flyservice.http.FlyHttpSvc;
 import com.sclouds.datasource.flyservice.http.bean.GetChatIdBean;
 import com.sclouds.datasource.flyservice.http.bean.GetRoomInfo;
 import com.sclouds.datasource.flyservice.http.network.BaseObserver;
 import com.sclouds.datasource.flyservice.http.network.CustomThrowable;
-import com.sclouds.datasource.flyservice.http.network.model.HttpResponse;
 import com.sclouds.datasource.hummer.HummerSvc;
 import com.sclouds.datasource.hummer.SimpleChannelServiceListener;
 import com.sclouds.datasource.thunder.SimpleThunderEventHandler;
 import com.sclouds.datasource.thunder.ThunderSvc;
 import com.sclouds.datasource.thunder.mode.ThunderConfig;
-import com.sclouds.effect.EffectManager;
-import com.sclouds.effect.consts.EffectConst;
 import com.sclouds.mouselive.Consts;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.bean.FakeMessage;
 import com.sclouds.mouselive.bean.PublicMessage;
-import com.sclouds.mouselive.event.EventDeleteRoom;
-import com.sclouds.mouselive.event.EventLeaveRoom;
 import com.sclouds.mouselive.utils.RoomQueueAction;
-import com.sclouds.mouselive.utils.SampleMaybeObserver;
-import com.sclouds.mouselive.utils.SampleSingleObserver;
+import com.sclouds.mouselive.utils.SimpleMaybeObserver;
+import com.sclouds.mouselive.utils.SimpleSingleObserver;
 import com.sclouds.mouselive.view.IRoomView;
-import com.sclouds.mouselive.views.SettingFragment;
 import com.thunder.livesdk.ThunderEventHandler;
 import com.thunder.livesdk.ThunderNotification;
 import com.thunder.livesdk.ThunderRtcConstant;
@@ -64,6 +62,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
@@ -159,15 +158,17 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
      */
     private HashSet<Long> muteMemberUserIds = new HashSet<>();
 
-    @Nullable
-    private Handler mUIHandler = new Handler();
+    private Handler mUIHandler = new Handler(Looper.getMainLooper());
 
     //房间请求触发处理队列
     protected RoomQueueAction mRoomQueueAction = new RoomQueueAction();
 
-    private boolean isJoinThunderCompleted = false;
-    private boolean isJoinHummerCompleted = false;
-    private boolean isSyncMembersCompleted = false;
+    //处理加入房间流程
+    private CountDownLatch mCountDownLatch = new CountDownLatch(3);
+    private Thread mThread;
+    private static boolean isJoinThunderCompleted = false;
+    private static boolean isJoinHummerCompleted = false;
+    private static boolean isSyncMembersCompleted = false;
 
     public BaseRoomViewModel(@NonNull Application application, @NonNull V mView,
                              @NonNull Room room) {
@@ -191,14 +192,8 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
         } else {
             mMine.setRoomRole(RoomUser.RoomRole.Spectator);
         }
-
-        //初始化Thunder
-        ThunderSvc.getInstance().create(getApplication(), Consts.APPID, Consts.APP_SECRET,
-                SettingFragment.isChina(getApplication()), 0);
         ThunderSvc.getInstance().setThunderConfig(getThunderConfig());
 
-        // 初始化 OrangeFilter sdk, serialNumber:of sdk鉴权序列号
-        EffectManager.getIns().init(getApplication(), EffectConst.OF_SERIAL_NAMBER);
         mHMRChannelCallback = new HMRChannelCallback();
         mThunderCallback = new ThunderCallback();
 
@@ -212,9 +207,43 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
     public void initData() {
         isClosing = false;
 
+        startListenerJoinStatus();
         if (getMine() != null) {
             joinRoom(mRoom);
         }
+    }
+
+    private void startListenerJoinStatus() {
+        mThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    mCountDownLatch.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                if (isClosing) {
+                    return;
+                }
+
+                if (isJoinThunderCompleted
+                        && isJoinHummerCompleted
+                        && isSyncMembersCompleted) {
+                    mUIHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            onJoinRoomAllCompleted();
+                        }
+                    });
+                }
+            }
+        });
+        mThread.start();
+    }
+
+    private void stopListenerJoinStatus() {
+        mThread.interrupt();
     }
 
     public void observeRequest(@NonNull LifecycleOwner owner,
@@ -339,11 +368,17 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
                     memberTemp.setSelfMicEnable(member.isSelfMicEnable());
 
                     memberTemp.setRoomId(room.getRoomId());
-                    memberTemp.setNoTyping(room.isAllNoTyping());
+                    if (ObjectsCompat.equals(memberTemp, getOwnerUser()) == false) {
+                        //不处理房主
+                        memberTemp.setNoTyping(room.isAllNoTyping());
+                    }
                 } else {
                     //增加操作
                     member.setRoomId(room.getRoomId());
-                    member.setNoTyping(room.isAllNoTyping());
+                    if (ObjectsCompat.equals(member, getOwnerUser()) == false) {
+                        //不处理房主
+                        member.setNoTyping(room.isAllNoTyping());
+                    }
 
                     if (ObjectsCompat.equals(member, getOwnerUser())) {
                         member.setRoomRole(RoomUser.RoomRole.Owner);
@@ -372,11 +407,14 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
 
         room.setRCount(BaseRoomViewModel.this.members.size());
         onBasicInfoChanged(room);
-        isSyncMembersCompleted = true;
+        onSyncMembers();
+    }
 
-        if (isJoinThunderCompleted && isJoinHummerCompleted && isSyncMembersCompleted) {
-            onJoinRoomAllCompleted();
-        }
+    private void onSyncMembers() {
+        LogUtils.d(TAG, "onSyncMember");
+
+        isSyncMembersCompleted = true;
+        mCountDownLatch.countDown();
     }
 
     /**
@@ -388,6 +426,8 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
     @UiThread
     @CallSuper
     protected void onJoinRoomAllCompleted() {
+        LogUtils.d(TAG, "onJoinRoomAllCompleted");
+
         //后进去房间的人，如果存在连麦，就加载连麦流程
         for (RoomUser member : members) {
             if (member.getLinkUid() != 0 && member.getLinkRoomId() != 0) {
@@ -411,14 +451,10 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
                 .getRoomInfo(mine.getUid(), getRoom().getRoomId(), getRoom().getRType())
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new BaseObserver<HttpResponse<GetRoomInfo>>(getApplication()) {
+                .subscribe(new BaseObserver<GetRoomInfo>(getApplication()) {
                     @Override
-                    public void handleSuccess(HttpResponse<GetRoomInfo> response) {
-                        if (response.Data == null) {
-                            return;
-                        }
-
-                        Room room = response.Data.getRoomInfo();
+                    public void handleSuccess(@NonNull GetRoomInfo data) {
+                        Room room = data.getRoomInfo();
                         room.setRMicEnable(getRoom().getRMicEnable());//这2个状态以hummer查询为准
                         room.setAllNoTyping(getRoom().isAllNoTyping());//这2个状态以hummer查询为准
 
@@ -433,11 +469,13 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
                             resetRoomInfo();
                         }
 
-                        room.setMembers(response.Data.getUserList());
+                        room.setMembers(data.getUserList());
                         mRoom = room;
                         syncMembers(room);
 
                         if (reJoinRoom) {
+                            startListenerJoinStatus();
+
                             //如果需要重新加入房间，就直接走加入房间流程
                             //进入聊天室和信令房间
                             if (getRoom().getRPublishMode() == Room.RTC || isRoomOwner()) {
@@ -483,9 +521,9 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
         FlyHttpSvc.getInstance()
                 .setChatId(mine.getUid(), room.getRoomId(), room.getRType(), chatID)
                 .compose(bindToLifecycle())
-                .subscribe(new BaseObserver<HttpResponse<String>>(getApplication()) {
+                .subscribe(new BaseObserver<String>(getApplication()) {
                     @Override
-                    public void handleSuccess(HttpResponse<String> response) {
+                    public void handleSuccess(@NonNull String data) {
 
                     }
 
@@ -537,7 +575,13 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
                 .cancelChat(dstUid, dstRid)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe();
+                .subscribe(new SimpleObserver<Boolean>() {
+                    @Override
+                    public void onError(Throwable e) {
+                        super.onError(e);
+                        LogUtils.e(TAG, "cancelChat", e);
+                    }
+                });
     }
 
     private void getChatRoomId(int retryCount) {
@@ -550,23 +594,25 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
         Room room = getRoom();
         FlyHttpSvc.getInstance().getChatId(mine.getUid(), room.getRoomId(), room.getRType())
                 .compose(bindToLifecycle())
-                .subscribe(new BaseObserver<HttpResponse<GetChatIdBean>>(getApplication()) {
+                .subscribe(new BaseObserver<GetChatIdBean>(getApplication()) {
                     @Override
-                    public void handleSuccess(HttpResponse<GetChatIdBean> response) {
-                        if (response.Data == null) {
-                            if (retryCount <= 10) {
-                                if (mUIHandler != null) {
-                                    mUIHandler
-                                            .postDelayed(() -> getChatRoomId(retryCount + 1), 500L);
-                                }
-                            } else {
-                                mLiveDataError.postValue(ERROR_GET_CHAT_ID);
+                    public void handleSuccess(@NonNull GetChatIdBean data) {
+                        room.setRChatId(data.getRChatId());
+                        onBasicInfoChanged(room);
+
+                        joinHummer(data.getRChatId(), 0);
+                    }
+
+                    @Override
+                    public void handleError(CustomThrowable e) {
+                        super.handleError(e);
+
+                        if (retryCount <= 10) {
+                            if (mUIHandler != null) {
+                                mUIHandler.postDelayed(() -> getChatRoomId(retryCount + 1), 500L);
                             }
                         } else {
-                            room.setRChatId(response.Data.getRChatId());
-                            onBasicInfoChanged(room);
-
-                            joinHummer(response.Data.getRChatId(), 0);
+                            mLiveDataError.postValue(ERROR_GET_CHAT_ID);
                         }
                     }
                 });
@@ -582,7 +628,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
         HummerSvc.getInstance().joinChannel(chatRoomId, mine.getUid())
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<Boolean>() {
+                .subscribe(new SimpleSingleObserver<Boolean>() {
                     @Override
                     public void onSuccess(Boolean aBoolean) {
                         if (aBoolean) {
@@ -609,7 +655,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
         HummerSvc.getInstance().fetchBasicInfo()
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<ChatRoomInfo>() {
+                .subscribe(new SimpleSingleObserver<ChatRoomInfo>() {
                     @Override
                     public void onSuccess(ChatRoomInfo chatRoomInfo) {
                         String AppExtra = chatRoomInfo.getAppExtra();
@@ -644,7 +690,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
         HummerSvc.getInstance().fetchMutedMembers()
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleMaybeObserver<Set<com.hummer.im.model.id.User>>() {
+                .subscribe(new SimpleMaybeObserver<Set<com.hummer.im.model.id.User>>() {
                     @Override
                     public void onSuccess(Set<com.hummer.im.model.id.User> users) {
                         muteMemberUserIds.clear();
@@ -653,19 +699,24 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
                             muteMemberUserIds.add(ui);
                         }
 
+                        Room room = getRoom();
+
                         //同步到members中
                         for (RoomUser member : members) {
                             if (ObjectsCompat.equals(member, getOwnerUser())) {
+                                //不处理房主
                                 continue;
                             }
 
                             boolean isNoTyping = false;
-                            if (muteMemberUserIds.contains(member.getUid())) {
+                            if (muteMemberUserIds.contains(member.getUid())
+                                    || room.isAllNoTyping()) {
                                 isNoTyping = true;
                             }
 
                             if (member.isNoTyping() != isNoTyping) {
                                 member.setNoTyping(isNoTyping);
+                                onMuteChanged(member);
                             }
                         }
                     }
@@ -676,7 +727,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
         HummerSvc.getInstance().fetchRoleMembers()
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleMaybeObserver<List<com.hummer.im.model.id.User>>() {
+                .subscribe(new SimpleMaybeObserver<List<com.hummer.im.model.id.User>>() {
                     @Override
                     public void onSuccess(List<com.hummer.im.model.id.User> users) {
                         //管理员列表
@@ -689,12 +740,14 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
                         //同步到members中
                         for (RoomUser member : members) {
                             if (ObjectsCompat.equals(member, getOwnerUser())) {
+                                //不处理房主
                                 continue;
                             }
 
                             if (admins.contains(member.getUid())) {
                                 if (member.getRoomRole() != RoomUser.RoomRole.Admin) {
                                     member.setRoomRole(RoomUser.RoomRole.Admin);
+                                    onRoleChanged(member);
                                 }
                             }
                         }
@@ -706,7 +759,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
         Room room = getRoom();
         HummerSvc.getInstance().createRoom(room.getRName())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<Long>() {
+                .subscribe(new SimpleSingleObserver<Long>() {
                     @Override
                     public void onSuccess(Long chatRoomid) {
                         setChatID(chatRoomid);
@@ -763,10 +816,10 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
     @UiThread
     @CallSuper
     protected void onJoinThunderSuccess() {
+        LogUtils.d(TAG, "onJoinThunderSuccess");
+
         isJoinThunderCompleted = true;
-        if (isJoinThunderCompleted && isJoinHummerCompleted && isSyncMembersCompleted) {
-            onJoinRoomAllCompleted();
-        }
+        mCountDownLatch.countDown();
     }
 
     @Override
@@ -780,6 +833,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
     protected void close() {
         resetRoomInfo();
 
+        stopListenerJoinStatus();
         mUIHandler = null;
         FunWSSvc.getInstance().stop();
         HummerSvc.getInstance().leaveChannel(null);
@@ -801,6 +855,12 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
      */
     @CallSuper
     protected void resetRoomInfo() {
+        stopListenerJoinStatus();
+        mCountDownLatch = new CountDownLatch(3);
+        isJoinThunderCompleted = false;
+        isJoinHummerCompleted = false;
+        isSyncMembersCompleted = false;
+
         mLiveDataError.postValue(null);
         members.clear();
         memberUserIds.clear();
@@ -858,44 +918,63 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
             return;
         }
 
-        if (mine.isSelfMicEnable()) {
-            toggleThunderMic(false);
-            mine.setSelfMicEnable(false);
-            onAudioStop(mine);
-
-            FunWSSvc.getInstance()
-                    .enableRemoteMic(mine.getUid(), getRoom().getRType(), false)
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .compose(bindToLifecycle())
-                    .subscribe(aBoolean -> {
-                        if (aBoolean) {
-
+        boolean isEnable = !mine.isSelfMicEnable();
+        toggleUserMic(mine, true, isEnable);
+        FunWSSvc.getInstance()
+                .enableRemoteMic(mine.getUid(), getRoom().getRType(), isEnable)
+                .observeOn(AndroidSchedulers.mainThread())
+                .compose(bindToLifecycle())
+                .subscribe(new SimpleObserver<Boolean>() {
+                    @Override
+                    public void onNext(Boolean aBoolean) {
+                        super.onNext(aBoolean);
+                        if (aBoolean == false) {
+                            ToastUtil.showToast(getApplication(), R.string.room_toggle_mic_error);
                         }
-                    });
-        } else {
-            toggleThunderMic(true);
-            mine.setSelfMicEnable(true);
-            onAudioStart(mine);
+                    }
 
-            FunWSSvc.getInstance()
-                    .enableRemoteMic(mine.getUid(), getRoom().getRType(), true)
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .compose(bindToLifecycle())
-                    .subscribe(aBoolean -> {
-                        if (aBoolean) {
-
-                        }
-                    });
-        }
+                    @Override
+                    public void onError(Throwable e) {
+                        super.onError(e);
+                        LogUtils.e(TAG, "toggleLocalMic", e);
+                        ToastUtil.showToast(getApplication(), R.string.room_toggle_mic_error);
+                    }
+                });
     }
 
     /**
-     * 禁麦操作，最终需要控制thunder去实现
+     * 本地麦克风控制
      *
-     * @param isEnable
+     * @param user     用户
+     * @param isActive true-主动调用；false-被动调用
+     * @param isEnable true-打开；false-关闭
      */
-    protected void toggleThunderMic(boolean isEnable) {
-        ThunderSvc.getInstance().toggleMicEnable(isEnable);
+    protected void toggleUserMic(@NonNull RoomUser user, boolean isActive, boolean isEnable) {
+        boolean isNeedChange = false;
+        if (isActive) {
+            if (user.isSelfMicEnable() != isEnable) {
+                user.setSelfMicEnable(isEnable);
+                isNeedChange = true;
+            }
+        } else {
+            if (user.isMicEnable() != isEnable) {
+                user.setMicEnable(isEnable);
+                isNeedChange = true;
+            }
+        }
+
+        if (ObjectsCompat.equals(user, getMine())) {
+            if (isEnable == false) {
+                ThunderSvc.getInstance().toggleMicEnable(false);
+            } else if (user.isSelfMicEnable()) {
+                //被动控制，但前提是我本地是允许打开的
+                ThunderSvc.getInstance().toggleMicEnable(true);
+            }
+        }
+
+        if (isNeedChange) {
+            onMemberMicStatusChanged(user);
+        }
     }
 
     /**
@@ -932,7 +1011,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
     /**
      * 踢出
      */
-    public void onKickout(User user) {
+    public void onKickout(@NonNull RoomUser user) {
 
     }
 
@@ -969,13 +1048,17 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
             getUserSync(uid)
                     .observeOn(AndroidSchedulers.mainThread())
                     .compose(bindToLifecycle())
-                    .subscribe(new SampleSingleObserver<RoomUser>() {
+                    .subscribe(new SimpleSingleObserver<RoomUser>() {
                         @Override
                         public void onSuccess(RoomUser user) {
                             //目前只支持"管理员"
                             admins.add(user.getUid());
                             user.setRoomRole(RoomUser.RoomRole.Admin);
                             onRoleChanged(user);
+
+                            onMessage(new FakeMessage(user,
+                                    getApplication().getString(R.string.user_add_role),
+                                    FakeMessage.MessageType.Notice));
                         }
                     });
         }
@@ -1010,12 +1093,16 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
             getUserSync(uid)
                     .observeOn(AndroidSchedulers.mainThread())
                     .compose(bindToLifecycle())
-                    .subscribe(new SampleSingleObserver<RoomUser>() {
+                    .subscribe(new SimpleSingleObserver<RoomUser>() {
                         @Override
                         public void onSuccess(RoomUser user) {
                             admins.remove(user.getUid());
                             user.setRoomRole(RoomUser.RoomRole.Spectator);
                             onRoleChanged(user);
+
+                            onMessage(new FakeMessage(user,
+                                    getApplication().getString(R.string.user_remove_role),
+                                    FakeMessage.MessageType.Notice));
                         }
                     });
         }
@@ -1040,12 +1127,16 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
                 getUserSync(uid)
                         .observeOn(AndroidSchedulers.mainThread())
                         .compose(bindToLifecycle())
-                        .subscribe(new SampleSingleObserver<RoomUser>() {
+                        .subscribe(new SimpleSingleObserver<RoomUser>() {
                             @Override
                             public void onSuccess(RoomUser user) {
                                 muteMemberUserIds.add(user.getUid());
                                 user.setNoTyping(true);
                                 onMuteChanged(user);
+
+                                onMessage(new FakeMessage(user,
+                                        getApplication().getString(R.string.user_mute),
+                                        FakeMessage.MessageType.Notice));
                             }
                         });
             }
@@ -1071,12 +1162,16 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
                 getUserSync(uid)
                         .observeOn(AndroidSchedulers.mainThread())
                         .compose(bindToLifecycle())
-                        .subscribe(new SampleSingleObserver<RoomUser>() {
+                        .subscribe(new SimpleSingleObserver<RoomUser>() {
                             @Override
                             public void onSuccess(RoomUser user) {
                                 muteMemberUserIds.remove(user.getUid());
                                 user.setNoTyping(false);
                                 onMuteChanged(user);
+
+                                onMessage(new FakeMessage(user,
+                                        getApplication().getString(R.string.user_unmute),
+                                        FakeMessage.MessageType.Notice));
                             }
                         });
             }
@@ -1102,7 +1197,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
                 getUserSync(uid)
                         .observeOn(AndroidSchedulers.mainThread())
                         .compose(bindToLifecycle())
-                        .subscribe(new SampleSingleObserver<RoomUser>() {
+                        .subscribe(new SimpleSingleObserver<RoomUser>() {
                             @Override
                             public void onSuccess(RoomUser user) {
                                 BaseRoomViewModel.this.onMemberKicked(user);
@@ -1133,7 +1228,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
             getUserSync(uid)
                     .observeOn(AndroidSchedulers.mainThread())
                     .compose(bindToLifecycle())
-                    .subscribe(new SampleSingleObserver<RoomUser>() {
+                    .subscribe(new SimpleSingleObserver<RoomUser>() {
                         @Override
                         public void onSuccess(RoomUser user) {
                             if (publicMessage.getType() == FakeMessage.MessageType.Notice) {
@@ -1220,7 +1315,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
             getUserSync(uidTemp)
                     .observeOn(AndroidSchedulers.mainThread())
                     .compose(bindToLifecycle())
-                    .subscribe(new SampleSingleObserver<RoomUser>() {
+                    .subscribe(new SimpleSingleObserver<RoomUser>() {
                         @Override
                         public void onSuccess(RoomUser user) {
                             user.setTxQuality(txQuality);
@@ -1276,7 +1371,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
                         getUserSync(user.getRoomId(), user.getUid())
                                 .observeOn(AndroidSchedulers.mainThread())
                                 .compose(bindToLifecycle())
-                                .subscribe(new SampleSingleObserver<RoomUser>() {
+                                .subscribe(new SimpleSingleObserver<RoomUser>() {
                                     @Override
                                     public void onSuccess(RoomUser user) {
                                         onMemberLeave(user);
@@ -1324,7 +1419,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
                 getUserSync(uidTemp)
                         .observeOn(AndroidSchedulers.mainThread())
                         .compose(bindToLifecycle())
-                        .subscribe(new SampleSingleObserver<RoomUser>() {
+                        .subscribe(new SimpleSingleObserver<RoomUser>() {
                             @Override
                             public void onSuccess(RoomUser user) {
                                 if (info.volume == user.getVolume()) {
@@ -1385,99 +1480,119 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
     }
 
     @UiThread
+    @CallSuper
     protected void onVideoStart(@NonNull RoomUser user) {
+        if (user.isVideoStart()) {
+            return;
+        }
+
         if (!isClosing) {
             mView.onVideoStart(user);
         }
+        user.setVideoStart(true);
     }
 
     @UiThread
+    @CallSuper
     protected void onVideoStop(@NonNull RoomUser user) {
+        if (!user.isVideoStart()) {
+            return;
+        }
+
         if (!isClosing) {
             mView.onVideoStop(user);
         }
+        user.setVideoStart(false);
     }
 
     @UiThread
-    protected void onAudioStart(@NonNull RoomUser user) {
-        if (!isClosing) {
-            mView.onAudioStart(user);
+    @CallSuper
+    protected void onMemberMicStatusChanged(@NonNull RoomUser user) {
+        LogUtils.d(TAG, "onMemberMicStatusChanged() called with: user = [" + user + "]");
+        if (isClosing) {
+            return;
         }
-    }
-
-    @UiThread
-    protected void onAudioStop(@NonNull RoomUser user) {
-        if (!isClosing) {
-            mView.onAudioStop(user);
-        }
+        mView.onMemberMicStatusChanged(user);
     }
 
     @UiThread
     protected void onPlayVolumeIndication(@NonNull RoomUser user) {
-        if (!isClosing) {
-            mView.onPlayVolumeIndication(user);
+        if (isClosing) {
+            return;
         }
+        mView.onPlayVolumeIndication(user);
     }
 
     @UiThread
     protected void onNetworkQuality(@NonNull RoomUser user) {
-        if (!isClosing) {
-            mView.onNetworkQuality(user);
+        if (isClosing) {
+            return;
         }
+        mView.onNetworkQuality(user);
     }
 
     @UiThread
     protected void onMuteChanged(@NonNull RoomUser user) {
-        if (!isClosing) {
-            mView.onMuteChanged(user);
+        LogUtils.d(TAG, "onMuteChanged() called with: user = [" + user + "]");
+        if (isClosing) {
+            return;
         }
+        mView.onMuteChanged(user);
     }
 
     @UiThread
     protected void onRoleChanged(@NonNull RoomUser user) {
-        if (!isClosing) {
-            mView.onRoleChanged(user);
+        LogUtils.d(TAG, "onRoleChanged() called with: user = [" + user + "]");
+        if (isClosing) {
+            return;
         }
+        mView.onRoleChanged(user);
     }
 
     @UiThread
     protected void onMemberKicked(@NonNull RoomUser user) {
-        if (!isClosing) {
-            mView.onMemberKicked(user);
+        LogUtils.d(TAG, "onMemberKicked() called with: user = [" + user + "]");
+        if (isClosing) {
+            return;
         }
+        mView.onMemberKicked(user);
     }
 
     /**
-     * 开始连麦，当SW指令操作成功之后，触发这个回掉
+     * 开始连麦，当SW指令操作成功之后触发
      *
-     * @param user 连麦的观众。如果我是观众，那就是自己
+     * @param user 连麦的人，不包含房主
      */
     @UiThread
     @CallSuper
     public void onMemberChatStart(@NonNull RoomUser user) {
         LogUtils.d(TAG, "onMemberChatStart() called with: user = [" + user + "]");
-        if (!isClosing) {
-            mView.onMemberChatStart(user);
+        if (isClosing) {
+            return;
         }
+        mView.onMemberChatStart(user);
     }
 
     /**
-     * 结束连麦
+     * 业务断开连麦之后触发，或者连麦的人（房主或者连麦人）离开房间之前触发
      *
-     * @param user 连麦的观众。如果我是观众，那就是自己
+     * @param user 连麦的人，不包含房主
      */
     @UiThread
     @CallSuper
     public void onMemberChatStop(@NonNull RoomUser user) {
         LogUtils.d(TAG, "onMemberChatStop() called with: user=" + user);
-        if (!isClosing) {
-            mView.onMemberChatStop(user);
+        if (isClosing) {
+            return;
         }
+        mView.onMemberChatStop(user);
     }
 
     @UiThread
     @CallSuper
     public void onJoinChatRoomSuccess() {
+        LogUtils.d(TAG, "onJoinChatRoomSuccess");
+
         RoomUser mine = getMine();
         if (mine != null) {
             if (!reJoinRoom) {
@@ -1490,9 +1605,15 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
         }
 
         isJoinHummerCompleted = true;
-        if (isJoinThunderCompleted && isJoinHummerCompleted && isSyncMembersCompleted) {
-            onJoinRoomAllCompleted();
+        mCountDownLatch.countDown();
+    }
+
+    @UiThread
+    protected void onMessage(@NonNull FakeMessage message) {
+        if (isClosing) {
+            return;
         }
+        mView.onMessage(message);
     }
 
     /**
@@ -1557,15 +1678,9 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
 
                 FlyHttpSvc.getInstance().getUserInfo(uid)
                         .compose(bindToLifecycle())
-                        .subscribe(new BaseObserver<HttpResponse<User>>(getApplication()) {
+                        .subscribe(new BaseObserver<User>(getApplication()) {
                             @Override
-                            public void handleSuccess(HttpResponse<User> response) {
-                                User user = response.Data;
-                                if (user == null) {
-                                    emitter.onSuccess(roomUser);
-                                    return;
-                                }
-
+                            public void handleSuccess(@NonNull User user) {
                                 roomUser.setNickName(user.getNickName());
                                 roomUser.setCover(user.getCover());
                                 memberCache.put(uid, roomUser);
@@ -1619,7 +1734,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
         getUserSync(roomId, uid)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<RoomUser>() {
+                .subscribe(new SimpleSingleObserver<RoomUser>() {
                     @Override
                     public void onSuccess(RoomUser user) {
                         //设置用户类型
@@ -1679,7 +1794,7 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
         getUserSync(rid, uid)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<RoomUser>() {
+                .subscribe(new SimpleSingleObserver<RoomUser>() {
                     @Override
                     public void onSuccess(RoomUser user) {
                         onMemberLeave(user);
@@ -1695,34 +1810,24 @@ public abstract class BaseRoomViewModel<V extends IRoomView> extends BaseViewMod
         }
 
         long fromUID = micPkg.Body.SrcUid;
+        long roomId = micPkg.Body.DestRoomId;
         long uid = micPkg.Body.DestUid;
 
-        getUserSync(uid)
+        getUserSync(roomId, uid)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<RoomUser>() {
+                .subscribe(new SimpleSingleObserver<RoomUser>() {
                     @Override
                     public void onSuccess(RoomUser user) {
                         if (fromUID == uid) {
-                            //这个用户，自己对自己本地操作
-                            user.setSelfMicEnable(micPkg.Body.MicEnable);
-                        } else {
-                            //房主操作了这个用户
-                            user.setMicEnable(micPkg.Body.MicEnable);
-                        }
-
-                        if (fromUID != uid && ObjectsCompat.equals(getMine(), user)) {
-                            //如果不是本地操作，并且是我被操作了，需要对thunder做相应控制
-                            if (user.isSelfMicEnable()) {
-                                //如果本地是打开状态，才需要开启或者关闭thunder
-                                toggleThunderMic(micPkg.Body.MicEnable);
+                            //user自己主动操作了麦克风
+                            if (ObjectsCompat.equals(user, getMine()) == false) {
+                                //只有不是自己才需要操作，因为我修改{@link toggleLocalMic()}已经进行了状态修改
+                                toggleUserMic(user, true, micPkg.Body.MicEnable);
                             }
-                        }
-
-                        if (micPkg.Body.MicEnable) {
-                            onAudioStart(user);
                         } else {
-                            onAudioStop(user);
+                            //被操作，需要处理逻辑
+                            toggleUserMic(user, false, micPkg.Body.MicEnable);
                         }
                     }
                 });

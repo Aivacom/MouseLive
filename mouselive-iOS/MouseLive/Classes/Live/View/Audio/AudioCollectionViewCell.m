@@ -7,7 +7,6 @@
 //
 
 #import "AudioCollectionViewCell.h"
-#import "SYThunderManagerNew.h"
 
 @interface AudioCollectionViewCell()
 @property (nonatomic, weak) IBOutlet UIImageView *bgheaderImageview;
@@ -79,13 +78,16 @@
         if (userModel.MicEnable) {
             if (userModel.SelfMicEnable) {
                 [self.microImageView setImage:[UIImage imageNamed:@"audio_micr_open"]];
-            }
-            else {
+            } else {
                 [self.microImageView setImage:[UIImage imageNamed:@"audio_mirc_close_onme"]];
             }
         }
         else {
-            [self.microImageView setImage:[UIImage imageNamed:@"audio_micr_close"]];
+//            if (userModel.SelfMicEnable) {
+//                [self.microImageView setImage:[UIImage imageNamed:@"audio_micr_open"]];
+//            } else {
+                [self.microImageView setImage:[UIImage imageNamed:@"audio_micr_close"]];
+//            }
         }
     } else {
         //不显示麦克风状态

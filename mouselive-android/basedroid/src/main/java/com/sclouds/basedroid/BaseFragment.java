@@ -48,6 +48,7 @@ public abstract class BaseFragment<B extends ViewDataBinding> extends RxFragment
         super.onViewCreated(view, savedInstanceState);
         initToolbar(view);
         initView(view);
+        initData();
     }
 
     private void initToolbar(View view) {
@@ -72,12 +73,6 @@ public abstract class BaseFragment<B extends ViewDataBinding> extends RxFragment
                 actionBar.setHomeButtonEnabled(true);
             }
         }
-    }
-
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        initData();
     }
 
     public void initBundle(@Nullable Bundle bundle) {

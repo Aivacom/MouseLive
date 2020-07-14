@@ -7,6 +7,7 @@ import android.os.SystemClock;
 import com.google.gson.JsonParseException;
 import com.sclouds.basedroid.net.NetworkMgr;
 import com.sclouds.basedroid.util.AppUtil;
+import com.sclouds.datasource.R;
 import com.sclouds.datasource.flyservice.http.network.model.HttpResponse;
 
 import org.apache.http.conn.ConnectTimeoutException;
@@ -14,13 +15,13 @@ import org.json.JSONException;
 
 import java.net.ConnectException;
 
+import androidx.annotation.NonNull;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import retrofit2.HttpException;
 
 public abstract class BaseObserver<T> implements Observer<T> {
 
-    private static final String TAG = BaseObserver.class.getSimpleName();
     private static long lastToastNetwork;
     private Context context;
 
@@ -51,7 +52,8 @@ public abstract class BaseObserver<T> implements Observer<T> {
     private CustomThrowable tranlateError(Throwable e) {
         CustomThrowable ex;
         if (!NetworkMgr.isNetworkConnected(context)) {
-            ex = new CustomThrowable(CustomError.NETWORK_DISCONNECT, "网络开小差啦，请检查下");
+            ex = new CustomThrowable(CustomError.NETWORK_DISCONNECT,
+                    context.getString(R.string.network_disconnect));
             return ex;
         } else if (e instanceof HttpException) {
             HttpException httpException = (HttpException) e;
@@ -67,7 +69,7 @@ public abstract class BaseObserver<T> implements Observer<T> {
                 case BAD_GATEWAY:
                 case SERVICE_UNAVAILABLE:
                 default:
-                    ex.message = "网络开小差啦，请检查下";
+                    ex.message = context.getString(R.string.network_disconnect);
                     break;
             }
             return ex;
@@ -75,11 +77,11 @@ public abstract class BaseObserver<T> implements Observer<T> {
                 || e instanceof JSONException
                 || e instanceof ParseException) {
             ex = new CustomThrowable(e, CustomError.PARSE_ERROR);
-            ex.message = "网络开小差啦，请检查下";
+            ex.message = context.getString(R.string.network_disconnect);
             return ex;
         } else if (e instanceof ConnectException) {
             ex = new CustomThrowable(e, CustomError.NETWORK_ERROR);
-            ex.message = "网络开小差啦，请检查下";
+            ex.message = context.getString(R.string.network_disconnect);
             return ex;
         } else if (e instanceof javax.net.ssl.SSLHandshakeException) {
             ex = new CustomThrowable(e, CustomError.SSL_ERROR);
@@ -87,34 +89,33 @@ public abstract class BaseObserver<T> implements Observer<T> {
             return ex;
         } else if (e instanceof ConnectTimeoutException) {
             ex = new CustomThrowable(e, CustomError.TIMEOUT_ERROR);
-            ex.message = "网络开小差啦，请检查下";
+            ex.message = context.getString(R.string.network_disconnect);
             return ex;
         } else if (e instanceof java.net.SocketTimeoutException) {
             ex = new CustomThrowable(e, CustomError.TIMEOUT_ERROR);
-            ex.message = "网络开小差啦，请检查下";
+            ex.message = context.getString(R.string.network_disconnect);
             return ex;
         } else {
             ex = new CustomThrowable(e, CustomError.UNKNOWN);
-            ex.message = "网络开小差啦，请检查下";
+            ex.message = context.getString(R.string.network_disconnect);
             return ex;
         }
     }
 
     @Override
     public void onSubscribe(Disposable d) {
-        if (!NetworkMgr.isNetworkConnected(context)) {
-            onError(new CustomThrowable(CustomError.NETWORK_DISCONNECT, "网络开小差啦，请检查下"));
-        }
+
     }
 
     @Override
-    public void onNext(T t) {
+    public void onNext(@NonNull T t) {
         if (t instanceof HttpResponse) {
             HttpResponse httpResponse = (HttpResponse) t;
             if (httpResponse.isSuccessful()) {
                 handleSuccess(t);
                 return;
             }
+
             int errorCode = Integer.valueOf(httpResponse.Code);
             if (errorCode == 401) {
                 // TODO: 2020-03-09 token err
@@ -149,6 +150,6 @@ public abstract class BaseObserver<T> implements Observer<T> {
         }
     }
 
-    public abstract void handleSuccess(T t);
+    public abstract void handleSuccess(@NonNull T t);
 
 }

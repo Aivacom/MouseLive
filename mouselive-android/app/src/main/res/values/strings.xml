@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name">尚云泛娱乐直播</string>
+    <string name="app_name">聚联云泛娱乐直播</string>
 
-    <string name="main_project_name">尚云泛娱乐直播解决方案</string>
+    <string name="main_project_name">泛娱乐直播解决方案</string>
     <string name="main_version">V%s</string>
     <string name="main_version2">Build：%s %s TB：%s HMR：%s</string>
 
@@ -57,15 +57,15 @@
     <string name="user_muting">禁言中</string>
     <string name="user_add_role">已是管理员</string>
     <string name="user_remove_role">已不是管理员</string>
-    <string name="office_notie">尚云提供低延时高质量音视频SDK，以及实时聊天SDK。点击房间内的按钮试试吧！喜欢就联系我们！</string>
+    <string name="office_notie">聚联云提供低延时高质量音视频SDK，以及实时聊天SDK。点击房间内的按钮试试吧！ 访问官网www.jocloud.com了解更多~</string>
     <string name="msg_text_mine">我 %s</string>
     <string name="msg_kick_out_me">您已被踢出房间</string>
     <string name="magic_reset">重置</string>
     <string name="magic_load_data_loading">美颜数据正在加载，请等候</string>
     <string name="magic_load_data_fail">美颜数据加载失败</string>
-    <string name="room_net_connting_title">温馨提示</string>
     <string name="room_net_connting_message">网络连接中，请稍后</string>
     <string name="room_magic_original">原图</string>
+    <string name="room_toggle_mic_error">切换麦克风失败</string>
 
     <string name="voice_wather">在线：%s</string>
     <string name="voice_all_mic_off">全部闭麦</string>
@@ -85,6 +85,11 @@
     <string name="voice_shangmai_tip">已上座</string>
     <string name="voice_xiamai_tip">已离开坐席</string>
 
+    <string name="ktv_bottom_menu1">公聊</string>
+    <string name="ktv_bottom_menu2">观众(%d)</string>
+    <string name="ktv_bottom_menu3">排麦</string>
+    <string name="ktv_empty_musics">暂无人点歌</string>
+
     <string name="ws_disconnect">WS断开连接</string>
     <string name="apply_chat_title">%s申请连麦</string>
     <string name="room_owner_leave_tip">房主直播已结束</string>
@@ -96,7 +101,10 @@
     <string name="video_definition">清晰度</string>
     <string name="reject_chatting">%s拒绝了您的连麦</string>
 
-    <string name="net_quality">网络质量：%s</string>
+    <string name="info_roomid">RoomId：%s</string>
+    <string name="info_uid">UID：%s</string>
+    <string name="net_tx_quality">上行质量：%s</string>
+    <string name="net_rx_quality">下行质量：%s</string>
     <string name="bitrates_up">上行：%dkb</string>
     <string name="bitrates_m">(A：%dkb/ V：%dkb)</string>
     <string name="bitrates_down">下行：%dkb</string>
@@ -139,6 +147,7 @@
     <string name="setting_token_content">超时时间(秒)</string>
 
     <string name="app_version">当前版本：V%s-%d</string>
+    <string name="fadeback_uid">UID：%s</string>
     <string name="upload_log">意见反馈</string>
     <string name="submit_upload">提交反馈</string>
     <string name="feedback_success">日志反馈成功</string>
@@ -147,6 +156,7 @@
     <string name="input_content_tip2">不可留空</string>
     <string name="input_contacts_tip1">请输入联系方式</string>
     <string name="input_contacts_tip2">选填</string>
+    <string name="error_picture">图片异常</string>
 
     <string name="effect_skin">美肤</string>
     <string name="effect_whiten">美白</string>
@@ -170,4 +180,11 @@
     <string name="effect_warm">暖阳</string>
     <string name="effect_fresh">清新</string>
     <string name="effect_creamy">粉嫩</string>
+
+    <string name="my_musics_back">退出</string>
+    <string name="my_musics_delete_all">全部删除</string>
+    <string name="my_musics_play_empty">暂无歌曲</string>
+    <string name="my_musics_play">播放选中歌曲</string>
+    <string name="my_musics_play_error">文件播放出错</string>
+
 </resources>

@@ -14,7 +14,6 @@ import com.sclouds.datasource.bean.Room;
 import com.sclouds.datasource.bean.RoomUser;
 import com.sclouds.datasource.flyservice.http.FlyHttpSvc;
 import com.sclouds.datasource.flyservice.http.network.BaseObserver;
-import com.sclouds.datasource.flyservice.http.network.model.HttpResponse;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.adapters.RoomPKMemberAdapter;
 import com.trello.rxlifecycle3.android.FragmentEvent;
@@ -94,19 +93,16 @@ public class RoomPKMembersDialog extends RxAppCompatDialogFragment {
         FlyHttpSvc.getInstance().getPKMembers(mRoomUser.getUid(), mRoom.getRType())
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindUntilEvent(FragmentEvent.DESTROY))
-                .subscribe(new BaseObserver<HttpResponse<List<Anchor>>>(getContext()) {
+                .subscribe(new BaseObserver<List<Anchor>>(getContext()) {
                     @Override
-                    public void handleSuccess(HttpResponse<List<Anchor>> response) {
-                        if (response != null && response.Data != null) {
-                            List<Anchor> members = response.Data;
-                            List<Anchor> membersNew = new ArrayList<>();
-                            for (Anchor anchor : members) {
-                                if (anchor.getAId() != mRoomUser.getUid()) {
-                                    membersNew.add(anchor);
-                                }
+                    public void handleSuccess(@NonNull List<Anchor> members) {
+                        List<Anchor> membersNew = new ArrayList<>();
+                        for (Anchor anchor : members) {
+                            if (anchor.getAId() != mRoomUser.getUid()) {
+                                membersNew.add(anchor);
                             }
-                            mAdapter.setData(membersNew);
                         }
+                        mAdapter.setData(membersNew);
                     }
                 });
     }

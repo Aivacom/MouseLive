@@ -11,6 +11,7 @@
 #import "SYEffectTabCell.h"
 #import "SYStickerContentCell.h"
 #import "SYBeautyContentCell.h"
+#import "SYEffectsDataManager.h"
 
 static NSString * const SYEffectTabCellKey = @"SYEffectTabCell";
 static NSString * const SYStickerContentCellKey = @"SYStickerContentCell";
@@ -63,6 +64,9 @@ SYEffectViewDelegate>
 
 - (void)showEffectView
 {
+    if (!_dataArray) {
+        [self setData:[SYEffectsDataManager sharedManager].getEffectsData];
+    }
     self.hidden = NO;
     [UIView animateWithDuration:0.25 animations:^{
         self.contentViewBottomLayout.constant = 0;

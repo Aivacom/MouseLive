@@ -12,7 +12,7 @@
 #import <AFNetworking.h>
 #import "SYAppInfo.h"
 
-static NSString *const BeautyResource = @"BeautyResource";
+static NSString * const BeautyResource = @"BeautyResource";
 @interface SYEffectsDataManager ()
 
 @property (nonatomic, strong) AFHTTPSessionManager *httpManager;
@@ -82,21 +82,10 @@ static NSString *const BeautyResource = @"BeautyResource";
 // 从服务端获取资源列表
 - (void)getEffectsListFromService
 {
-//    NSDictionary *params = @{@"Version": @"v0.1.0"};
-//    [HttpService sy_httpRequestWithType:SYHttpRequestKeyType_GetBeauty params:params success:^(int taskId, id  _Nullable respObjc) {
-//        NSArray *dataArr = respObjc[@"Data"];
-//        NSArray *arr = [SYEffectsModel mj_objectArrayWithKeyValuesArray:dataArr];
-//        [self downloadDataWithArray:arr];
-//        [self downloadDataWithArray:arr];
-//        self.dataArray = arr;
-//    } failure:^(int taskId, id  _Nullable respObjc, NSString * _Nullable errorCode, NSString * _Nullable errorMsg) {
-//        YYLogDebug(@"-------%@", errorMsg);
-//    }];
-    
     NSDictionary *params = @{@"AppId": @([SYAppInfo sharedInstance].appId.integerValue),
-                             @"Version": @"1.0.0"
+                             @"Version": @"v0.1.0"
     };
-    NSString *url = @"http://funapi.sunclouds.com/fun/api/v1/getBeauty";
+    NSString *url = @"http://fun.jocloud.com/fun/api/v1/getBeauty";
     [self.httpManager POST:url parameters:params progress:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
         responseObject = [NSJSONSerialization JSONObjectWithData:responseObject options:0 error:nil];;
         NSArray *dataArr = responseObject[@"Data"];
@@ -155,7 +144,7 @@ static NSString *const BeautyResource = @"BeautyResource";
 {
     AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
     manager.requestSerializer = [AFJSONRequestSerializer serializer];
-    manager.requestSerializer.timeoutInterval = HttpTimeoutInterval;
+    manager.requestSerializer.timeoutInterval = 30;
     manager.requestSerializer.cachePolicy = NSURLRequestReloadIgnoringCacheData;
     manager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json", @"text/json", @"text/javascript",@"text/html",@"image/jpeg",@"text/plain", nil];
     manager.responseSerializer = [AFHTTPResponseSerializer serializer];

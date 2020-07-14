@@ -1,28 +1,22 @@
 package com.sclouds.effect;
 
 import android.content.Context;
-import android.os.Build;
 import android.text.TextUtils;
 
 import com.orangefilter.OrangeFilter;
-import com.sclouds.common.notify.IMessageAble;
-import com.sclouds.common.notify.Message;
-import com.sclouds.common.notify.MessageDispatcher;
-import com.sclouds.datasource.thunder.ThunderSvc;
 import com.sclouds.effect.consts.EffectConst;
 import com.sclouds.effect.utils.BeautyHelper;
 import com.sclouds.effect.utils.FilterHelper;
+import com.thunder.livesdk.ThunderEngine;
 
 import java.io.File;
 import java.util.logging.Logger;
-
-import androidx.annotation.RequiresApi;
 
 /**
  * Created by zhouwen on 2020/4/8.
  * 特效接口类--美颜,滤镜,贴纸,手势功能接口管理类
  */
-public class EffectManager implements IMessageAble {
+public class EffectManager {
 
     private static final Logger sLogger = Logger.getLogger("FaceEffectManager");
     private static EffectManager sEffectManager;
@@ -38,6 +32,8 @@ public class EffectManager implements IMessageAble {
     private BeautyHelper mBeautyHelper = new BeautyHelper();
     private FilterHelper mFilterHelper = new FilterHelper();
     private BeautyOption mOption = new BeautyOption();
+
+    private ThunderEngine mThunderEngine = null;
 
     public static EffectManager getIns() {
         if (sEffectManager == null) {
@@ -55,31 +51,74 @@ public class EffectManager implements IMessageAble {
      * 初始化
      *
      * @param context      上下文
-     * @param serialNumber 鉴权串
+     * @param serialNumber 鉴权串（需要业务方通过技术支持内部申请）
      */
-    public void init(Context context, String serialNumber) {
+    public void init(Context context, ThunderEngine mThunderEngine, String serialNumber) {
         sLogger.info("chowen#init>>>>>>>");
-        MessageDispatcher.getInstance().register(Message.Type.FACE_REGISTER, this);
-        MessageDispatcher.getInstance().register(Message.Type.FACE_UNREGISTER, this);
+        this.mThunderEngine = mThunderEngine;
 
-        initOfSdk(context, serialNumber);
+        OrangeFilter.setLogLevel(OrangeFilter.OF_LogLevel_Debug);
+        // extract assets 加载美颜，滤镜相关数据模型
+        mVenusModelPath = context.getFilesDir().getPath() + "/orangefilter/models/venus_models";
+        File modelDir = new File(mVenusModelPath);
+
+        if (!(modelDir.isDirectory() && modelDir.exists())) {
+            boolean isSuc = new File(mVenusModelPath + "/face").mkdirs();
+            sLogger.info("initOfSdk#isSuc=" + isSuc);
+            OrangeFilter.extractAssetsDir(
+                    context.getAssets(),
+                    "models/venus_models/face",
+                    mVenusModelPath + "/face"
+            );
+
+            new File(mVenusModelPath + "/segment").mkdirs();
+            OrangeFilter.extractAssetsDir(
+                    context.getAssets(),
+                    "models/venus_models/segment",
+                    mVenusModelPath + "/segment"
+            );
+
+            new File(mVenusModelPath + "/gesture").mkdirs();
+            OrangeFilter.extractAssetsDir(
+                    context.getAssets(),
+                    "models/venus_models/gesture",
+                    mVenusModelPath + "/gesture"
+            );
+        }
+
+        final String effectPath = context.getFilesDir().getPath() + "/orangefilter/effects";
+        File effectDir = new File(effectPath);
+        if (!(effectDir.isDirectory() && effectDir.exists())) {
+            effectDir.mkdirs();
+            OrangeFilter.extractAssetsDir(context.getAssets(), "effects", effectPath);
+        }
+
+        // check license 鉴权
+        final String ofLicenseName = "of_offline_license.license";
+        String ofLicensePath = context.getFilesDir().getPath() + "/" + ofLicenseName;
+        int ret = OrangeFilter.checkSerialNumber(context, serialNumber, ofLicensePath);
+        if (ret != OrangeFilter.OF_Result_Success) {
+            sLogger.severe("OrangeFilter license invalid. ret = [" + ret + "]");
+        } else {
+            sLogger.info("OrangeFilter license valid. ret = [" + ret + "]");
+        }
     }
 
     /**
      * 注意，register函数需要在startVideoPreview紧挨着下面调用
      */
-    private void register() {
-        if (ThunderSvc.getInstance().getThunderEngine() != null) {
-            sLogger.severe("GPUImageBeautyOrangeFilter register");
-            mEffectProcessor = new EffectCaptureProcessor(mVenusModelPath);
-            mEffectProcessor.setEffectHelper(mBeautyHelper, mFilterHelper);
-            ThunderSvc.getInstance().getThunderEngine()
-                    .registerVideoCaptureTextureObserver(mEffectProcessor);
-
-            mVideoCaptureWrapper = mEffectProcessor.new VideoCaptureWrapper();
-            ThunderSvc.getInstance().getThunderEngine()
-                    .registerVideoCaptureFrameObserver(mVideoCaptureWrapper);
+    public void register() {
+        if (mThunderEngine == null) {
+            throw new NullPointerException("your must call init first");
         }
+
+        sLogger.severe("GPUImageBeautyOrangeFilter register");
+        mEffectProcessor = new EffectCaptureProcessor(mVenusModelPath);
+        mEffectProcessor.setEffectHelper(mBeautyHelper, mFilterHelper);
+        mThunderEngine.registerVideoCaptureTextureObserver(mEffectProcessor);
+
+        mVideoCaptureWrapper = mEffectProcessor.new VideoCaptureWrapper();
+        mThunderEngine.registerVideoCaptureFrameObserver(mVideoCaptureWrapper);
 
         if (!TextUtils.isEmpty(mDefaultBeautyPath)) {
             setBeautyEffectPath(mDefaultBeautyPath);
@@ -90,15 +129,16 @@ public class EffectManager implements IMessageAble {
     /**
      * 注意，unRegister函数需要在stopVideoPreview后调用
      */
-    private void unRegister() {
-        if (ThunderSvc.getInstance().getThunderEngine() != null) {
-            sLogger.severe("GPUImageBeautyOrangeFilter unRegister");
-            ThunderSvc.getInstance().getThunderEngine().registerVideoCaptureTextureObserver(null);
-            ThunderSvc.getInstance().getThunderEngine().registerVideoCaptureFrameObserver(null);
-            mEffectProcessor = null;
-            mVideoCaptureWrapper = null;
+    public void unRegister() {
+        if (mThunderEngine == null) {
+            return;
         }
 
+        sLogger.severe("GPUImageBeautyOrangeFilter unRegister");
+        mThunderEngine.registerVideoCaptureTextureObserver(null);
+        mThunderEngine.registerVideoCaptureFrameObserver(null);
+        mEffectProcessor = null;
+        mVideoCaptureWrapper = null;
         mHasRegister = false;
     }
 
@@ -402,75 +442,5 @@ public class EffectManager implements IMessageAble {
      */
     public boolean isFilterReady() {
         return mFilterHelper.isReady();
-    }
-
-    /**
-     * 初始化orange filter sdk
-     *
-     * @param context      of Context id: 上下文id
-     * @param serialNumber 鉴权串（需要业务方通过技术支持内部申请）
-     */
-    private void initOfSdk(Context context, String serialNumber) {
-        OrangeFilter.setLogLevel(OrangeFilter.OF_LogLevel_Debug);
-        // extract assets 加载美颜，滤镜相关数据模型
-        mVenusModelPath = context.getFilesDir().getPath() + "/orangefilter/models/venus_models";
-        File modelDir = new File(mVenusModelPath);
-
-        if (!(modelDir.isDirectory() && modelDir.exists())) {
-            boolean isSuc = new File(mVenusModelPath + "/face").mkdirs();
-            sLogger.info("initOfSdk#isSuc=" + isSuc);
-            OrangeFilter.extractAssetsDir(
-                    context.getAssets(),
-                    "models/venus_models/face",
-                    mVenusModelPath + "/face"
-            );
-
-            new File(mVenusModelPath + "/segment").mkdirs();
-            OrangeFilter.extractAssetsDir(
-                    context.getAssets(),
-                    "models/venus_models/segment",
-                    mVenusModelPath + "/segment"
-            );
-
-            new File(mVenusModelPath + "/gesture").mkdirs();
-            OrangeFilter.extractAssetsDir(
-                    context.getAssets(),
-                    "models/venus_models/gesture",
-                    mVenusModelPath + "/gesture"
-            );
-        }
-
-        final String effectPath = context.getFilesDir().getPath() + "/orangefilter/effects";
-        File effectDir = new File(effectPath);
-        if (!(effectDir.isDirectory() && effectDir.exists())) {
-            effectDir.mkdirs();
-            OrangeFilter.extractAssetsDir(context.getAssets(), "effects", effectPath);
-        }
-
-        // check license 鉴权
-        final String ofLicenseName = "of_offline_license.license";
-        String ofLicensePath = context.getFilesDir().getPath() + "/" + ofLicenseName;
-        int ret = OrangeFilter.checkSerialNumber(context, serialNumber, ofLicensePath);
-        if (ret != OrangeFilter.OF_Result_Success) {
-            sLogger.severe("OrangeFilter license invalid. ret = [" + ret + "]");
-        } else {
-            sLogger.info("OrangeFilter license valid. ret = [" + ret + "]");
-        }
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
-    @Override
-    public void onMessage(Message message) {
-        sLogger.info("onMessage>>>>>type>" + message.type);
-        switch (message.type) {
-            case FACE_REGISTER:
-                register();
-                break;
-            case FACE_UNREGISTER:
-                unRegister();
-                break;
-            default:
-                break;
-        }
     }
 }

@@ -5,15 +5,14 @@ import android.view.View;
 import com.sclouds.basedroid.BaseAdapter;
 import com.sclouds.basedroid.BaseFragment;
 import com.sclouds.datasource.bean.EffectTab;
-import com.sclouds.effect.EffectManager;
-import com.sclouds.effect.consts.EffectConst;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.adapters.BeautyPanelAdapter;
-import com.sclouds.mouselive.bean.effect.Effect;
-import com.sclouds.mouselive.bean.effect.EffectDataManager;
 import com.sclouds.mouselive.databinding.LayoutRoomStickerBinding;
-import com.sclouds.mouselive.event.EventEffectDowned;
-import com.sclouds.mouselive.event.EventLeaveRoom;
+import com.sclouds.datasource.event.EventEffectDowned;
+import com.sclouds.datasource.effect.EffectSvc;
+import com.sclouds.datasource.effect.IEffect;
+import com.sclouds.datasource.effect.bean.Effect;
+import com.sclouds.datasource.effect.bean.EffectDataManager;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -111,7 +110,7 @@ public class EffectStickerFragmrnt extends BaseFragment<LayoutRoomStickerBinding
             }
         }
 
-        adapter = new BeautyPanelAdapter(getContext(), list, EffectConst.Effect.EFFECT_STICKER);
+        adapter = new BeautyPanelAdapter(getContext(), list, IEffect.Effect.EFFECT_STICKER);
         mBinding.rvEffectSticker.setAdapter(adapter);
         adapter.setOnItemClickListener(this);
 
@@ -134,10 +133,10 @@ public class EffectStickerFragmrnt extends BaseFragment<LayoutRoomStickerBinding
 
         if (position == 0) {
             //清空状态，传一个空字符串的path
-            EffectManager.getIns().setEffectWithType(EffectConst.Effect.EFFECT_STICKER, "");
+            EffectSvc.getInstance().setEffectWithType(IEffect.Effect.EFFECT_STICKER, "");
         } else if (effect.getDownloadStatus() == Effect.DownloadStatus.Download) {
-            EffectManager.getIns()
-                    .setEffectWithType(EffectConst.Effect.EFFECT_STICKER, effect.getPath());
+            EffectSvc.getInstance()
+                    .setEffectWithType(IEffect.Effect.EFFECT_STICKER, effect.getPath());
         }
         adapter.selecteItem(position, this);
     }
@@ -161,8 +160,8 @@ public class EffectStickerFragmrnt extends BaseFragment<LayoutRoomStickerBinding
                 adapter.notifyItemChanged(i);
 
                 if (effect.isSelected()) {
-                    EffectManager.getIns()
-                            .setEffectWithType(EffectConst.Effect.EFFECT_STICKER, effect.getPath());
+                    EffectSvc.getInstance()
+                            .setEffectWithType(IEffect.Effect.EFFECT_STICKER, effect.getPath());
                 }
                 return;
             }

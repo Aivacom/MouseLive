@@ -56,7 +56,8 @@
     <string name="user_muting">Banned</string>
     <string name="user_add_role">is admin now</string>
     <string name="user_remove_role">is not admin now</string>
-    <string name="office_notie">SunClouds provides low latency, high quality video and audio livestreaming SDK and chatroom SDK. Try the features in the liveroom and let us know if you like it!</string>
+    <string name="office_notie">Jocloud provides low latency, high quality video and audio streaming SDK and chatroom
+        SDK. Try the features in the live room and know more about us via www.jocloud.com.</string>
     <string name="msg_text_mine">Me %s</string>
     <string name="msg_kick_out_me">You are kicked out.</string>
     <string name="magic_reset">Reset</string>
@@ -64,6 +65,7 @@
     <string name="magic_load_data_fail">Failed to load beauty data</string>
     <string name="room_net_connting_message">Reconnecting to internet, please wait.</string>
     <string name="room_magic_original">Original</string>
+    <string name="room_toggle_mic_error">Failed to switch microphone</string>
 
     <string name="voice_wather">Online：%s</string>
     <string name="voice_all_mic_off">Mute All</string>
@@ -83,6 +85,8 @@
     <string name="voice_shangmai_tip">have a seat.</string>
     <string name="voice_xiamai_tip">left the seat.</string>
 
+    <string name="ktv_empty_musics">暂无人点歌</string>
+
     <string name="ws_disconnect">WS disconnect</string>
     <string name="apply_chat_title">%s apply for connet</string>
     <string name="room_owner_leave_tip">Broadcast ended.</string>
@@ -94,7 +98,10 @@
     <string name="video_definition">Sharpness</string>
     <string name="reject_chatting">%s rejected your connect</string>
 
-    <string name="net_quality">Network：%s</string>
+    <string name="info_roomid">RoomId：%s</string>
+    <string name="info_uid">UID：%s</string>
+    <string name="net_tx_quality">TxNetwork：%s</string>
+    <string name="net_rx_quality">RxNetwork：%s</string>
     <string name="bitrates_up">Upload：%dkb</string>
     <string name="bitrates_m">(A：%dkb/ V：%dkb)</string>
     <string name="bitrates_down">Download：%dkb</string>
@@ -137,14 +144,16 @@
     <string name="setting_token_content">Timeout(Second)</string>
 
     <string name="app_version">Current Version: V%s-%d</string>
+    <string name="fadeback_uid">UID：%s</string>
     <string name="upload_log">Feedback</string>
     <string name="submit_upload">Submit</string>
-    <string name="feedback_success">Successful</string>
-    <string name="feedback_fail">Failed</string>
+    <string name="feedback_success">Feedback success.</string>
+    <string name="feedback_fail">Feedback failed.</string>
     <string name="input_content_tip1">Please kindly let us know your concerns.</string>
     <string name="input_content_tip2">Do not leave it blank.</string>
     <string name="input_contacts_tip1">How can we contact you?</string>
     <string name="input_contacts_tip2">Optional</string>
+    <string name="error_picture">Picture error</string>
 
     <string name="effect_skin">skin</string>
     <string name="effect_whiten">whiten</string>
@@ -168,4 +177,11 @@
     <string name="effect_warm">warm</string>
     <string name="effect_fresh">fresh</string>
     <string name="effect_creamy">creamy</string>
+
+    <string name="my_musics_back">Back</string>
+    <string name="my_musics_delete_all">Delete All</string>
+    <string name="my_musics_play_empty">no music now</string>
+    <string name="my_musics_play">Play Selected Music</string>
+    <string name="my_musics_play_error">Play Error</string>
+
 </resources>

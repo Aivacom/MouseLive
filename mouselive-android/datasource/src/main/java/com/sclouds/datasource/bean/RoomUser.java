@@ -98,6 +98,11 @@ public class RoomUser extends User implements Parcelable {
      */
     private boolean SelfMicEnable = true;
 
+    /**
+     * 视频
+     */
+    private boolean isVideoStart = false;
+
     public RoomUser() {
         //gson构造使用
     }
@@ -125,6 +130,7 @@ public class RoomUser extends User implements Parcelable {
         isNoTyping = in.readByte() != 0;
         MicEnable = in.readByte() != 0;
         SelfMicEnable = in.readByte() != 0;
+        isVideoStart = in.readByte() != 0;
     }
 
     @Override
@@ -139,6 +145,7 @@ public class RoomUser extends User implements Parcelable {
         dest.writeByte((byte) (isNoTyping ? 1 : 0));
         dest.writeByte((byte) (MicEnable ? 1 : 0));
         dest.writeByte((byte) (SelfMicEnable ? 1 : 0));
+        dest.writeByte((byte) (isVideoStart ? 1 : 0));
     }
 
     @Override
@@ -254,6 +261,14 @@ public class RoomUser extends User implements Parcelable {
         MicEnable = micEnable;
     }
 
+    public boolean isVideoStart() {
+        return isVideoStart;
+    }
+
+    public void setVideoStart(boolean videoStart) {
+        isVideoStart = videoStart;
+    }
+
     @Override
     public String toString() {
         return super.toString() + "RoomUser{" +
@@ -265,6 +280,7 @@ public class RoomUser extends User implements Parcelable {
                 ", isNoTyping=" + isNoTyping +
                 ", MicEnable=" + MicEnable +
                 ", SelfMicEnable=" + SelfMicEnable +
+                ", isVideoStart=" + isVideoStart +
                 "} ";
     }
 }

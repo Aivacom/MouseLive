@@ -11,9 +11,9 @@
 
 @interface SYBeautyCell ()
 
-@property (weak, nonatomic) IBOutlet UIImageView *selectedImgView;
-@property (weak, nonatomic) IBOutlet UIImageView *imgView;
-@property (weak, nonatomic) IBOutlet UILabel *nameLabel;
+@property (nonatomic, weak) IBOutlet UIImageView *selectedImgView;
+@property (nonatomic, weak) IBOutlet UIImageView *imgView;
+@property (nonatomic, weak) IBOutlet UILabel *nameLabel;
 
 @end
 

@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface HMRUser (SYAdditions)
 
-@property (nonatomic, readonly, assign) BOOL sy_isMe;         // 是否是自己
+@property (nonatomic, assign, readonly) BOOL sy_isMe;         // 是否是自己
 
 @end
 

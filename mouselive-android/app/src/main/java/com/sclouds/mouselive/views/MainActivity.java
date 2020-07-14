@@ -17,6 +17,7 @@ import com.sclouds.mouselive.databinding.ActivityMainBinding;
 import com.sclouds.mouselive.viewmodel.MainViewModel;
 import com.sclouds.mouselive.views.dialog.CreatRoomDialog;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -48,6 +49,8 @@ public class MainActivity extends BaseMVVMActivity<ActivityMainBinding, MainView
     private MainMineFragment fragmentMine = MainMineFragment.newInstance();
     private FeedbackFragment fragmentFeedback = FeedbackFragment.newInstance();
 
+    private SimpleDateFormat mSimpleDateFormat = new SimpleDateFormat("MM/dd/yyyy");
+
     @Override
     protected void initView() {
         TextView tvVersion = findViewById(R.id.tvVersion);
@@ -55,7 +58,8 @@ public class MainActivity extends BaseMVVMActivity<ActivityMainBinding, MainView
         TextView tvVersion2 = findViewById(R.id.tvVersion2);
         tvVersion2
                 .setText(getString(R.string.main_version2, String.valueOf(BuildConfig.VERSION_CODE),
-                        "03/09/2020", com.sclouds.datasource.BuildConfig.TB_VERSION,
+                        mSimpleDateFormat.format(BuildConfig.buildTime),
+                        com.sclouds.datasource.BuildConfig.TB_VERSION,
                         com.sclouds.datasource.BuildConfig.HRM_VERSION));
         ImageView ivAdd = findViewById(R.id.ivAdd);
         ivAdd.setOnClickListener(this);
@@ -148,14 +152,10 @@ public class MainActivity extends BaseMVVMActivity<ActivityMainBinding, MainView
         int id = item.getItemId();
         if (id == R.id.menuMain) {
             showMainFragment();
-        } else if (id == R.id.menuVideo) {
-            return false;
         } else if (id == R.id.empty) {
             return false;
         } else if (id == R.id.menuFadeback) {
             showFeedback();
-        } else if (id == R.id.menuMine) {
-            showMineFragment();
         }
         return true;
     }

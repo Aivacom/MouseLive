@@ -8,24 +8,25 @@
 
 #import <UIKit/UIKit.h>
 #import "NetworkQualityStauts.h"
-#import "BaseLiveViewController.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface LiveCodeRateView : UIView
-@property (weak, nonatomic) IBOutlet UILabel *upQualityLabel;
-@property (weak, nonatomic) IBOutlet UILabel *upLabel;
-@property (weak, nonatomic) IBOutlet UILabel *upDetailLabel;
-@property (weak, nonatomic) IBOutlet UILabel *downQualityLabel;
-@property (weak, nonatomic) IBOutlet UILabel *downLabel;
-@property (weak, nonatomic) IBOutlet UILabel *downDetailLabel;
+@property (nonatomic, weak) IBOutlet UILabel *upQualityLabel;
+@property (nonatomic, weak) IBOutlet UILabel *upLabel;
+@property (nonatomic, weak) IBOutlet UILabel *upDetailLabel;
+@property (nonatomic, weak) IBOutlet UILabel *downQualityLabel;
+@property (nonatomic, weak) IBOutlet UILabel *downLabel;
+@property (nonatomic, weak) IBOutlet UILabel *downDetailLabel;
+@property (nonatomic, assign)LiveType type;
+@property (nonatomic, copy)NSString *userDetailString;
+@property (nonatomic, strong) NetworkQualityStauts *qualityModel;
 
 + (instancetype)liveCodeRateView;
 
-@property (nonatomic, assign)LiveType type;
-@property (nonatomic, copy)NSString *uid;
-@property (nonatomic, copy)NSString *userDetailString;
-@property (nonatomic,strong) NetworkQualityStauts *qualityModel;
+
+//更新码率
+- (void)refreshCodeView;
 @end
 
 NS_ASSUME_NONNULL_END

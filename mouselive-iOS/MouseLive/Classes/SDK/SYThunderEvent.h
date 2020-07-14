@@ -8,9 +8,10 @@
 
 #import <Foundation/Foundation.h>
 #import <ThunderEngine.h>
+#import "NetworkQualityStauts.h"
 
 @protocol SYThunderDelegate <NSObject>
-
+@optional
 /**
  @brief 进入房间回调
  @param [OUT] room 房间名
@@ -18,16 +19,16 @@
  @param [OUT] elapsed 表示进房间耗时，从调用joinRoom到发生此事件经过的时间（毫秒）
  @remark 调用joinRoom后，收到此通知表示与服务器连接正常，可以调用需要"进房间成功"才能调用的接口
  */
-- (void)thunderEngine:(ThunderEngine* _Nonnull)engine
-    onJoinRoomSuccess:(nonnull NSString*)room
-              withUid:(nonnull NSString*)uid
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine
+    onJoinRoomSuccess:(nonnull NSString *)room
+              withUid:(nonnull NSString *)uid
               elapsed:(NSInteger)elapsed;
 
 /**
 @brief 离开房间通知
 @remark 调用leaveRoom，正常退出房间就会收到此通知
 */
-- (void)thunderEngine: (ThunderEngine* _Nonnull)engine onLeaveRoomWithStats:(ThunderRtcRoomStats* _Nonnull)stats;
+- (void)thunderEngine: (ThunderEngine * _Nonnull)engine onLeaveRoomWithStats:(ThunderRtcRoomStats * _Nonnull)stats;
 
 /**
  @brief SDK鉴权结果通知 关于鉴权详见官网的"用户鉴权说明"
@@ -76,17 +77,17 @@ onCaptureVolumeIndication:(NSInteger)totalVolume
  @param [OUT] data 解码前数据
  */
 - (void)thunderEngine:(ThunderEngine * _Nonnull)engine
-      onAudioPlayData:(nonnull NSString*)uid
+      onAudioPlayData:(nonnull NSString *)uid
              duration:(NSUInteger)duration
                   cpt:(NSUInteger)cpt
                   pts:(NSUInteger)pts
-                 data:(nullable NSData*)data;
+                 data:(nullable NSData *)data;
 
 /**
  @brief 音频播放频谱数据回调
  @param [OUT] data 频谱数据,类型UInt8，数值范围[0-100]
  */
-- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onAudioPlaySpectrumData:(nullable NSData*)data;
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onAudioPlaySpectrumData:(nullable NSData *)data;
 
 /**
  @brief 音频采集数据回调
@@ -95,7 +96,7 @@ onCaptureVolumeIndication:(NSInteger)totalVolume
  @param [OUT] channel 数据声道数
  */
 - (void)thunderEngine:(ThunderEngine * _Nonnull)engine
-onAudioCapturePcmData:(nullable NSData*)data
+onAudioCapturePcmData:(nullable NSData *)data
            sampleRate:(NSUInteger)sampleRate
               channel:(NSUInteger)channel;
 
@@ -106,7 +107,7 @@ onAudioCapturePcmData:(nullable NSData*)data
  @param [OUT] channel 数据声道数
  */
 - (void)thunderEngine:(ThunderEngine * _Nonnull)engine
-  onAudioRenderPcmData:(nullable NSData*)data
+  onAudioRenderPcmData:(nullable NSData *)data
               duration:(NSUInteger)duration
             sampleRate:(NSUInteger)sampleRate
                channel:(NSUInteger)channel;
@@ -118,8 +119,8 @@ onAudioCapturePcmData:(nullable NSData*)data
  @remark 主播有通过sendUserAppMsgData发送数据，进频道的观众会收到该回调
  */
 - (void)thunderEngine:(ThunderEngine * _Nonnull)engine
-  onRecvUserAppMsgData:(nonnull NSData*)msgData
-                   uid:(nonnull NSString*)uid;
+  onRecvUserAppMsgData:(nonnull NSData *)msgData
+                   uid:(nonnull NSString *)uid;
 
 /**
  @brief 业务发自定义广播消息发送失败回调
@@ -134,7 +135,7 @@ onAudioCapturePcmData:(nullable NSData*)data
  @param [OUT] uid 远端用户uid
  @remark 调用joinRoom后，房间存的音频流及后续音频流状态发生变化时就会收到该回调
  */
-- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onRemoteAudioStopped:(BOOL)stopped byUid:(nonnull NSString*)uid;
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onRemoteAudioStopped:(BOOL)stopped byUid:(nonnull NSString *)uid;
 
 /**
  @brief 远端用户视频流开启/停止回调
@@ -142,7 +143,7 @@ onAudioCapturePcmData:(nullable NSData*)data
  @param [OUT] uid 对应的uid
  @remark 调用joinRoom后，房间存的视频流及后续视频流状态发生变化时就会收到该回调
  */
-- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onRemoteVideoStopped:(BOOL)stopped byUid:(nonnull NSString*)uid;
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onRemoteVideoStopped:(BOOL)stopped byUid:(nonnull NSString *)uid;
 
 /**
  @brief 已显示远端视频首帧回调
@@ -151,7 +152,7 @@ onAudioCapturePcmData:(nullable NSData*)data
  @param [OUT] elapsed 实耗时间，从调用joinRoom到发生此事件经过的时间（毫秒）
  @remark 调用setRemoteVideoCanvas后，在收到视频流并在窗口显示时，会收到该回调
  */
-- (void)thunderEngine:(ThunderEngine *_Nonnull)engine
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine
     onRemoteVideoPlay:(nonnull NSString *)uid
     size:(CGSize)size
     elapsed:(NSInteger)elapsed;
@@ -162,8 +163,8 @@ onAudioCapturePcmData:(nullable NSData*)data
  @param [OUT] size 视频尺寸(宽和高)
  @param [OUT] rotation 旋转信息 (0 到 360)
  */
-- (void)thunderEngine:(ThunderEngine *_Nonnull)engine
-onVideoSizeChangedOfUid:(nonnull NSString*)uid
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine
+onVideoSizeChangedOfUid:(nonnull NSString *)uid
                  size:(CGSize)size
                  rotation:(NSInteger)rotation;
 
@@ -171,35 +172,35 @@ onVideoSizeChangedOfUid:(nonnull NSString*)uid
  @brief 摄像头采集状态回调
  @param [OUT] status 摄像头采集状态
  */
-- (void)thunderEngine:(ThunderEngine *_Nonnull)engine onVideoCaptureStatus:(ThunderVideoCaptureStatus)status;
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onVideoCaptureStatus:(ThunderVideoCaptureStatus)status;
 
 /**
  @brief sdk与服务器的网络连接状态回调
  @param [OUT] status 连接状态，参见ThunderConnectionStatus
  @remark 调用joinRoom后，SDK与服务器网络连接状态发生变化时会收到该回调
  */
-- (void)thunderEngine:(ThunderEngine *_Nonnull)engine onConnectionStatus:(ThunderConnectionStatus)status;
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onConnectionStatus:(ThunderConnectionStatus)status;
 
 /**
  @brief 上下行流量通知 (周期性通知，每2秒通知一次)
- @param [OUT] stats 上行下流通统计信息
+ @param [OUT] networkQualityStatus 上行下流通统计信息
  @remark 用户进频道后，就会收到该回调
  */
-- (void)thunderEngine:(ThunderEngine *_Nonnull)engine onRoomStats:(nonnull RoomStats*)stats;
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine networkQualityStatus:(nonnull NetworkQualityStauts *)networkQualityStatus;
 
 /**
  @brief 已发送本地音频首帧的回调
  @param [OUT] elapsed 从本地用户调用 joinRoom 方法直至该回调被触发的延迟（毫秒）
  @remark 用户上行音频流，就会收到该回调
  */
-- (void)thunderEngine:(ThunderEngine *_Nonnull)engine onFirstLocalAudioFrameSent:(NSInteger)elapsed;
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onFirstLocalAudioFrameSent:(NSInteger)elapsed;
 
 /**
  @brief 已发送本地视频首帧的回调
  @param [OUT] elapsed 从本地用户调用 joinRoom 方法直至该回调被触发的延迟（毫秒）
  @remark 用户上行视频流，就会收到该通知
  */
-- (void)thunderEngine:(ThunderEngine *_Nonnull)engine onFirstLocalVideoFrameSent:(NSInteger)elapsed;
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onFirstLocalVideoFrameSent:(NSInteger)elapsed;
 
 /**
  @brief 开播或设置转码任务后调用 addPublishOriginStreamUrl设置推原流到CDN 或调用 addPublishTranscodingStreamUrl设置推混画流到CDN后会触发此回调。
@@ -207,8 +208,8 @@ onVideoSizeChangedOfUid:(nonnull NSString*)uid
  @param [OUT] url  推流的目标url
  @param [OUT] errorCode  推流错误码
  */
-- (void)thunderEngine:(ThunderEngine *_Nonnull)engine
-  onPublishStreamToCDNStatusWithUrl:(NSString *_Nonnull)url
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine
+  onPublishStreamToCDNStatusWithUrl:(NSString * _Nonnull)url
   errorCode:(ThunderPublishCDNErrorCode)errorCode;
 
 /**
@@ -216,7 +217,7 @@ onVideoSizeChangedOfUid:(nonnull NSString*)uid
  @param [OUT] type 当前网络状态
  @remark "初始化"后，当网络类型发生变化时，会收到该回调
  */
-- (void)thunderEngine:(ThunderEngine *_Nonnull)engine onNetworkTypeChanged:(NSInteger)type;
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onNetworkTypeChanged:(NSInteger)type;
 
 /*!
 @brief 报告本地视频统计信息
@@ -235,19 +236,19 @@ onVideoSizeChangedOfUid:(nonnull NSString*)uid
  @brief 音频设备采集状态回调
  @param [OUT] status 采集状态
  */
-- (void)thunderEngine:(ThunderEngine *_Nonnull)engine onAudioCaptureStatus:(NSInteger)status;
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onAudioCaptureStatus:(NSInteger)status;
 
 /**
  @brief 服务器网络连接中断通告，SDK 在调用 joinRoom 后无论是否加入成功，只要 10 秒和服务器无法连接就会触发该回调
  */
-- (void)thunderEngineConnectionLost:(ThunderEngine *_Nonnull)engine;
+- (void)thunderEngineConnectionLost:(ThunderEngine * _Nonnull)engine;
 
 /**
  @brief 鉴权服务即将过期回调
  @param [OUT] token 即将服务失效的Token
  @remark  用户的token快过期时会收到该回调
  */
-- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onTokenWillExpire:(nonnull NSString*)token;
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onTokenWillExpire:(nonnull NSString *)token;
 
 /**
  @brief 鉴权过期回调
@@ -267,7 +268,7 @@ onVideoSizeChangedOfUid:(nonnull NSString*)uid
  @param [OUT] elapsed 加入耗时
  @remark 本地用户进房间后，有其它用户再进入该房间就会收到该回调，只在纯音频模式下生效
  */
-- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onUserJoined:(nonnull NSString*)uid elapsed:(NSInteger)elapsed;
+- (void)thunderEngine:(ThunderEngine * _Nonnull)engine onUserJoined:(nonnull NSString *)uid elapsed:(NSInteger)elapsed;
 
 /**
  @brief 远端用户离开当前房间回调
@@ -276,7 +277,7 @@ onVideoSizeChangedOfUid:(nonnull NSString*)uid
  @remark 本地用户进房间后，有其它用户退出该房间就会收到该回调，只在纯音频模式下生效
  */
 - (void)thunderEngine:(ThunderEngine * _Nonnull)engine
-        onUserOffline:(nonnull NSString*)uid
+        onUserOffline:(nonnull NSString *)uid
         reason:(ThunderLiveRtcUserOfflineReason)reason;
 
 /*!
@@ -286,7 +287,7 @@ onVideoSizeChangedOfUid:(nonnull NSString*)uid
  @param [OUT] rxQuality 该用户的下行网络质量，参见ThunderLiveRtcNetworkQuality
  */
 - (void)thunderEngine:(ThunderEngine * _Nonnull)engine
-     onNetworkQuality:(nonnull NSString*)uid
+     onNetworkQuality:(nonnull NSString *)uid
      txQuality:(ThunderLiveRtcNetworkQuality)txQuality
      rxQuality:(ThunderLiveRtcNetworkQuality)rxQuality;
 
@@ -296,8 +297,8 @@ onVideoSizeChangedOfUid:(nonnull NSString*)uid
  @param [OUT] stats 流信息，参见ThunderRtcRemoteVideoStats
  */
 - (void)thunderEngine:(ThunderEngine * _Nonnull)engine
-        onRemoteVideoStatsOfUid:(nonnull NSString*)uid
-        stats:(ThunderRtcRemoteVideoStats* _Nonnull)stats;
+        onRemoteVideoStatsOfUid:(nonnull NSString *)uid
+        stats:(ThunderRtcRemoteVideoStats * _Nonnull)stats;
 
 /*!
  @brief 通话中远端音频流信息回调
@@ -305,8 +306,8 @@ onVideoSizeChangedOfUid:(nonnull NSString*)uid
  @param [OUT] stats 流信息，参见ThunderRtcRemoteAudioStats
  */
 - (void)thunderEngine:(ThunderEngine * _Nonnull)engine
-        onRemoteAudioStatsOfUid:(nonnull NSString*)uid
-        stats:(ThunderRtcRemoteAudioStats* _Nonnull)stats;
+        onRemoteAudioStatsOfUid:(nonnull NSString *)uid
+        stats:(ThunderRtcRemoteAudioStats * _Nonnull)stats;
 @end
 
 NS_ASSUME_NONNULL_BEGIN

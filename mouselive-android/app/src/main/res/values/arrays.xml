@@ -39,8 +39,6 @@
     <string-array name="rooms_titles">
         <item>表演PK</item>
         <item>语音聊天</item>
-        <item>在线KTV</item>
-        <item>赛事解说</item>
     </string-array>
 
     <string-array name="create_rooms_title">

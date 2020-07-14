@@ -1,7 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
-apply plugin: 'kotlin-kapt'
 apply plugin: 'com.jakewharton.hugo'
 
 android {
@@ -44,6 +41,7 @@ android {
             minifyEnabled false
             zipAlignEnabled false
             shrinkResources false
+            buildConfigField "long", "buildTime", "${buildTime()}L"
         }
 
         qiang {
@@ -63,12 +61,16 @@ android {
     }
 }
 
+static def buildTime() {
+    return System.currentTimeMillis()
+}
+
 static def getGitBranch() {
     return 'git symbolic-ref --short -q HEAD'.execute().text.trim()
 }
 
 static def getCustomVersionName() {
-    def versionName = '1.1.0'
+    def versionName = '1.2.1'
     String gitBranch = getGitBranch();
     if ('master' == gitBranch) {
         return versionName
@@ -140,6 +142,6 @@ dependencies {
 
     implementation project(':datasource')
     implementation project(':aliplayer')
-    implementation project(':effect')
-    implementation project(':common')
+    //不配置美颜的序列号的话需要将此模块注销
+    implementation project(':effectAdapter')
 }

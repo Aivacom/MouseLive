@@ -7,9 +7,7 @@ import android.net.Uri;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.view.View;
-import android.widget.TextView;
 
-import com.bumptech.glide.Glide;
 import com.sclouds.basedroid.BaseFragment;
 import com.sclouds.basedroid.ToastUtil;
 import com.sclouds.basedroid.Tools;
@@ -18,6 +16,7 @@ import com.sclouds.datasource.bean.User;
 import com.sclouds.datasource.database.DatabaseSvc;
 import com.sclouds.mouselive.BuildConfig;
 import com.sclouds.mouselive.R;
+import com.sclouds.mouselive.adapters.FeedbackPhotoAdapter;
 import com.sclouds.mouselive.databinding.FragmentFeedbackBinding;
 import com.sclouds.mouselive.utils.DoubleUtils;
 import com.sclouds.mouselive.utils.FileUtil;
@@ -31,7 +30,9 @@ import java.util.List;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
-import androidx.loader.content.CursorLoader;
+import androidx.lifecycle.Observer;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import tv.athena.core.axis.Axis;
 import tv.athena.feedback.api.FeedbackData;
 import tv.athena.feedback.api.IFeedbackService;
@@ -45,8 +46,6 @@ import tv.athena.feedback.api.IFeedbackService;
 public class FeedbackFragment extends BaseFragment<FragmentFeedbackBinding> {
 
     private static final int REQUESTCODE = 100;
-
-    private String imagePath = null;
 
     /**
      * 默认反馈只会上传主目录下的日志，不能上传文件夹下面日志，所以需要我们手动添加。
@@ -103,51 +102,56 @@ public class FeedbackFragment extends BaseFragment<FragmentFeedbackBinding> {
         List<File> files = new ArrayList<>();
         addFiles(files, fileLogs);
 
-        // ArrayList<String> arrayList = new ArrayList<>();
-        // arrayList.add(imagePath);
+        FeedbackData.Builder builder = new FeedbackData.Builder(Constants.FEEDBACK_CRASHLOGID,
+                user.getUid(), feedbackContent)
+                .setContactInfo(contact)
+                .setExternPathlist(files)
+                .setFeedbackStatusListener(new FeedbackData.FeedbackStatusListener() {
+                    @Override
+                    public void onFailure(@NotNull FailReason failReason) {
+                        mBinding.etFeedbackContent.post(() -> {
+                            ToastUtil.showToast(getContext(), R.string.feedback_fail);
+                            hideLoading();
+                        });
+                    }
 
-        FeedbackData feedbackData =
-                new FeedbackData.Builder(Constants.FEEDBACK_CRASHLOGID, user.getUid(),
-                        feedbackContent)
-                        // .setImagePathlist(arrayList)
-                        .setContactInfo(contact)
-                        .setExternPathlist(files)
-                        .setFeedbackStatusListener(new FeedbackData.FeedbackStatusListener() {
-                            @Override
-                            public void onFailure(@NotNull FailReason failReason) {
-                                mBinding.etFeedbackContent.post(() -> {
-                                    ToastUtil.showToast(getContext(), R.string.feedback_fail);
-                                    hideLoading();
-                                });
+                    @Override
+                    public void onComplete() {
+                        long cur = System.currentTimeMillis();
+                        for (File file : files) {
+                            deleteFile(file, cur);
+                        }
+
+                        mBinding.etFeedbackContent.post(() -> {
+                            mBinding.etFeedbackContent.setText("");
+                            mBinding.etContacts.setText("");
+                            ToastUtil.showToast(getContext(), R.string.feedback_success);
+                            hideLoading();
+
+                            Activity activity = getActivity();
+                            if (activity instanceof MainActivity) {
+
+                            } else if (activity instanceof FragmentActivity) {
+                                activity.finish();
                             }
+                        });
+                    }
 
-                            @Override
-                            public void onComplete() {
-                                long cur = System.currentTimeMillis();
-                                for (File file : files) {
-                                    deleteFile(file, cur);
-                                }
+                    @Override
+                    public void onProgressChange(int i) {
 
-                                mBinding.etFeedbackContent.post(() -> {
-                                    mBinding.etFeedbackContent.setText("");
-                                    mBinding.etContacts.setText("");
-                                    ToastUtil.showToast(getContext(), R.string.feedback_success);
-                                    hideLoading();
+                    }
+                });
 
-                                    Activity activity = getActivity();
-                                    if (activity instanceof MainActivity) {
+        if (adapter.getItemCount() > 1) {
+            ArrayList<String> arrayList = new ArrayList<>();
+            for (int i = 0; i < adapter.getItemCount() - 1; i++) {
+                arrayList.add(adapter.getDataAtPosition(i));
+            }
+            builder.setImagePathlist(arrayList);
+        }
 
-                                    } else if (activity instanceof FragmentActivity) {
-                                        activity.finish();
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onProgressChange(int i) {
-
-                            }
-                        }).create();
+        FeedbackData feedbackData = builder.create();
         Axis.Companion.getService(IFeedbackService.class).sendNewLogUploadFeedback(feedbackData);
     }
 
@@ -178,13 +182,15 @@ public class FeedbackFragment extends BaseFragment<FragmentFeedbackBinding> {
         }
     }
 
+    private FeedbackPhotoAdapter adapter;
+
     @Override
     public void initView(View view) {
         String version = this.getString(R.string.app_version, BuildConfig.VERSION_NAME,
                 BuildConfig.VERSION_CODE);
-        ((TextView) view.findViewById(R.id.tv_app_version)).setText(version);
+        mBinding.tvAppVersion.setText(version);
 
-        view.findViewById(R.id.btn_feedback).setOnClickListener(v -> {
+        mBinding.btnFeedback.setOnClickListener(v -> {
             if (!Tools.networkConnected()) {
                 ToastUtil.showToast(getContext(), R.string.network_error);
                 return;
@@ -195,12 +201,22 @@ public class FeedbackFragment extends BaseFragment<FragmentFeedbackBinding> {
             }
         });
 
-        mBinding.ivPhoto.setVisibility(View.GONE);
-        mBinding.ivPhoto.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-            intent.setType("image/*");
-            startActivityForResult(intent, REQUESTCODE);
-        });
+        adapter = new FeedbackPhotoAdapter(getContext(),
+                new FeedbackPhotoAdapter.ISubViewClick() {
+                    @Override
+                    public void onSubViewClick(@NonNull View view, int position) {
+                        Intent intent = new Intent(Intent.ACTION_PICK);
+                        intent.setData(
+                                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                        startActivityForResult(intent, REQUESTCODE);
+                    }
+                });
+        adapter.addItem("");
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext(),
+                RecyclerView.HORIZONTAL, false);
+        linearLayoutManager.setStackFromEnd(true);
+        mBinding.rvPhotos.setLayoutManager(linearLayoutManager);
+        mBinding.rvPhotos.setAdapter(adapter);
 
         Toolbar toolbar = view.findViewById(R.id.toolbar);
         Activity activity = getActivity();
@@ -213,11 +229,43 @@ public class FeedbackFragment extends BaseFragment<FragmentFeedbackBinding> {
 
     @Override
     public void initData() {
+        setUID();
+    }
+
+    private void setUID() {
+        DatabaseSvc.getIntance().mLiveData.observe(this, new Observer<User>() {
+            @Override
+            public void onChanged(User user) {
+                if (user != null) {
+                    mBinding.tvUID.setText(
+                            getString(R.string.fadeback_uid, String.valueOf(user.getUid())));
+                }
+            }
+        });
+
+        User user = DatabaseSvc.getIntance().getUser();
+        if (user != null) {
+            mBinding.tvUID.setText(getString(R.string.fadeback_uid, String.valueOf(user.getUid())));
+        }
     }
 
     @Override
     public int getLayoutResId() {
         return R.layout.fragment_feedback;
+    }
+
+    private String getRealPathFromURI(Uri contentURI) {
+        String result;
+        Cursor cursor = getContext().getContentResolver().query(contentURI, null, null, null, null);
+        if (cursor == null) {
+            result = contentURI.getPath();
+        } else {
+            cursor.moveToFirst();
+            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+            result = cursor.getString(idx);
+            cursor.close();
+        }
+        return result;
     }
 
     @Override
@@ -226,19 +274,11 @@ public class FeedbackFragment extends BaseFragment<FragmentFeedbackBinding> {
         if (requestCode == REQUESTCODE && resultCode == Activity.RESULT_OK && data != null) {
             Uri selectedImage = data.getData();
             if (selectedImage != null) {
-                Glide.with(getContext()).load(selectedImage).into(mBinding.ivPhoto);
-
-                String[] projection = {MediaStore.Images.Media.DATA};
-                CursorLoader loader =
-                        new CursorLoader(getContext(), selectedImage, projection, null, null, null);
-                Cursor cursor = loader.loadInBackground();
-                if (cursor != null) {
-                    if (cursor.moveToFirst()) {
-                        int column_index =
-                                cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-                        imagePath = cursor.getString(column_index);
-                    }
-                    cursor.close();
+                File imageFile = new File(getRealPathFromURI(selectedImage));
+                if (imageFile.exists()) {
+                    adapter.addItem(adapter.getItemCount() - 1, imageFile.getAbsolutePath());
+                } else {
+                    ToastUtil.showToast(getContext(), R.string.error_picture);
                 }
             }
         }

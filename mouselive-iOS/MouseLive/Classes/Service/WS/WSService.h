@@ -45,7 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 接收到 WS 数据 回调
 /// @param cmd 命令 WSRequestType
 /// @param body 消息体
-- (BOOL)websocketRecvMsgWithCmd:(NSNumber*)cmd body:(NSDictionary*)body;
+- (BOOL)websocketRecvMsgWithCmd:(NSNumber *)cmd body:(NSDictionary *)body;
 
 /// WS 网络错误 回调
 /// @param err 错误码
@@ -64,7 +64,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface WSService : NSObject
 
-@property (nonatomic, readonly, assign) WSServiceState state;
+@property (nonatomic, assign, readonly) WSServiceState state;
 
 + (instancetype)sharedInstance;
 

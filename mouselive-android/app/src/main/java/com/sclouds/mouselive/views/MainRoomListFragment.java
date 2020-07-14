@@ -1,6 +1,8 @@
 package com.sclouds.mouselive.views;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 
 import com.sclouds.basedroid.BaseMVVMFragment;
@@ -10,15 +12,14 @@ import com.sclouds.datasource.bean.Room;
 import com.sclouds.datasource.bean.RoomUser;
 import com.sclouds.datasource.bean.User;
 import com.sclouds.datasource.database.DatabaseSvc;
+import com.sclouds.datasource.event.EventDeleteRoom;
 import com.sclouds.datasource.flyservice.http.FlyHttpSvc;
 import com.sclouds.datasource.flyservice.http.bean.GetRoomInfo;
 import com.sclouds.datasource.flyservice.http.network.BaseObserver;
 import com.sclouds.datasource.flyservice.http.network.CustomThrowable;
-import com.sclouds.datasource.flyservice.http.network.model.HttpResponse;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.adapters.RoomsAdapter;
 import com.sclouds.mouselive.databinding.FragmentMainRoomsBinding;
-import com.sclouds.mouselive.event.EventDeleteRoom;
 import com.sclouds.mouselive.viewmodel.RoomListModel;
 import com.trello.rxlifecycle3.android.FragmentEvent;
 
@@ -27,7 +28,6 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.List;
-import java.util.Objects;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -97,6 +97,30 @@ public class MainRoomListFragment extends BaseMVVMFragment<FragmentMainRoomsBind
         mBinding.recyclerView.setLayoutManager(
                 new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
         mAdapter = new RoomsAdapter(getContext());
+        if (roomType == Room.ROOM_TYPE_KTV) {
+            View itemView = LayoutInflater.from(getContext())
+                    .inflate(R.layout.item_main_room_list_header, null);
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    gotoMyMusics();
+                }
+            });
+            itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    Room room = new Room();
+                    room.setRType(Room.ROOM_TYPE_KTV);
+                    room.setRoomId(123455);
+                    User owner = new User();
+                    owner.setUid(111111);
+                    room.setROwner(owner);
+                    PermissionActivity.startPermissionActivity(getContext(), room);
+                    return false;
+                }
+            });
+            mAdapter.addHeaderView(itemView);
+        }
         mAdapter.setOnItemClickListener((v, p) -> {
             if (!Tools.networkConnected()) {
                 ToastUtil.showToast(getContext(), R.string.network_fail);
@@ -114,19 +138,19 @@ public class MainRoomListFragment extends BaseMVVMFragment<FragmentMainRoomsBind
                     .getRoomInfo(user.getUid(), currentRoom.getRoomId(), roomType)
                     .observeOn(AndroidSchedulers.mainThread())
                     .compose(bindUntilEvent(FragmentEvent.DESTROY))
-                    .subscribe(new BaseObserver<HttpResponse<GetRoomInfo>>(getContext()) {
+                    .subscribe(new BaseObserver<GetRoomInfo>(getContext()) {
                         @Override
-                        public void handleSuccess(HttpResponse<GetRoomInfo> response) {
+                        public void handleSuccess(@NonNull GetRoomInfo data) {
                             hideLoading();
 
-                            if (response.Data == null || response.Data.getRoomInfo() == null) {
+                            Room room = data.getRoomInfo();
+                            if (room == null) {
                                 ToastUtil.showToast(getContext(), R.string.room_list_dimiss);
                                 mAdapter.deleteItem(p);
                                 return;
                             }
 
-                            List<RoomUser> members = response.Data.getUserList();
-                            Room room = response.Data.getRoomInfo();
+                            List<RoomUser> members = data.getUserList();
                             if (members != null) {
                                 room.setRCount(members.size());
                                 room.setMembers(members);
@@ -152,22 +176,22 @@ public class MainRoomListFragment extends BaseMVVMFragment<FragmentMainRoomsBind
         mBinding.recyclerView.setAdapter(mAdapter);
     }
 
+    private void gotoMyMusics() {
+        Intent intent = new Intent(getContext(), MyMusicsActivity.class);
+        startActivity(intent);
+    }
+
     @Override
     public void initData() {
         super.initData();
         observeRoomList();
 
-        if (roomType >= Room.ROOM_TYPE_KTV) {
-            mBinding.swipeRefresh.setEnabled(false);
-            mBinding.recyclerView.setEnabled(false);
-        } else {
-            DatabaseSvc.getIntance().mLiveData.observe(this, user -> {
-                if (user != null) {
-                    mBinding.swipeRefresh.setRefreshing(true);
-                    onRefresh();
-                }
-            });
-        }
+        DatabaseSvc.getIntance().mLiveData.observe(this, user -> {
+            if (user != null) {
+                mBinding.swipeRefresh.setRefreshing(true);
+                onRefresh();
+            }
+        });
     }
 
     @Override
@@ -212,7 +236,7 @@ public class MainRoomListFragment extends BaseMVVMFragment<FragmentMainRoomsBind
             @Override
             public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
                 //noinspection unchecked
-                return (T) new RoomListModel(Objects.requireNonNull(getActivity()).getApplication(),
+                return (T) new RoomListModel(requireActivity().getApplication(),
                         MainRoomListFragment.this, roomType);
             }
         }).get(RoomListModel.class);

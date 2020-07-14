@@ -106,17 +106,6 @@ public class SimpleThunderEventHandler extends ThunderEventHandler {
     }
 
     @Override
-    public void onAudioCapturePcmData(byte[] data, int dataSize, int sampleRate, int channel) {
-
-    }
-
-    @Override
-    public void onAudioRenderPcmData(byte[] data, int dataSize, long duration, int sampleRate,
-                                     int channel) {
-
-    }
-
-    @Override
     public void onRecvUserAppMsgData(byte[] data, String uid) {
 
     }

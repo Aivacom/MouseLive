@@ -12,6 +12,7 @@
 #import "SYCommonMacros.h"
 #import "SYAppInfo.h"
 #import "SYToken.h"
+#import "WaterMarkAdapter.h"
 
 @interface SYThunderManagerNew () <ThunderRtcLogDelegate, ThunderAudioFilePlayerDelegate,ThunderEventDelegate>
 @property (nonatomic, strong, readwrite) ThunderEngine *engine;
@@ -23,11 +24,14 @@
 @property (nonatomic, weak) ThunderAudioFilePlayer *audioPlayer;
 @property (nonatomic, assign) BOOL isInit;
 @property (nonatomic, assign) BOOL isPlaying;
-@property (nonatomic, assign) BOOL isLocalMuted;
+@property (nonatomic, assign) BOOL isAudioMuted;
+@property (nonatomic, assign) ThunderSourceType sourceType;
 @property (nonatomic, copy) NSString *mixTask; // 混画的 task 标示
 @property (nonatomic, copy) NSString *pushUrl; // 推流 CDN url
 @property (nonatomic, strong) LiveTranscoding *liveTranscoding; // 混画配置
 @property (nonatomic, weak) id<ThunderVideoCaptureFrameObserver>videoCaptureFrameObserverDelegate;
+
+
 
 @end
 
@@ -69,8 +73,6 @@
         
         // 设置区域：国外
         //    [_engine setArea:THUNDER_AREA_FOREIGN];
-        
-        
         // 打开用户音量回调，500毫秒回调一次
         [_engine setAudioVolumeIndication:500 moreThanThd:0 lessThanThd:0 smooth:0];
         
@@ -91,10 +93,10 @@
         self.mixTask = nil;
         
         // 设置SDK日志存储路径
-        NSString *logPath = NSHomeDirectory();
-        self.logPath = [logPath stringByAppendingString:kLogFilePath];
+        NSArray *logPath = NSSearchPathForDirectoriesInDomains(NSCachesDirectory,NSUserDomainMask,YES);
+        NSString *docPath = [logPath lastObject];
+        self.logPath = [docPath stringByAppendingString:kLogFilePath];
         [_engine setLogFilePath: _logPath];
-
         YYLogDebug(@"[MouseLive-Thunder] setupEngineWithDelegate, exit");
     }
 }
@@ -164,43 +166,28 @@
     YYLogDebug(@"[MouseLive-Thunder] setupIsVideo, exit");
 }
 
-- (int)joinRoom:(NSString *)roomId uid:(NSString *)uid haveVideo:(BOOL)haveVideo pushUrl:(NSString *)pushUrl
+- (void)joinMediaRoom:(NSString * _Nonnull)roomId uid:(NSString * _Nonnull)uid roomType:(LiveType)roomType
 {
-    YYLogDebug(@"[MouseLive-Thunder] joinRoom, entry, roomid:%@, uid:%@, pushUrl:%@", roomId, self.localUid, pushUrl);
-    
     self.isPlaying = NO;
-    self.isLocalMuted = NO;
+    self.isAudioMuted = NO;
     self.localUid = uid;
     self.roomId = roomId;
     
-    if (haveVideo) {
-        YYLogDebug(@"[MouseLive-Thunder] joinRoom set Video");
-        // 设置房间属性。   如果不是指定纯音频模式的话，可以不设置，默认是音视频模式
-        
-        // 在 joinRoom 前设置
-        int ret = [_engine setMediaMode:THUNDER_CONFIG_NORMAL];     // 音视频模式：音视频模式；
-        YYLogDebug(@"[MouseLive-Thunder] joinRoom setMediaMode THUNDER_CONFIG_NORMAL, ret = %d", ret);
-        
-        ret = [_engine setRoomMode:THUNDER_ROOM_CONFIG_COMMUNICATION];   // 场景模式：直播
-        YYLogDebug(@"[MouseLive-Thunder] joinRoom setRoomMode THUNDER_ROOM_CONFIG_COMMUNICATION, ret = %d", ret);
-    }
-    else {
-        YYLogDebug(@"[MouseLive-Thunder] joinRoom set audio");
-        
-        // 在 joinRoom 前设置
-        int ret = [_engine setMediaMode:THUNDER_CONFIG_ONLY_AUDIO];     // 音频模式
-        YYLogDebug(@"[MouseLive-Thunder] joinRoom setMediaMode THUNDER_CONFIG_ONLY_AUDIO, ret = %d", ret);
-        
-        ret = [_engine setRoomMode:THUNDER_ROOM_CONFIG_MULTIAUDIOROOM];   // 对人语音连麦
-        YYLogDebug(@"[MouseLive-Thunder] setupIsVideo setRoomMode THUNDER_ROOM_CONFIG_MULTIAUDIOROOM, ret = %d", ret);
+    switch (roomType) {
+        case LiveTypeVideo:
+            [_engine setMediaMode:THUNDER_CONFIG_NORMAL];
+            [_engine setRoomMode:THUNDER_ROOM_CONFIG_COMMUNICATION];
+            [_engine setLocalVideoMirrorMode:THUNDER_VIDEO_MIRROR_MODE_PREVIEW_PUBLISH_BOTH_MIRROR];
+            break;
+        case LiveTypeAudio:
+            [_engine setMediaMode:THUNDER_CONFIG_ONLY_AUDIO];
+            [_engine setRoomMode:THUNDER_ROOM_CONFIG_MULTIAUDIOROOM];
+            break;
+        default:
+            break;
     }
     
-    if (pushUrl && ![pushUrl isEqualToString:@""]) {
-        self.pushUrl = pushUrl;
-    }
-    
-    // 加入房间
-    return [_engine joinRoom:[SYToken sharedInstance].thToken roomName:roomId uid:self.localUid];
+    [_engine joinRoom:[SYToken sharedInstance].thToken roomName:roomId uid:uid];
 }
 
 - (void)setupPublishMode
@@ -240,7 +227,9 @@
     [_engine setAudioSourceType:THUNDER_AUDIO_MIX];
     [_engine stopLocalAudioStream:YES];
     [_engine stopLocalVideoStream:YES];
-    [_engine stopVideoPreview];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        [self.engine stopVideoPreview];
+    });
     
     // 如果注册摄像机数据返回，在离开房间前，需要移除注册
     if (self.videoCaptureFrameObserverDelegate) {
@@ -370,87 +359,10 @@
     [_engine setVoiceChanger:(int)voice];
 }
 
-- (void)disableLocalVideo:(BOOL)disabled
-{
-    YYLogDebug(@"[MouseLive-Thunder] disableLocalVideo entry, disabled:%d", disabled);
-    if (!disabled) {
-        [_engine startVideoPreview];
-        YYLogDebug(@"disableLocalVideo startVideoPreview");
-    }
-    else {
-        [_engine stopVideoPreview];
-        YYLogDebug(@"disableLocalVideo stopVideoPreview");
-    }
-    
-    // 开关本地视频发送
-    [_engine stopLocalVideoStream:disabled];
-    
-    YYLogDebug(@"[MouseLive-Thunder] disableLocalVideo stopLocalVideoStream, disabled:%d", disabled);
-    YYLogDebug(@"[MouseLive-Thunder] disableLocalVideo exit");
-}
-
 - (void)disableRemoteVideo:(NSString *)uid disabled:(BOOL)disabled
 {
     YYLogDebug(@"[MouseLive-Thunder] disableRemoteVideo uid:%@, disabled:%d", uid, disabled);
     [_engine stopRemoteVideoStream:uid stopped:disabled];
-}
-
-- (void)disableLocalAudio:(BOOL)disabled haveVideo:(BOOL)haveVideo
-{
-    YYLogDebug(@"[MouseLive-Thunder] disableLocalAudio disabled:%d, haveVideo:%d", disabled, haveVideo);
-    
-    if (haveVideo) {
-        // 开关本地音频流
-        [_engine stopLocalAudioStream:disabled];
-    }
-    else {
-        // stopLocalAudioStream 是直接不能发送音频流了
-        // 语音房因为有背景音乐，所以在不能使用 stopLocalAudioStream, 需要 setAudioSourceType
-        _isLocalMuted = disabled;
-        
-        if (disabled) {
-            [_engine setAudioSourceType:THUNDER_AUDIO_FILE];
-        }
-        else {
-            [_engine setAudioSourceType:THUNDER_AUDIO_MIX];
-        }
-
-        [_engine stopLocalAudioStream:(_isLocalMuted && !_isPlaying)];
-    }
-}
-
-- (void)disableRemoteAudio:(NSString *)uid disabled:(BOOL)disabled
-{
-    YYLogDebug(@"[MouseLive-Thunder] disableRemoteAudio uid:%@, disabled:%d", uid, disabled);
-    [_engine stopRemoteAudioStream:uid stopped:disabled];
-}
-
-- (void)recoveryRemoteStream:(NSString *)uid
-{
-    YYLogDebug(@"[MouseLive-Thunder] recoveryRemoteStream uid:%@", uid);
-    
-    [_engine stopRemoteAudioStream:uid stopped:NO];
-    [_engine stopRemoteVideoStream:uid stopped:NO];
-    
-    YYLogDebug(@"[MouseLive-Thunder] stopRemoteAudioStream  NO");
-    YYLogDebug(@"[MouseLive-Thunder] stopRemoteVideoStream  NO");
-}
-
-- (void)recoveryAllRemoteStream
-{
-    YYLogDebug(@"recoveryRemoteStream entry");
-    // 关闭的流进行恢复
-    [_engine stopAllRemoteVideoStreams:YES]; // 为了让下面的stopAllRemoteVideoStreams生效
-    [_engine stopAllRemoteVideoStreams:NO];
-    
-    [_engine stopAllRemoteAudioStreams:YES]; // 为了让下面的stopAllRemoteVideoStreams生效
-    [_engine stopAllRemoteAudioStreams:NO];
-    
-    YYLogDebug(@"[MouseLive-Thunder] stopAllRemoteVideoStreams  YES");
-    YYLogDebug(@"[MouseLive-Thunder] stopAllRemoteVideoStreams  NO");
-    YYLogDebug(@"[MouseLive-Thunder] stopAllRemoteAudioStreams  YES");
-    YYLogDebug(@"[MouseLive-Thunder] stopAllRemoteAudioStreams  NO");
-    YYLogDebug(@"[MouseLive-Thunder] recoveryRemoteStream exit");
 }
 
 - (void)switchPublishMode:(ThunderPublishVideoMode)publishMode
@@ -477,18 +389,12 @@
 - (void)openAuidoFileWithPath:(NSString * _Nonnull)path
 {
     YYLogDebug(@"[MouseLive-Thunder] audioPlayer entry");
-//    [self.audioPlayer open:path];
-//    [self.audioPlayer enablePublish:YES];
     if (!self.isPlaying) {
         self.isPlaying = YES;
 
-        [_engine stopLocalAudioStream:(_isLocalMuted && !_isPlaying)];
-
-        if (_isLocalMuted) {
-            [self.engine setAudioSourceType:THUNDER_AUDIO_FILE];
-        } else {
-            [self.engine setAudioSourceType:THUNDER_AUDIO_MIX];
-        }
+        [_engine stopLocalAudioStream:(_isAudioMuted && !_isPlaying)];
+        
+        [self.engine setAudioSourceType:self.sourceType];
 
         [self.audioPlayer open:path];
         [self.audioPlayer enablePublish:YES]; // 开启推送
@@ -512,8 +418,9 @@
         [self.audioPlayer close];
         
         [self.engine destroyAudioFilePlayer:_audioPlayer];
-        [self.engine setAudioSourceType:THUNDER_AUDIO_MIC];
+//        [self.engine setAudioSourceType:THUNDER_AUDIO_MIC];
         self.isPlaying = NO;
+        [self.engine setAudioSourceType:self.sourceType];
     }
     
     YYLogDebug(@"[MouseLive-Thunder] audioPlayer stop");
@@ -533,7 +440,7 @@
 {
     YYLogDebug(@"[MouseLive-Thunder] audioPlayer pause");
     self.isPlaying = NO;
-    [_engine stopLocalAudioStream:(_isLocalMuted && !_isPlaying)];
+    [_engine stopLocalAudioStream:(_isAudioMuted && !_isPlaying)];
     [self.audioPlayer pause];
 }
 
@@ -545,22 +452,15 @@
     
     self.isPlaying = YES;
     
-    [_engine stopLocalAudioStream:(_isLocalMuted && !_isPlaying)];
+    [_engine stopLocalAudioStream:(_isAudioMuted && !_isPlaying)];
     
-    if (_isLocalMuted) {
-        [self.engine setAudioSourceType:THUNDER_AUDIO_FILE];
-    } else {
-        [self.engine setAudioSourceType:THUNDER_AUDIO_MIX];
-    }
+    [self.engine setAudioSourceType:self.sourceType];
     [self.audioPlayer resume];
 }
 
-- (void)setVideoWatermarkWithUrl:(NSURL *)url rect:(CGRect)rect
+- (void)setVideoWatermarkWithThunderImage:(ThunderImage *)thunderImage
 {
-    ThunderImage *water = [[ThunderImage alloc] init];
-    water.rect = rect;
-    water.url = url;
-    [self.engine setVideoWatermark:water];
+    [self.engine setVideoWatermark:thunderImage];
 }
 
 - (void)setEnableInEarMonitor:(BOOL)enabled
@@ -738,11 +638,88 @@
     [_engine updateToken:token];
 }
 
+
+#pragma mark --New API
+- (ThunderSourceType)sourceType
+{
+    if (_isPlaying) {
+        if (_isAudioMuted) {
+            return THUNDER_AUDIO_FILE;
+        } else {
+            return THUNDER_AUDIO_MIX;
+        }
+    } else {
+        if (_isAudioMuted) {
+            return THUNDER_AUDIO_FILE;
+//            return THUNDER_SOURCE_TYPE_NONE;
+        } else {
+            return THUNDER_AUDIO_MIC;
+        }
+    }
+}
+
 /// 设置本地视频预处理回调接口
 /// @param delegate 本地视频帧预处理接口，可用于自定义的美颜等处理。
 - (void)registerVideoCaptureFrameObserver:(nullable id<ThunderVideoCaptureFrameObserver>)delegate
 {
     self.videoCaptureFrameObserverDelegate = delegate;
+}
+
+- (void)enableLocalAudioStream:(BOOL)enabled
+{
+    [self.engine stopLocalAudioStream:!enabled];
+}
+
+- (void)disableLocalAudioCapture:(BOOL)disabled
+{
+    self.isAudioMuted = disabled;
+    
+    NSString *paras = [NSString stringWithFormat:@"sourceType: %ld", (long)self.sourceType];
+    YYLogFuncEntry([self class], _cmd, paras);
+    [self.engine setAudioSourceType:self.sourceType];
+    
+    [_engine stopLocalAudioStream:(_isAudioMuted && !_isPlaying)];
+}
+
+- (void)setupLocalUser:(NSString * _Nonnull)uid videoView:(UIView * _Nonnull)view;
+{
+    ThunderVideoCanvas *canvas = [[ThunderVideoCanvas alloc] init];
+    canvas.uid = uid;
+    canvas.view = view;
+    canvas.renderMode = THUNDER_RENDER_MODE_CLIP_TO_BOUNDS;
+    
+    [self.engine setLocalVideoCanvas:canvas];
+}
+
+- (void)setupRemoteUser:(NSString * _Nonnull)uid videoView:(UIView * _Nullable)view
+{
+    ThunderVideoCanvas *canvas = [[ThunderVideoCanvas alloc] init];
+    canvas.uid = uid;
+    canvas.view = view;
+    canvas.renderMode = THUNDER_RENDER_MODE_CLIP_TO_BOUNDS;
+    
+    [self.engine setRemoteVideoCanvas:canvas];
+}
+
+- (void)setMirrorPreview:(BOOL)preview publish:(BOOL)publish
+{
+    ThunderVideoMirrorMode mirrorMode;
+    
+    if (preview) {
+        if (publish) {
+            mirrorMode = THUNDER_VIDEO_MIRROR_MODE_PREVIEW_PUBLISH_BOTH_MIRROR;
+        } else {
+            mirrorMode = THUNDER_VIDEO_MIRROR_MODE_PREVIEW_MIRROR_PUBLISH_NO_MIRROR;
+        }
+    } else {
+        if (publish) {
+            mirrorMode = THUNDER_VIDEO_MIRROR_MODE_PREVIEW_NO_MIRROR_PUBLISH_MIRROR;
+        } else {
+            mirrorMode = THUNDER_VIDEO_MIRROR_MODE_PREVIEW_PUBLISH_BOTH_NO_MIRROR;
+        }
+    }
+    
+    [self.engine setLocalVideoMirrorMode:mirrorMode];
 }
 
 @end

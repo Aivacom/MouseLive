@@ -19,10 +19,14 @@
 @property (nonatomic, copy, readwrite) NSString *compAppId;      // 应用标识
 @property (nonatomic, copy, readwrite) NSString *feedbackAppId;  // 反馈 appid
 @property (nonatomic, copy, readwrite) NSString *scheme;         // app 的scheme
-@property (nonatomic, readwrite) BOOL enableSCLog;         // 是否托管尚云日志
+@property (nonatomic, readwrite) BOOL enableSCLog;         // 是否托管聚联云日志
 @property (nonatomic, copy, readwrite) NSString *appArea;         // 地区
 @property (nonatomic, copy, readwrite) NSString *gitVersion; // git version
 @property (nonatomic, copy, readwrite) NSString *gitBranch; // git branch
+
+@property (nonatomic, copy, readwrite) NSString *SvrVer;
+@property (nonatomic, copy, readwrite) NSString *DevName;
+@property (nonatomic, copy, readwrite) NSString *DevUUID;
 
 @end
 
@@ -57,6 +61,11 @@
         self.gitVersion = [self _valueInPlistForKey:@"SvnBuildVersion"];
         self.gitBranch = [self getGitBranch];
         self.ofSerialNumber = kOFSDKSerialNumber;
+        
+        self.SvrVer = @"v0.1.0";
+        self.DevName = [UIDevice currentDevice].name;
+        self.DevUUID = [UIDevice currentDevice].identifierForVendor.UUIDString;
+        
     }
     return self;
 }

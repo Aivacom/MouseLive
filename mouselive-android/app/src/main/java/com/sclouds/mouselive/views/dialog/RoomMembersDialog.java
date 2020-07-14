@@ -16,7 +16,7 @@ import com.sclouds.datasource.bean.RoomUser;
 import com.sclouds.datasource.hummer.HummerSvc;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.adapters.RoomMemberAdapter;
-import com.sclouds.mouselive.utils.SampleSingleObserver;
+import com.sclouds.mouselive.utils.SimpleSingleObserver;
 import com.trello.rxlifecycle3.android.FragmentEvent;
 
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ public class RoomMembersDialog extends BaseDialog implements View.OnClickListene
     private RoomMemberAdapter mAdapter;
 
     private Room mRoom;
-    private RoomUser mRoomUser;//自己
+    private RoomUser mMine;//自己
     private ArrayList<RoomUser> mMembers;//房间成员
 
     private IMemberMenuCallback mCallback;
@@ -81,7 +81,7 @@ public class RoomMembersDialog extends BaseDialog implements View.OnClickListene
         mAdapter.setOnItemClickListener(new BaseAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-                if (mRoomUser.getRoomRole() == RoomUser.RoomRole.Spectator) {
+                if (mMine.getRoomRole() == RoomUser.RoomRole.Spectator) {
                     return;
                 }
 
@@ -90,11 +90,11 @@ public class RoomMembersDialog extends BaseDialog implements View.OnClickListene
                     return;
                 }
 
-                if (ObjectsCompat.equals(user, mRoomUser)) {
+                if (ObjectsCompat.equals(user, mMine)) {
                     return;
                 }
 
-                if (mRoomUser.getRoomRole() == RoomUser.RoomRole.Admin &&
+                if (mMine.getRoomRole() == RoomUser.RoomRole.Admin &&
                         user.getRoomRole() == RoomUser.RoomRole.Admin) {
                     return;
                 }
@@ -110,7 +110,7 @@ public class RoomMembersDialog extends BaseDialog implements View.OnClickListene
         Bundle bundle = getArguments();
         assert bundle != null;
         mRoom = bundle.getParcelable(TAG_ROOM);
-        mRoomUser = bundle.getParcelable(TAG_USER);
+        mMine = bundle.getParcelable(TAG_USER);
         mMembers = bundle.getParcelableArrayList(TAG_MEMBERS);
         isAllMute = bundle.getBoolean(TAG_ALL_MUTE);
 
@@ -124,7 +124,7 @@ public class RoomMembersDialog extends BaseDialog implements View.OnClickListene
     }
 
     private void setMuteTextData() {
-        if (mRoomUser.getRoomRole() != RoomUser.RoomRole.Owner) {
+        if (mMine.getRoomRole() != RoomUser.RoomRole.Owner) {
             tvAllMute.setVisibility(View.GONE);
             return;
         }
@@ -139,7 +139,7 @@ public class RoomMembersDialog extends BaseDialog implements View.OnClickListene
     /**
      * 根据职位排序，房主-管理员-观众
      */
-    private Comparator<RoomUser> mComparable = new Comparator<RoomUser>() {
+    public static Comparator<RoomUser> MEMBER_COMPARABLE = new Comparator<RoomUser>() {
         @Override
         public int compare(RoomUser o1, RoomUser o2) {
             RoomUser.RoomRole rr1 = o1.getRoomRole();
@@ -157,13 +157,13 @@ public class RoomMembersDialog extends BaseDialog implements View.OnClickListene
      */
     private void setMemebers(ArrayList<RoomUser> mMembers) {
         //先按照职位进行排序
-        Collections.sort(mMembers, mComparable);
+        Collections.sort(mMembers, MEMBER_COMPARABLE);
 
-        if (mRoomUser.getRoomRole() != RoomUser.RoomRole.Owner) {
+        if (mMine.getRoomRole() != RoomUser.RoomRole.Owner) {
             //将我自己排到第二位
             int index = 0;
             while (index < mMembers.size()) {
-                if (ObjectsCompat.equals(mMembers.get(index), mRoomUser)) {
+                if (ObjectsCompat.equals(mMembers.get(index), mMine)) {
                     break;
                 }
                 index++;
@@ -188,7 +188,7 @@ public class RoomMembersDialog extends BaseDialog implements View.OnClickListene
         HummerSvc.getInstance().muteAll(!isAllMute)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .compose(bindUntilEvent(FragmentEvent.DESTROY))
-                .subscribe(new SampleSingleObserver<Boolean>() {
+                .subscribe(new SimpleSingleObserver<Boolean>() {
                     @Override
                     public void onSuccess(Boolean aBoolean) {
                         hideLoading();
@@ -203,12 +203,12 @@ public class RoomMembersDialog extends BaseDialog implements View.OnClickListene
 
     private void showUserDialog(RoomUser target, int position) {
         RoomUserMenuDialog dialog = new RoomUserMenuDialog();
-        dialog.show(getParentFragmentManager(), mRoomUser, target,
+        dialog.show(getParentFragmentManager(), mMine, target,
                 new RoomUserMenuDialog.IUserCallback() {
                     @Override
                     public void onUserRoleChanged(RoomUser.RoomRole mRoomRole) {
                         target.setRoomRole(mRoomRole);
-                        Collections.sort(mMembers, mComparable);
+                        Collections.sort(mMembers, MEMBER_COMPARABLE);
                         mAdapter.notifyDataSetChanged();
 
                         mCallback.onUserRoleChanged(target);
@@ -224,7 +224,6 @@ public class RoomMembersDialog extends BaseDialog implements View.OnClickListene
 
                     @Override
                     public void onKickout() {
-                        mAdapter.deleteItem(target);
                         mCallback.onKickout(target);
                     }
                 });

@@ -7,10 +7,9 @@
 //
 
 #import "ApplyAlertView.h"
-#import "LiveProtocol.h"
-#import "LivePresenter.h"
+#import "LiveUserModel.h"
 
-@interface ApplyAlertView()<LiveProtocol>
+@interface ApplyAlertView()
 /** 头像*/
 @property (nonatomic, weak) IBOutlet UIImageView *coverView;
 /** 昵称*/
@@ -26,32 +25,29 @@
 
 @property (nonatomic, weak) IBOutlet UIView *bottomBgView;
 
-@property (weak, nonatomic) IBOutlet UIView *bgContentView;
-@property (nonatomic, strong)LivePresenter *presenter;
+@property (nonatomic, weak) IBOutlet UIView *bgContentView;
 
-@property (nonatomic,strong)LiveUserModel *liveUserModel;
 
-@property (nonatomic,strong)LiveAnchorModel *liveAnchorModel;
 
-@property (nonatomic, copy) NSString *uid;
+@property(nonatomic, assign)LiveType livetype;
 
 @end
 
 @implementation ApplyAlertView
+- (instancetype)initWithLiveType:(LiveType)livetype
+{
+    self = [super init];
+    if (self) {
+        self = [[NSBundle mainBundle] loadNibNamed:NSStringFromClass([ApplyAlertView class]) owner:nil options:nil].lastObject;
+        self.livetype = livetype;
+    }
+    return  self;
+}
 
 + (instancetype)applyAlertView
 {
     return [[NSBundle mainBundle] loadNibNamed:NSStringFromClass(self) owner:nil options:nil].lastObject;
 }
-
-//- (LivePresenter *)presenter
-//{
-//    if (!_presenter) {
-//        _presenter = [[LivePresenter alloc]init];
-//        [_presenter attachView:self];
-//    }
-//    return _presenter;
-//}
 
 - (void)awakeFromNib
 {
@@ -64,45 +60,33 @@
 - (IBAction)closeBtnClicked:(UIButton *)sender
 {
     if (self.applyBlock) {
-        self.applyBlock(ApplyActionTypeReject,self.uid,sender);
+        self.applyBlock(ApplyActionTypeReject,_model.Uid,_model.RoomId);
     }
 }
 
 - (IBAction)applayAction:(UIButton *)sender
 {
+    ApplyActionType type = sender.tag;
     if (self.applyBlock) {
-        self.applyBlock(sender.tag,self.uid,sender);
+        self.applyBlock(type,_model.Uid,_model.RoomId);
     }
 }
 
-- (void)setModel:(id)model
+- (void)setModel:(LiveUserModel *)model
 {
     _model = model;
-    NSString *cover = @"";
-    NSString *NickName = @"";
-    if ([model isKindOfClass:[LiveUserModel class]]) {
-        self.liveUserModel = model;
-        cover = self.liveUserModel.Cover;
-        NickName = self.liveUserModel.NickName;
-        self.uid = self.liveUserModel.Uid;
+ 
+    [self.coverView yy_setImageWithURL:[NSURL URLWithString:model.Cover] placeholder:PLACEHOLDER_IMAGE];
+    self.nickNameLabel.text = model.NickName;
+    if (!model.isAnchor) {
         // @"申请连麦"
         self.applyNameLabel.text = self.livetype == LiveTypeVideo ? NSLocalizedString(@"wants to interact with you.",nil):NSLocalizedString(@"wants to have a seat.",nil);
-    }else{
-        self.liveAnchorModel = model;
-        cover = self.liveAnchorModel.ACover;
-        NickName = self.liveAnchorModel.AName;
-        self.uid = self.liveAnchorModel.AId;
+    } else {
         //@"想与您PK"
         self.applyNameLabel.text =NSLocalizedString(@"wants to battle with you.",nil);
     }
-    [self.coverView yy_setImageWithURL:[NSURL URLWithString:cover] placeholder:PLACEHOLDER_IMAGE];
-    self.nickNameLabel.text = NickName;
-}
-
-- (void)liveUserData:(LiveUserModel *)user
-{
-
     
 }
+
 
 @end

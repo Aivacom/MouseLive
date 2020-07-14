@@ -13,7 +13,7 @@ import com.sclouds.basedroid.ToastUtil;
 import com.sclouds.datasource.bean.RoomUser;
 import com.sclouds.datasource.hummer.HummerSvc;
 import com.sclouds.mouselive.R;
-import com.sclouds.mouselive.utils.SampleSingleObserver;
+import com.sclouds.mouselive.utils.SimpleSingleObserver;
 import com.trello.rxlifecycle3.android.FragmentEvent;
 
 import androidx.fragment.app.FragmentManager;
@@ -149,7 +149,7 @@ public class RoomUserMenuDialog extends BaseDialog implements View.OnClickListen
         HummerSvc.getInstance().kick(mTargetRoomUser)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .compose(bindUntilEvent(FragmentEvent.DESTROY))
-                .subscribe(new SampleSingleObserver<Boolean>() {
+                .subscribe(new SimpleSingleObserver<Boolean>() {
                     @Override
                     public void onSuccess(Boolean aBoolean) {
                         hideLoading();
@@ -178,7 +178,7 @@ public class RoomUserMenuDialog extends BaseDialog implements View.OnClickListen
             HummerSvc.getInstance().removeRole(mTargetRoomUser)
                     .subscribeOn(AndroidSchedulers.mainThread())
                     .compose(bindUntilEvent(FragmentEvent.DESTROY))
-                    .subscribe(new SampleSingleObserver<Boolean>() {
+                    .subscribe(new SimpleSingleObserver<Boolean>() {
                         @Override
                         public void onSuccess(Boolean aBoolean) {
                             hideLoading();
@@ -204,7 +204,7 @@ public class RoomUserMenuDialog extends BaseDialog implements View.OnClickListen
             HummerSvc.getInstance().addRole(mTargetRoomUser)
                     .subscribeOn(AndroidSchedulers.mainThread())
                     .compose(bindUntilEvent(FragmentEvent.DESTROY))
-                    .subscribe(new SampleSingleObserver<Boolean>() {
+                    .subscribe(new SimpleSingleObserver<Boolean>() {
                         @Override
                         public void onSuccess(Boolean aBoolean) {
                             hideLoading();
@@ -234,7 +234,7 @@ public class RoomUserMenuDialog extends BaseDialog implements View.OnClickListen
             HummerSvc.getInstance().unmuteMember(mTargetRoomUser)
                     .subscribeOn(AndroidSchedulers.mainThread())
                     .compose(bindUntilEvent(FragmentEvent.DESTROY))
-                    .subscribe(new SampleSingleObserver<Boolean>() {
+                    .subscribe(new SimpleSingleObserver<Boolean>() {
                         @Override
                         public void onSuccess(Boolean aBoolean) {
                             hideLoading();
@@ -260,7 +260,7 @@ public class RoomUserMenuDialog extends BaseDialog implements View.OnClickListen
             HummerSvc.getInstance().muteMember(mTargetRoomUser)
                     .subscribeOn(AndroidSchedulers.mainThread())
                     .compose(bindUntilEvent(FragmentEvent.DESTROY))
-                    .subscribe(new SampleSingleObserver<Boolean>() {
+                    .subscribe(new SimpleSingleObserver<Boolean>() {
                         @Override
                         public void onSuccess(Boolean aBoolean) {
                             hideLoading();

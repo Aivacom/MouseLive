@@ -5,11 +5,6 @@ package com.sclouds.effect.consts;
  */
 public interface EffectConst {
     /**
-     * orangeFilter sdk sn: 鉴权串
-     */
-    String OF_SERIAL_NAMBER = 请填写鉴权串
-
-    /**
      * 特效类型
      */
     interface Effect {

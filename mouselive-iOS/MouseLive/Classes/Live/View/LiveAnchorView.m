@@ -7,7 +7,6 @@
 //
 
 #import "LiveAnchorView.h"
-#import "LiveAnchorModel.h"
 #import "LiveUserModel.h"
 #import <YYWebImage.h>
 
@@ -106,11 +105,17 @@
 
 - (IBAction)quit:(UIButton *)sender
 {
-    
     if (self.quitBlock) {
         self.quitBlock();
     }
 }
+
+- (void)setRoomModel:(LiveUserListManager *)roomModel
+{
+    [self.headImageView yy_setImageWithURL:[NSURL URLWithString:roomModel.ROwner.Cover] placeholder:[UIImage imageNamed:@"placeholder_head"]];
+    self.nameLabel.text = roomModel.RName;
+}
+
 
 - (void)setRoomInfoModel:(LiveRoomInfoModel *)roomInfoModel
 {
@@ -127,14 +132,14 @@
     self.peopleLabel.attributedText = countString;
 }
 
-- (void)setPushMode:(PushModeType)pushMode
+- (void)setPublishMode:(PublishMode)publishMode
 {
-    _pushMode = pushMode;
-    switch (pushMode) {
-        case PushModeType_RTC:
+    _publishMode = publishMode;
+    switch (publishMode) {
+        case PUBLISH_STREAM_RTC:
             [self.modeButton setImage:[UIImage imageNamed:@"icon-RTC"] forState:UIControlStateNormal];
             break;
-        case PushModeType_CDN:
+        case PUBLISH_STREAM_CDN:
             [self.modeButton setImage:[UIImage imageNamed:@"icon-CDN"] forState:UIControlStateNormal];
             break;
         default:
@@ -143,11 +148,11 @@
 }
 - (IBAction)modeBtnClicked:(UIButton *)sender
 {
- switch (_pushMode) {
-     case PushModeType_RTC:
+ switch (_publishMode) {
+     case PUBLISH_STREAM_RTC:
          [MBProgressHUD yy_showSuccess:@"当前是实时RTC模式"];
          break;
-     case PushModeType_CDN:
+     case PUBLISH_STREAM_CDN:
         [MBProgressHUD yy_showSuccess:@"当前是CDN模式"];
          break;
      default:

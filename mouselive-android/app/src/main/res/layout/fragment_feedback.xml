@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout>
+<layout xmlns:tools="http://schemas.android.com/tools">
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -34,6 +34,17 @@
                     android:textSize="14sp" />
 
                 <TextView
+                    android:id="@+id/tvUID"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="8dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginRight="8dp"
+                    android:text="@string/fadeback_uid"
+                    android:textColor="#252C2B"
+                    android:textSize="14sp" />
+
+                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="8dp"
@@ -64,14 +75,12 @@
                         android:textColorHint="#80252c2b"
                         android:textSize="12sp" />
 
-                    <ImageView
-                        android:id="@+id/ivPhoto"
-                        android:layout_width="wrap_content"
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvPhotos"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_alignParentRight="true"
                         android:layout_alignParentBottom="true"
-                        android:layout_margin="4dp"
-                        android:src="@mipmap/ic_feedback_upload_photo" />
+                        tools:listitem="@layout/item_photos" />
                 </RelativeLayout>
 
                 <TextView

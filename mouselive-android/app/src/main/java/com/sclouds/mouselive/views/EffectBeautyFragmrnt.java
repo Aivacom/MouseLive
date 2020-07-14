@@ -10,15 +10,15 @@ import android.view.View;
 import com.sclouds.basedroid.BaseAdapter;
 import com.sclouds.basedroid.BaseFragment;
 import com.sclouds.datasource.bean.EffectTab;
-import com.sclouds.effect.BeautyOption;
-import com.sclouds.effect.EffectManager;
-import com.sclouds.effect.consts.EffectConst;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.adapters.BeautyPanelAdapter;
-import com.sclouds.mouselive.bean.effect.Effect;
-import com.sclouds.mouselive.bean.effect.EffectDataManager;
 import com.sclouds.mouselive.databinding.LayoutRoomBeautyBinding;
-import com.sclouds.mouselive.event.EventEffectDowned;
+import com.sclouds.datasource.event.EventEffectDowned;
+import com.sclouds.datasource.effect.bean.BeautyOption;
+import com.sclouds.datasource.effect.EffectSvc;
+import com.sclouds.datasource.effect.IEffect;
+import com.sclouds.datasource.effect.bean.Effect;
+import com.sclouds.datasource.effect.bean.EffectDataManager;
 import com.warkiz.widget.IndicatorSeekBar;
 import com.warkiz.widget.OnSeekChangeListener;
 import com.warkiz.widget.SeekParams;
@@ -87,7 +87,7 @@ public class EffectBeautyFragmrnt extends BaseFragment<LayoutRoomBeautyBinding> 
                 }
 
                 int selecteIndex = adapter.getSelecteIndex();
-                if (selecteIndex >= 0 && EffectManager.getIns().isBeautyReady()) {
+                if (selecteIndex >= 0 && EffectSvc.getInstance().isBeautyReady()) {
                     Effect effect = adapter.getDataAtPosition(selecteIndex);
                     effect.getOption().value = seekParams.progress;
                     adapter.notifyItemChanged(selecteIndex);
@@ -130,12 +130,12 @@ public class EffectBeautyFragmrnt extends BaseFragment<LayoutRoomBeautyBinding> 
                 switch (action) {
                     case MotionEvent.ACTION_DOWN:
                         //关闭美颜
-                        EffectManager.getIns().setBeautyEffectEnable(false);
+                        EffectSvc.getInstance().setBeautyEffectEnable(false);
                         break;
                     case MotionEvent.ACTION_UP:
                     case MotionEvent.ACTION_CANCEL:
                         //恢复打开美颜
-                        EffectManager.getIns().setBeautyEffectEnable(true);
+                        EffectSvc.getInstance().setBeautyEffectEnable(true);
                         break;
                     default:
                         break;
@@ -193,7 +193,7 @@ public class EffectBeautyFragmrnt extends BaseFragment<LayoutRoomBeautyBinding> 
             effect.getOption().value = defaultValue;
             mBinding.seekEffectBeauty.setProgress(defaultValue);
 
-            EffectManager.getIns()
+            EffectSvc.getInstance()
                     .setBeautyOptionValue(effect.getOperationType(), effect.getResourceTypeName(),
                             defaultValue);
         }
@@ -213,13 +213,13 @@ public class EffectBeautyFragmrnt extends BaseFragment<LayoutRoomBeautyBinding> 
                     effect.setDownloadStatus(Effect.DownloadStatus.Undownload);
                 }
 
-                BeautyOption optionTemp = EffectManager.getIns()
+                BeautyOption optionTemp = EffectSvc.getInstance()
                         .getBeautyOption(effect.getOperationType(), effect.getResourceTypeName());
                 BeautyOption option = new BeautyOption();
                 option.type = effect.getOperationType();
                 option.name = effect.getResourceTypeName();
 
-                if (EffectManager.getIns().isBeautyReady()) {
+                if (EffectSvc.getInstance().isBeautyReady()) {
                     option.min = optionTemp.min;
                     option.max = optionTemp.max;
                     option.value = optionTemp.value;
@@ -236,7 +236,7 @@ public class EffectBeautyFragmrnt extends BaseFragment<LayoutRoomBeautyBinding> 
                 list.add(effect);
             }
         }
-        adapter = new BeautyPanelAdapter(getContext(), list, EffectConst.Effect.EFFECT_BEAUTY);
+        adapter = new BeautyPanelAdapter(getContext(), list, IEffect.Effect.EFFECT_BEAUTY);
         mBinding.rvEffectBeauty.setAdapter(adapter);
         adapter.setOnItemClickListener(this);
 
@@ -267,12 +267,12 @@ public class EffectBeautyFragmrnt extends BaseFragment<LayoutRoomBeautyBinding> 
             mBinding.seekEffectBeauty.setEnabled(true);
             mBinding.tvEffectBeautyDefault.setEnabled(true);
 
-            EffectManager.getIns().setBeautyEffectEnable(true);
+            EffectSvc.getInstance().setBeautyEffectEnable(true);
             BeautyOption option = effect.getOption();
             mBinding.seekEffectBeauty.setMax(option.max);
             mBinding.seekEffectBeauty.setMin(option.min);
             mBinding.seekEffectBeauty.setProgress(option.value);
-            EffectManager.getIns().setBeautyOptionValue(effect.getOperationType(),
+            EffectSvc.getInstance().setBeautyOptionValue(effect.getOperationType(),
                     effect.getResourceTypeName(), option.value);
             adapter.selecteItem(position, this);
             selecteIndex = position;
@@ -302,7 +302,7 @@ public class EffectBeautyFragmrnt extends BaseFragment<LayoutRoomBeautyBinding> 
             public boolean handleMessage(@NonNull Message msg) {
                 int progress = msg.arg1;
                 Effect effect = (Effect) msg.obj;
-                EffectManager.getIns().setBeautyOptionValue(effect.getOperationType(),
+                EffectSvc.getInstance().setBeautyOptionValue(effect.getOperationType(),
                         effect.getResourceTypeName(), progress);
                 return false;
             }
@@ -341,12 +341,12 @@ public class EffectBeautyFragmrnt extends BaseFragment<LayoutRoomBeautyBinding> 
                     mBinding.seekEffectBeauty.setEnabled(true);
                     mBinding.tvEffectBeautyDefault.setEnabled(true);
 
-                    EffectManager.getIns().setBeautyEffectEnable(true);
+                    EffectSvc.getInstance().setBeautyEffectEnable(true);
                     BeautyOption option = effect.getOption();
                     mBinding.seekEffectBeauty.setMax(option.max);
                     mBinding.seekEffectBeauty.setMin(option.min);
                     mBinding.seekEffectBeauty.setProgress(option.value);
-                    EffectManager.getIns().setBeautyOptionValue(effect.getOperationType(),
+                    EffectSvc.getInstance().setBeautyOptionValue(effect.getOperationType(),
                             effect.getResourceTypeName(), option.value);
                 }
                 return;

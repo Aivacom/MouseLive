@@ -14,10 +14,9 @@ import com.sclouds.datasource.bean.EffectTab;
 import com.sclouds.datasource.flyservice.http.FlyHttpSvc;
 import com.sclouds.datasource.flyservice.http.network.BaseObserver;
 import com.sclouds.datasource.flyservice.http.network.CustomThrowable;
-import com.sclouds.datasource.flyservice.http.network.model.HttpResponse;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.adapters.MagicDialogPagerAdapter;
-import com.sclouds.mouselive.bean.effect.EffectDataManager;
+import com.sclouds.datasource.effect.bean.EffectDataManager;
 import com.sclouds.mouselive.databinding.LayoutRoomFaceMenuBinding;
 import com.sclouds.mouselive.views.EffectBeautyFragmrnt;
 import com.sclouds.mouselive.views.EffectFilterFragmrnt;
@@ -38,6 +37,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 public class EffectPanDialog extends BaseDataBindDialog<LayoutRoomFaceMenuBinding> {
 
     private static final String TAG = EffectPanDialog.class.getSimpleName();
+    public static final String TAG_VERSION = "v0.1.0";
 
     public void show(@NonNull FragmentManager manager) {
         super.show(manager, TAG);
@@ -91,20 +91,20 @@ public class EffectPanDialog extends BaseDataBindDialog<LayoutRoomFaceMenuBindin
     private void loadEffectList(int retryCount) {
         mBinding.tvLoading.setVisibility(View.VISIBLE);
         showLoading(R.string.magic_load_data_loading);
-        FlyHttpSvc.getInstance().getEffectList("1.0.0")
+        FlyHttpSvc.getInstance().getEffectList(TAG_VERSION)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindUntilEvent(FragmentEvent.DESTROY))
-                .subscribe(new BaseObserver<HttpResponse<List<EffectTab>>>(
+                .subscribe(new BaseObserver<List<EffectTab>>(
                         getContext()) {
                     @Override
-                    public void handleSuccess(HttpResponse<List<EffectTab>> response) {
+                    public void handleSuccess(@NonNull List<EffectTab> data) {
                         hideLoading();
                         mBinding.tvLoading.setVisibility(View.GONE);
-                        if (response.Data == null || response.Data.isEmpty()) {
+                        if (data.isEmpty()) {
                             return;
                         }
 
-                        EffectDataManager.getIns().loadData(getContext(), response.Data);
+                        EffectDataManager.getIns().loadData(getContext(), data);
                         setAdapter();
                     }
 

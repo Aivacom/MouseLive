@@ -14,16 +14,16 @@ typedef enum {
   BottomSettingTypeSkinCare     //美颜
 } BottomSettingType;
 
-typedef void (^SettingBlock)(BottomSettingType type);
+typedef void (^SettingBlock)(BottomSettingType type, UIButton *button);
 
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface LiveBottomSettingView : UIView
-@property (nonatomic,  copy) SettingBlock settingBlock;
 
+@property (nonatomic, copy) SettingBlock settingBlock;
 /**非主播和非连麦的人不可以点击档位按钮*/
-@property (nonatomic,assign) BOOL isMircPeople;
+@property (nonatomic, assign) BOOL isCanSettingGear;
 
 + (instancetype)bottomSettingView;
 

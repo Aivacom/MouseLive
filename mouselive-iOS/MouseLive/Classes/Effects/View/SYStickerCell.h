@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param selected 是否选中
 /// @param selectedMuti 是否是多选
 /// @param downloaded 是否已下载
-- (void)setThumb:(NSString *_Nullable)thumb
+- (void)setThumb:(NSString * _Nullable)thumb
         selected:(BOOL)selected
     selectedMuti:(BOOL)selectedMuti
       downloaded:(BOOL)downloaded;

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="15705" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="16096" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15706"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16086"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -11,7 +11,7 @@
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
         <view alpha="0.5" contentMode="scaleToFill" id="iN0-l3-epB" customClass="LiveCodeRateView">
-            <rect key="frame" x="0.0" y="0.0" width="131" height="172"/>
+            <rect key="frame" x="0.0" y="0.0" width="131" height="199"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="g7G-sF-Ge4">
@@ -50,9 +50,9 @@
                     <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                     <nil key="highlightedColor"/>
                 </label>
-                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="D0r-FE-g3O">
-                    <rect key="frame" x="4" y="4" width="107" height="0.0"/>
-                    <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" lineBreakMode="tailTruncation" numberOfLines="3" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="D0r-FE-g3O">
+                    <rect key="frame" x="4" y="4" width="127" height="0.0"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="12"/>
                     <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                     <nil key="highlightedColor"/>
                 </label>
@@ -64,6 +64,7 @@
                 <constraint firstItem="jlp-tm-cFw" firstAttribute="top" secondItem="w7M-E7-yjV" secondAttribute="bottom" constant="2" id="28S-qh-wG5"/>
                 <constraint firstItem="w7M-E7-yjV" firstAttribute="top" secondItem="PXI-mv-Ehc" secondAttribute="bottom" constant="2" id="2Ov-MO-1sL"/>
                 <constraint firstItem="UPk-pE-jfq" firstAttribute="top" secondItem="g7G-sF-Ge4" secondAttribute="bottom" constant="2" id="36D-BN-npi"/>
+                <constraint firstItem="vUN-kp-3ea" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="jlp-tm-cFw" secondAttribute="bottom" id="37c-NJ-ooJ"/>
                 <constraint firstItem="D0r-FE-g3O" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="4" id="3Z6-fO-Lcn"/>
                 <constraint firstAttribute="trailing" secondItem="w7M-E7-yjV" secondAttribute="trailing" constant="1" id="4nR-jE-t2S"/>
                 <constraint firstItem="vUN-kp-3ea" firstAttribute="trailing" secondItem="PXI-mv-Ehc" secondAttribute="trailing" constant="1" id="5NF-3t-b2b"/>
@@ -76,7 +77,7 @@
                 <constraint firstItem="vUN-kp-3ea" firstAttribute="trailing" secondItem="g7G-sF-Ge4" secondAttribute="trailing" constant="1" id="dg0-Qf-FJm"/>
                 <constraint firstItem="Oi1-UJ-aVV" firstAttribute="leading" secondItem="g7G-sF-Ge4" secondAttribute="leading" id="ewM-8u-9xs"/>
                 <constraint firstItem="g7G-sF-Ge4" firstAttribute="leading" secondItem="D0r-FE-g3O" secondAttribute="leading" id="ntu-R2-S6S"/>
-                <constraint firstAttribute="trailing" secondItem="D0r-FE-g3O" secondAttribute="trailing" constant="20" symbolic="YES" id="uwH-S4-yYc"/>
+                <constraint firstAttribute="trailing" secondItem="D0r-FE-g3O" secondAttribute="trailing" id="uwH-S4-yYc"/>
                 <constraint firstItem="Oi1-UJ-aVV" firstAttribute="top" secondItem="UPk-pE-jfq" secondAttribute="bottom" constant="2" id="xPx-p7-haU"/>
                 <constraint firstItem="jlp-tm-cFw" firstAttribute="leading" secondItem="g7G-sF-Ge4" secondAttribute="leading" id="xfb-rn-Dgc"/>
                 <constraint firstAttribute="trailing" secondItem="jlp-tm-cFw" secondAttribute="trailing" constant="1" id="yqx-2S-VaV"/>
@@ -99,7 +100,7 @@
                 <outlet property="upLabel" destination="UPk-pE-jfq" id="OuZ-kC-SN8"/>
                 <outlet property="upQualityLabel" destination="g7G-sF-Ge4" id="qUq-i3-uRp"/>
             </connections>
-            <point key="canvasLocation" x="25.362318840579711" y="113.16964285714285"/>
+            <point key="canvasLocation" x="-218" y="53"/>
         </view>
     </objects>
 </document>

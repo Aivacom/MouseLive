@@ -2,18 +2,18 @@ package com.sclouds.mouselive;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
-import android.content.Context;
 import android.os.StrictMode;
 import android.os.StrictMode.VmPolicy;
 
 import com.sclouds.basedroid.Tools;
 import com.sclouds.basedroid.net.NetworkMgr;
-import com.sclouds.common.AppContextUtil;
 import com.sclouds.datasource.Constants;
 import com.sclouds.datasource.database.DatabaseSvc;
+import com.sclouds.datasource.effect.EffectSvc;
 import com.sclouds.datasource.flyservice.http.FlyHttpSvc;
 import com.sclouds.datasource.thunder.ThunderSvc;
 import com.sclouds.mouselive.utils.FileUtil;
+import com.sclouds.mouselive.views.SettingFragment;
 import com.yy.spidercrab.SCLog;
 
 import java.lang.reflect.Constructor;
@@ -39,23 +39,31 @@ public class SYApplication extends Application {
     public void onCreate() {
         super.onCreate();
         closeAndroidPDialog();
-        initStrictMode();
+        // initStrictMode();
         MultiDex.install(this);
         initConfig();
         initPrivate();
-        initLog();
+
+        initSDK();
+
     }
 
-    private void initLog() {
+    private void initEffect() {
+        EffectSvc.loadIfNeed();
+        // 初始化 OrangeFilter sdk, serialNumber:of sdk鉴权序列号
+        EffectSvc.getInstance().init(this, ThunderSvc.getInstance().getEngine(),
+                Consts.OF_SERIAL_NAMBER);
+    }
+
+    private void initSDK() {
         SCLog.init(this);
+        SCLog.enableConsoleLogger(true);
         // 初始化 SDK 日志存储目录
         ThunderSvc.setLogFilePath(FileUtil.getLog(this));
-    }
-
-    @Override
-    protected void attachBaseContext(Context base) {
-        super.attachBaseContext(base);
-        AppContextUtil.setContext(this);
+        //初始化Thunder
+        ThunderSvc.getInstance().create(this, Consts.APPID, Consts.APP_SECRET,
+                SettingFragment.isChina(this), 0);
+        initEffect();
     }
 
     /**

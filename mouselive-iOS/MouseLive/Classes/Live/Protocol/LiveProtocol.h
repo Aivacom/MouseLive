@@ -8,21 +8,20 @@
 #import "LiveUserModel.h"
 #import "LiveAnchorModel.h"
 #import "LiveRoomInfoModel.h"
+#import "RLMLiveRoomModel.h"
 #import "LiveDefaultConfig.h"
-
-typedef NS_ENUM(NSInteger,LiveType) {
-  LiveTypeVideo = 1,
-  LiveTypeAudio,
-};
 
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol LiveProtocol <NSObject>
 
 @optional
+
 - (void)audienceJoinChatRoom:(id)data;
 //公聊区 主播创建聊天室
-- (void)successChatRoom:(id)data withType:(LiveType)type;
+- (void)successChatRoom:(id)data withType:(RoomType)type;
+//新版方法
+- (void)successChatRoom:(RLMLiveRoomModel*)roomModel;
 
 - (void)liveViewRoomInfo:(LiveRoomInfoModel*)roomInfo UserListDataSource:(NSArray <LiveUserModel *>*)data;
 - (void)liveViewAnchorListDataSource:(NSArray <LiveAnchorModel *>*)data;

@@ -37,14 +37,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface GobalViewBound : NSObject
 
-@property (nonatomic, readonly, assign) int navBarHeight;
-@property (nonatomic, readonly, assign) int statusBarHeight;
-@property (nonatomic, readonly, assign) int tarBarHeight;
-@property (nonatomic, readonly, assign) int navContentBarHeight;
-@property (nonatomic, readonly, assign) int screenWidth;
-@property (nonatomic, readonly, assign) int screenHeight;
-@property (nonatomic, readonly, assign) int dataViewTitleHeight;
-@property (nonatomic, readonly, assign) int bannerCellHeight;
+@property (nonatomic, assign, readonly) int navBarHeight;
+@property (nonatomic, assign, readonly) int statusBarHeight;
+@property (nonatomic, assign, readonly) int tarBarHeight;
+@property (nonatomic, assign, readonly) int navContentBarHeight;
+@property (nonatomic, assign, readonly) int screenWidth;
+@property (nonatomic, assign, readonly) int screenHeight;
+@property (nonatomic, assign, readonly) int dataViewTitleHeight;
+@property (nonatomic, assign, readonly) int bannerCellHeight;
 
 + (instancetype)sharedInstance;
 

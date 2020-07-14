@@ -36,8 +36,9 @@ public final class LogUtils {
         SCLog.i(MODULE_NAME, tag, null, null, 0, getDebugLog(tag,log));
     }
 
-    public static void e(String tag, String log, Exception error) {
-        SCLog.e(MODULE_NAME, tag, null, null, 0, getDebugLog(tag,log) + " exception: " + error.getMessage());
+    public static void e(String tag, String log, Throwable error) {
+        SCLog.e(MODULE_NAME, tag, null, null, 0,
+                getDebugLog(tag,log) + "\n Error: " + getThrowableLog(error));
     }
 
     private static String getDebugLog(String tag,String log) {
@@ -45,5 +46,25 @@ public final class LogUtils {
             return tag+": "+log;
         else
             return log;
+    }
+
+    private static final String SUPPRESSED_CAPTION = "Suppressed: ";
+    private static final String CAUSE_CAPTION = "Caused by: ";
+
+    private static String getThrowableLog(Throwable throwable) {
+        StackTraceElement[] trace = throwable.getStackTrace();
+        StringBuffer sb = new StringBuffer(throwable.toString());
+        for (StackTraceElement traceElement : trace)
+            sb.append("\n\tat " + traceElement);
+
+        // Print suppressed exceptions, if any
+        for (Throwable se : throwable.getSuppressed())
+            sb.append("\n\t  "+ SUPPRESSED_CAPTION+getThrowableLog(se));
+
+        // Print cause, if any
+        Throwable ourCause = throwable.getCause();
+        if (ourCause != null)
+            sb.append("\n\t "+CAUSE_CAPTION+getThrowableLog(ourCause));
+        return sb.toString();
     }
 }

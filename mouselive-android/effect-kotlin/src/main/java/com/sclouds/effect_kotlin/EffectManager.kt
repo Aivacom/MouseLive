@@ -1,14 +1,8 @@
 package com.sclouds.effect_kotlin
 
 import android.content.Context
-import android.os.Build
 import android.text.TextUtils
-import androidx.annotation.RequiresApi
 import com.orangefilter.OrangeFilter
-import com.sclouds.common.notify.IMessageAble
-import com.sclouds.common.notify.Message
-import com.sclouds.common.notify.MessageDispatcher
-import com.sclouds.datasource.thunder.ThunderSvc
 import com.sclouds.effect_kotlin.consts.EffectConst
 import com.sclouds.effect_kotlin.utils.BeautyHelper
 import com.sclouds.effect_kotlin.utils.FilterHelper
@@ -20,36 +14,76 @@ import java.util.logging.Logger
  * Created by zhouwen on 2020/4/22.
  * 特效接口类--美颜,滤镜,贴纸,手势功能接口管理类
  */
-class EffectManager : IMessageAble {
+class EffectManager {
     private var mVenusModelPath: String? = null
     private var mDefaultBeautyPath: String? = null
 
     // 是否已经注册过registerVideoCaptureTextureObserver等相关
     private var mHasRegister = false
-    private var mThunderEngine: ThunderEngine? = null
     private var mGpuBeauty: EffectCaptureProcessor? = null
     private var mVideoCaptureWrapper: EffectCaptureProcessor.VideoCaptureWrapper? = null
     private val mBeautyHelper = BeautyHelper()
     private val mFilterHelper = FilterHelper()
     private val mOption = BeautyOption()
 
+    private var mThunderEngine: ThunderEngine? = null
+
     /**
      * 初始化
      * @param context 上下文
-     * @param serialNumber 鉴权串
+     * @param serialNumber 鉴权串（需要业务方通过技术支持内部申请）
      */
-    fun init(context: Context, serialNumber: String) {
+    fun init(context: Context, mThunderEngine: ThunderEngine, serialNumber: String) {
         sLogger.info("chowen#init>>>>>>>")
-        MessageDispatcher.getInstance().register(Message.Type.FACE_REGISTER, this)
-        MessageDispatcher.getInstance().register(Message.Type.FACE_UNREGISTER, this)
-        mThunderEngine = ThunderSvc.getInstance().thunderEngine
-        initOfSdk(context, serialNumber)
+        this.mThunderEngine = mThunderEngine
+
+        OrangeFilter.setLogLevel(OrangeFilter.OF_LogLevel_Debug)
+        // extract assets 加载美颜，滤镜相关数据模型
+        mVenusModelPath = context.filesDir.path + "/orangefilter/models/venus_models"
+        val modelDir = File(mVenusModelPath)
+        if (!(modelDir.isDirectory && modelDir.exists())) {
+            val isSuc = File("$mVenusModelPath/face").mkdirs()
+            sLogger.info("initOfSdk#isSuc=$isSuc")
+            OrangeFilter.extractAssetsDir(
+                    context.assets,
+                    "models/venus_models/face",
+                    "$mVenusModelPath/face"
+            )
+            File("$mVenusModelPath/segment").mkdirs()
+            OrangeFilter.extractAssetsDir(
+                    context.assets,
+                    "models/venus_models/segment",
+                    "$mVenusModelPath/segment"
+            )
+            File("$mVenusModelPath/gesture").mkdirs()
+            OrangeFilter.extractAssetsDir(
+                    context.assets,
+                    "models/venus_models/gesture",
+                    "$mVenusModelPath/gesture"
+            )
+        }
+        val effectPath = context.filesDir.path + "/orangefilter/effects"
+        val effectDir = File(effectPath)
+        if (!(effectDir.isDirectory && effectDir.exists())) {
+            effectDir.mkdirs()
+            OrangeFilter.extractAssetsDir(context.assets, "effects", effectPath)
+        }
+
+        // check license 鉴权
+        val ofLicenseName = "of_offline_license.license"
+        val ofLicensePath = context.filesDir.path + "/" + ofLicenseName
+        val ret = OrangeFilter.checkSerialNumber(context, serialNumber, ofLicensePath)
+        if (ret != OrangeFilter.OF_Result_Success) {
+            sLogger.severe("OrangeFilter license invalid. ret = [$ret]")
+        } else {
+            sLogger.info("OrangeFilter license valid. ret = [$ret]")
+        }
     }
 
     /**
      * 注意，register函数需要在startVideoPreview紧挨着下面调用
      */
-    private fun register() {
+    fun register() {
         if (mThunderEngine != null) {
             sLogger.severe("GPUImageBeautyOrangeFilter register")
             mGpuBeauty = EffectCaptureProcessor(mVenusModelPath)
@@ -67,7 +101,7 @@ class EffectManager : IMessageAble {
     /**
      * 注意，unRegister函数需要在stopVideoPreview后调用
      */
-    private fun unRegister() {
+    fun unRegister() {
         if (mThunderEngine != null) {
             sLogger.severe("GPUImageBeautyOrangeFilter unRegister")
             mThunderEngine?.registerVideoCaptureTextureObserver(null)
@@ -127,16 +161,18 @@ class EffectManager : IMessageAble {
     fun setEffectWithType(type: String?, effectPath: String?) {
         when (type) {
             EffectConst.Effect.EFFECT_BEAUTY -> setBeautyEffectPath(effectPath)
-            EffectConst.Effect.EFFECT_FILTER  -> setFilterEffectPath(effectPath)
+            EffectConst.Effect.EFFECT_FILTER -> setFilterEffectPath(effectPath)
             EffectConst.Effect.EFFECT_STICKER -> setStickerEffectPath(effectPath)
             EffectConst.Effect.EFFECT_GESTURE -> setGestureEffectPath(effectPath)
-            EffectConst.GestureEffectType.GESTURE_GOOD-> setGestureGoodEffect(effectPath)
-            EffectConst.GestureEffectType.GESTURE_SINGLE_LOVE->setGestureSingleLoveEffect(effectPath)
-            EffectConst.GestureEffectType.GESTURE_DOUBLE_LOVE-> setGestureDoubleLoveEffect(effectPath)
-            EffectConst.GestureEffectType.GESTURE_SIX->setGestureSixEffect(effectPath)
-            EffectConst.GestureEffectType.GESTURE_HAND->setGestureHandEffect(effectPath)
-            EffectConst.GestureEffectType.GESTURE_V->setGestureVEffect(effectPath)
-            EffectConst.GestureEffectType.GESTURE_OK->setGestureOkEffect(effectPath)
+            EffectConst.GestureEffectType.GESTURE_GOOD -> setGestureGoodEffect(effectPath)
+            EffectConst.GestureEffectType.GESTURE_SINGLE_LOVE -> setGestureSingleLoveEffect(
+                    effectPath)
+            EffectConst.GestureEffectType.GESTURE_DOUBLE_LOVE -> setGestureDoubleLoveEffect(
+                    effectPath)
+            EffectConst.GestureEffectType.GESTURE_SIX -> setGestureSixEffect(effectPath)
+            EffectConst.GestureEffectType.GESTURE_HAND -> setGestureHandEffect(effectPath)
+            EffectConst.GestureEffectType.GESTURE_V -> setGestureVEffect(effectPath)
+            EffectConst.GestureEffectType.GESTURE_OK -> setGestureOkEffect(effectPath)
             else -> {
 
             }
@@ -363,65 +399,6 @@ class EffectManager : IMessageAble {
      */
     val isFilterReady: Boolean
         get() = mFilterHelper.isReady
-
-    /**
-     * 初始化orange filter sdk
-     *
-     * @param context      of Context id: 上下文id
-     * @param serialNumber 鉴权串（需要业务方通过技术支持内部申请）
-     */
-    private fun initOfSdk(context: Context, serialNumber: String) {
-        OrangeFilter.setLogLevel(OrangeFilter.OF_LogLevel_Debug)
-        // extract assets 加载美颜，滤镜相关数据模型
-        mVenusModelPath = context.filesDir.path + "/orangefilter/models/venus_models"
-        val modelDir = File(mVenusModelPath)
-        if (!(modelDir.isDirectory && modelDir.exists())) {
-            val isSuc = File("$mVenusModelPath/face").mkdirs()
-            sLogger.info("initOfSdk#isSuc=$isSuc")
-            OrangeFilter.extractAssetsDir(
-                    context.assets,
-                    "models/venus_models/face",
-                    "$mVenusModelPath/face"
-            )
-            File("$mVenusModelPath/segment").mkdirs()
-            OrangeFilter.extractAssetsDir(
-                    context.assets,
-                    "models/venus_models/segment",
-                    "$mVenusModelPath/segment"
-            )
-            File("$mVenusModelPath/gesture").mkdirs()
-            OrangeFilter.extractAssetsDir(
-                    context.assets,
-                    "models/venus_models/gesture",
-                    "$mVenusModelPath/gesture"
-            )
-        }
-        val effectPath = context.filesDir.path + "/orangefilter/effects"
-        val effectDir = File(effectPath)
-        if (!(effectDir.isDirectory && effectDir.exists())) {
-            effectDir.mkdirs()
-            OrangeFilter.extractAssetsDir(context.assets, "effects", effectPath)
-        }
-
-        // check license 鉴权
-        val ofLicenseName = "of_offline_license.license"
-        val ofLicensePath = context.filesDir.path + "/" + ofLicenseName
-        val ret = OrangeFilter.checkSerialNumber(context, serialNumber, ofLicensePath)
-        if (ret != OrangeFilter.OF_Result_Success) {
-            sLogger.severe("OrangeFilter license invalid. ret = [$ret]")
-        } else {
-            sLogger.info("OrangeFilter license valid. ret = [$ret]")
-        }
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
-    override fun onMessage(message: Message) {
-        sLogger.info("onMessage>>>>>type>" + message.type)
-        when (message.type) {
-            Message.Type.FACE_REGISTER -> register()
-            Message.Type.FACE_UNREGISTER -> unRegister()
-        }
-    }
 
     companion object {
         private val sLogger = Logger.getLogger("FaceEffectManager")

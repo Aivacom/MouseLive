@@ -16,8 +16,8 @@
 @property (nonatomic) NSString *thunderBlotSDKVersion;
 @property (nonatomic) NSString *hummerSDKVersion;
 
-@property (weak, nonatomic) IBOutlet UILabel *bundleLabel;
-@property (weak, nonatomic) IBOutlet UILabel *buildLabel;
+@property (nonatomic, weak) IBOutlet UILabel *bundleLabel;
+@property (nonatomic, weak) IBOutlet UILabel *buildLabel;
 
 @end
 

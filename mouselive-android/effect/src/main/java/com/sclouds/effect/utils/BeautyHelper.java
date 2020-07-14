@@ -3,7 +3,6 @@ package com.sclouds.effect.utils;
 import android.util.Log;
 
 import com.orangefilter.OrangeFilter;
-import com.yy.spidercrab.util.LogUtils;
 
 public class BeautyHelper {
     private static final String TAG = "BeautyHelper";
@@ -105,7 +104,8 @@ public class BeautyHelper {
     }
 
     public int getBeautyOptionMinValue(int optionType, String optionName) {
-        OrangeFilter.OF_Paramf param = (OrangeFilter.OF_Paramf) getFilterParam(optionType, optionName);
+        OrangeFilter.OF_Paramf param =
+                (OrangeFilter.OF_Paramf) getFilterParam(optionType, optionName);
         if (param != null) {
             return (int) (param.minVal / (param.maxVal - param.minVal) * 100);
         }
@@ -113,7 +113,8 @@ public class BeautyHelper {
     }
 
     public int getBeautyOptionMaxValue(int optionType, String optionName) {
-        OrangeFilter.OF_Paramf param = (OrangeFilter.OF_Paramf) getFilterParam(optionType, optionName);
+        OrangeFilter.OF_Paramf param =
+                (OrangeFilter.OF_Paramf) getFilterParam(optionType, optionName);
         if (param != null) {
             return (int) (param.maxVal / (param.maxVal - param.minVal) * 100);
         }
@@ -121,7 +122,8 @@ public class BeautyHelper {
     }
 
     public int getBeautyOptionDefaultValue(int optionType, String optionName) {
-        OrangeFilter.OF_Paramf param = (OrangeFilter.OF_Paramf) getFilterParam(optionType, optionName);
+        OrangeFilter.OF_Paramf param =
+                (OrangeFilter.OF_Paramf) getFilterParam(optionType, optionName);
         if (param != null) {
             return (int) (param.defVal / (param.maxVal - param.minVal) * 100);
         }
@@ -129,7 +131,8 @@ public class BeautyHelper {
     }
 
     public int getBeautyOptionValue(int optionType, String optionName) {
-        OrangeFilter.OF_Paramf param = (OrangeFilter.OF_Paramf) getFilterParam(optionType, optionName);
+        OrangeFilter.OF_Paramf param =
+                (OrangeFilter.OF_Paramf) getFilterParam(optionType, optionName);
         if (param != null) {
             return (int) (param.val / (param.maxVal - param.minVal) * 100);
         }
@@ -138,7 +141,8 @@ public class BeautyHelper {
 
     public void setBeautyOptionValue(int optionType, String optionName, int value) {
         if (mInfo != null) {
-            OrangeFilter.OF_Paramf param = (OrangeFilter.OF_Paramf) getFilterParam(optionType, optionName);
+            OrangeFilter.OF_Paramf param =
+                    (OrangeFilter.OF_Paramf) getFilterParam(optionType, optionName);
             param.val = value / 100.0f * (param.maxVal - param.minVal);
 
             int filter = mInfo.filterList[optionType];

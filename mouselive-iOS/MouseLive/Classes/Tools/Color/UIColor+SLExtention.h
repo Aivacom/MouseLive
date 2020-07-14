@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSArray *)sl_convertColorToRGB:(UIColor *)color;
 //设置十六进制颜色
 + (UIColor *)sl_colorWithHex:(NSInteger)hex;
-+ (UIColor*)sl_colorWithHexString:(NSString *)hexString;
++ (UIColor *)sl_colorWithHexString:(NSString *)hexString;
 @end
 
 NS_ASSUME_NONNULL_END

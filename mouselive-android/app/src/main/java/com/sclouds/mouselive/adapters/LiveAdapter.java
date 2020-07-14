@@ -4,8 +4,8 @@ import android.content.Context;
 import android.view.View;
 
 import com.sclouds.basedroid.BaseAdapter;
-import com.sclouds.datasource.bean.Room;
 import com.sclouds.datasource.bean.RoomUser;
+import com.sclouds.datasource.bean.User;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.widget.MyThunderPlayerView;
 import com.sclouds.mouselive.widget.MyThunderPreviewView;
@@ -25,16 +25,11 @@ public class LiveAdapter extends BaseAdapter<RoomUser, LiveAdapter.ViewHolder> {
     private static final int TYPE_PREVIEW = 1;//本地
     private static final int TYPE_PLAYVIEW = 2;//远程
 
-    private Room mRoom;
+    private User ROwner;
 
-    public LiveAdapter(Context context, Room mRoom) {
+    public LiveAdapter(Context context, User ROwner) {
         super(context);
-        this.mRoom = mRoom;
-    }
-
-    public void setRoom(Room room) {
-        mRoom = room;
-        notifyDataSetChanged();
+        this.ROwner = ROwner;
     }
 
     @Override
@@ -82,12 +77,12 @@ public class LiveAdapter extends BaseAdapter<RoomUser, LiveAdapter.ViewHolder> {
                 MyThunderPreviewView mPreviewView = (MyThunderPreviewView) myview;
                 mPreviewView.bindUID(item.getUid());
 
-                mPreviewView.setLinkRoomUser(mRoom, item);
+                mPreviewView.setLinkRoomUser(ROwner, item);
             } else {
                 MyThunderPlayerView mPlayerView = (MyThunderPlayerView) myview;
                 mPlayerView.bindUID(item.getUid());
 
-                mPlayerView.setLinkRoomUser(mRoom, item);
+                mPlayerView.setLinkRoomUser(ROwner, item);
             }
         }
     }

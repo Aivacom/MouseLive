@@ -12,9 +12,9 @@
 #import <HMRChatRoom/HMRChatRoom.h>
 #import "SYUser.h"
 
-typedef void (^SYFetchMembersCompletionHandler) (NSArray<SYUser *> * _Nullable members, NSError * _Nullable error);
+typedef void (^SYFetchMembersCompletionHandler) (NSSet<HMRUser *> * _Nullable members, NSError * _Nullable error);
 typedef void (^SYFetchAudienceMembersCompletionHandler) (NSArray<SYUser *> * _Nullable members, NSError * _Nullable error);
-typedef void (^SYCharRoomCompletionHandler)(NSString* _Nullable roomId, NSError* _Nullable error);
+typedef void (^SYCharRoomCompletionHandler)(NSString * _Nullable roomId, NSError * _Nullable error);
 typedef void (^SYCompletionHandler)(NSError * _Nullable error);
 
 typedef enum : NSUInteger {
@@ -34,35 +34,35 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 进入房间
 /// @param user 进入房间的用户列表
-- (void)didJoinWithArray:(NSArray<SYUser *>*)user;
+- (void)didJoinWithArray:(NSArray<SYUser *> *)user;
 
 /// 退出房间
 /// @param user 退出房间的用户列表
-- (void)didLeaveWithArray:(NSArray<SYUser *>*)user;
+- (void)didLeaveWithArray:(NSArray<SYUser *> *)user;
 
 /// 接受某人给自己的发送的信令
 /// @param uid 发送用户 uid
 /// @param message 发送的信令
-- (void)didReceivedSelfSignalMessageFrom:(NSString*)uid message:(NSString*)message;
+- (void)didReceivedSelfSignalMessageFrom:(NSString *)uid message:(NSString *)message;
 
 /// 接受某人发送的信令 -- 没有实现
 /// @param uid 发送用户 uid
 /// @param message 发送的信令
-- (void)didReceivedSignalMessageFrom:(NSString*)uid message:(NSString*)message;
+- (void)didReceivedSignalMessageFrom:(NSString *)uid message:(NSString *)message;
 
 /// 接受某人发给自己的文本消息 -- 没有实现
 /// @param uid 发送用户 uid
 /// @param message 发送的文本
-- (void)didReceivedSelfBroadcastFrom:(NSString*)uid message:(NSString*)message;
+- (void)didReceivedSelfBroadcastFrom:(NSString *)uid message:(NSString *)message;
 
 /// 接受某人发送的文本消息
 /// @param uid 发送用户 uid
 /// @param message 发送的文本
-- (void)didReceivedBroadcastFrom:(NSString*)uid message:(NSString*)message;
+- (void)didReceivedBroadcastFrom:(NSString *)uid message:(NSString *)message;
 
 /// 踢人消息
 /// @param user 被踢出的人员列表
-- (void)didKickedWithArray:(NSArray<SYUser *>*)user;
+- (void)didKickedWithArray:(NSArray<SYUser *> *)user;
 
 /// 自己被踢出
 - (void)didKickedSelf;
@@ -77,7 +77,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 禁言/解禁的消息， 通过 isMute 判断自己是否被禁言 -- 这样判断自己是否合适？？？
 /// @param user 被禁言/解禁的人员列表
 /// @param muted yes - 禁言; no - 解禁
-- (void)didMutedWithArray:(NSArray<SYUser *>*)user muted:(BOOL)muted;
+- (void)didMutedWithArray:(NSArray<SYUser *> *)user muted:(BOOL)muted;
 
 /// 全体禁言/解禁
 /// @param muted YES - 禁言; NO - 解禁
@@ -89,11 +89,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 提升管理员，通过判断 isAdmin 判断是否是自己管理员 -- 这样判断自己是否合适？？？
 /// @param uid 被提升管理员的 uid
-- (void)didAddRoleWithUid:(NSString*)uid;
+- (void)didAddRoleWithUid:(NSString *)uid;
 
 /// 撤销管理员，通过判断 isAdmin 判断是否是自己管理员 -- 这样判断自己是否合适？？？
 /// @param uid 被撤销管理员的 uid
-- (void)didRemoveRoleWithUid:(NSString*)uid;
+- (void)didRemoveRoleWithUid:(NSString *)uid;
 
 /// 房间已经被销毁
 - (void)didDismissByOperator;
@@ -105,14 +105,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface SYHummerManager : NSObject
 
-@property (nonatomic, readonly, copy) NSString *uid;  // 用户Uid
-@property (nonatomic, readonly, assign) BOOL isLoggedIn;  // 是否已登录
-@property (nonatomic, readonly, assign) BOOL isMuted; // 用户是否被禁言
-@property (nonatomic, readonly, assign) BOOL isAdmin; // 是否是管理员
-@property (nonatomic, readonly, assign) BOOL isOwner; // 房主
-@property (nonatomic, readonly, assign) BOOL isMicOff; // 用户是否禁麦
-@property (nonatomic, readonly, assign) BOOL isAllMuted;  // 用于内部发送请求
-@property (nonatomic, readonly, assign) BOOL isAllMicOff;  // 用于内部发送请求
+@property (nonatomic, copy, readonly) NSString *uid;  // 用户Uid
+@property (nonatomic, assign, readonly) BOOL isLoggedIn;  // 是否已登录
+@property (nonatomic, assign, readonly) BOOL isMuted; // 用户是否被禁言
+@property (nonatomic, assign, readonly) BOOL isAdmin; // 是否是管理员
+@property (nonatomic, assign, readonly) BOOL isOwner; // 房主
+@property (nonatomic, assign, readonly) BOOL isMicOff; // 用户是否禁麦
+@property (nonatomic, assign, readonly) BOOL isAllMuted;  // 用于内部发送请求
+@property (nonatomic, assign, readonly) BOOL isAllMicOff;  // 用于内部发送请求
 
 /// 单实例，初始化 SDK
 + (instancetype)sharedManager;
@@ -155,42 +155,42 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param receiverUid 要发送给某人 uid
 /// @param message 发送的信令
 /// @param completionHandler 处理回调 -- SYCompletionHandler
-- (void)sendSignalToTarget:(NSString*)receiverUid message:(NSString*)message completionHandler:(SYCompletionHandler)completionHandler;
+- (void)sendSignalToTarget:(NSString *)receiverUid message:(NSString *)message completionHandler:(SYCompletionHandler)completionHandler;
 
 /// 发送给房间内所有人信令
 /// @param message 发送的信令
 /// @param completionHandler 处理回调 -- SYCompletionHandler
-- (void)sendSignalToAll:(NSString*)message completionHandler:(SYCompletionHandler)completionHandler;
+- (void)sendSignalToAll:(NSString *)message completionHandler:(SYCompletionHandler)completionHandler;
 
 /// 发送给某人消息
 /// @param receiverUid 要发送给某人 uid
 /// @param message 发送的消息
 /// @param completionHandler 处理回调 -- SYCompletionHandler
-- (void)sendMessageToTarget:(NSString*)receiverUid message:(NSString*)message completionHandler:(SYCompletionHandler)completionHandler;
+- (void)sendMessageToTarget:(NSString *)receiverUid message:(NSString *)message completionHandler:(SYCompletionHandler)completionHandler;
 
 /// 发送给房间内所有人消息
 /// @param message 发送的消息
 /// @param completionHandler 处理回调 -- SYCompletionHandler
-- (void)sendMessageToAll:(NSString*)message completionHandler:(SYCompletionHandler)completionHandler;
+- (void)sendMessageToAll:(NSString *)message completionHandler:(SYCompletionHandler)completionHandler;
 
 // 要去除掉
 // 发送单播消息 //  ----
-- (void)sendSignalMessage:(NSString *)message receiver:(NSString*)receiverUid completionHandler:(SYCompletionHandler)completionHandler;
+- (void)sendSignalMessage:(NSString *)message receiver:(NSString *)receiverUid completionHandler:(SYCompletionHandler)completionHandler;
 
 // 要去除掉
 // 发送广播消息
-- (void)sendBroadcastMessage:(NSString*)message completionHandler:(SYCompletionHandler)completionHandler;
+- (void)sendBroadcastMessage:(NSString *)message completionHandler:(SYCompletionHandler)completionHandler;
 
 /// 踢人
 /// @param uid 被踢用户 uid
 /// @param completionHandler 处理回调 -- SYCompletionHandler
-- (void)sendKickWithUid:(NSString*)uid completionHandler:(SYCompletionHandler)completionHandler;
+- (void)sendKickWithUid:(NSString *)uid completionHandler:(SYCompletionHandler)completionHandler;
 
 /// 单人禁言/解禁
 /// @param uid 被操作用户 uid
 /// @param muted yes - 禁言; no - 解禁
 /// @param completionHandler 处理回调 -- SYCompletionHandler
-- (void)sendMutedWithUid:(NSString*)uid muted:(BOOL)muted completionHandler:(SYCompletionHandler)completionHandler;
+- (void)sendMutedWithUid:(NSString *)uid muted:(BOOL)muted completionHandler:(SYCompletionHandler)completionHandler;
 
 /// 全体禁言/解禁
 /// @param muted yes - 禁言; no - 解禁
@@ -200,18 +200,26 @@ NS_ASSUME_NONNULL_BEGIN
 /// 提升管理员
 /// @param uid 被提升管理员的用户 uid
 /// @param completionHandler 处理回调 -- SYCompletionHandler
-- (void)addAdminWithUid:(NSString*)uid completionHandler:(SYCompletionHandler)completionHandler;
+- (void)addAdminWithUid:(NSString *)uid completionHandler:(SYCompletionHandler)completionHandler;
 
 // 撤销管理员
 /// 撤销管理员
 /// @param uid 被撤销管理员的用户 uid
 /// @param completionHandler 处理回调 -- SYCompletionHandler
-- (void)removeAdminWithUid:(NSString*)uid completionHandler:(SYCompletionHandler)completionHandler;
+- (void)removeAdminWithUid:(NSString *)uid completionHandler:(SYCompletionHandler)completionHandler;
 
 /// 全体禁麦/开麦
 /// @param off yes - 禁麦; no - 开麦
 /// @param completionHandler 处理回调 -- SYCompletionHandler
 - (void)sendAllMicOffWithOff:(BOOL)off completionHandler:(SYCompletionHandler)completionHandler;
+
+- (void)createChatRoomSuccess:(StrCompletion)success fail:(ErrorComplete)fail;
+
+- (void)fetchMutedUsers:(SYFetchMembersCompletionHandler)completionHandler;
+
+- (void)fetchRoleMember:(SYFetchMembersCompletionHandler)completionHandler;
+
+- (void)fetchRoomInfo:(SYCompletionHandler)completionHandler;
 
 @end
 

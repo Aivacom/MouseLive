@@ -8,17 +8,11 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 
 import com.sclouds.basedroid.LogUtils;
-import com.sclouds.basedroid.ToastUtil;
-import com.sclouds.datasource.bean.EffectTab;
 import com.sclouds.datasource.bean.Room;
 import com.sclouds.datasource.bean.RoomUser;
 import com.sclouds.datasource.business.pkg.ChatPacket;
 import com.sclouds.datasource.flyservice.funws.FunWSClientHandler;
 import com.sclouds.datasource.flyservice.funws.FunWSSvc;
-import com.sclouds.datasource.flyservice.http.FlyHttpSvc;
-import com.sclouds.datasource.flyservice.http.network.BaseObserver;
-import com.sclouds.datasource.flyservice.http.network.CustomThrowable;
-import com.sclouds.datasource.flyservice.http.network.model.HttpResponse;
 import com.sclouds.datasource.thunder.ThunderSvc;
 import com.sclouds.datasource.thunder.WaterMarkAdapter;
 import com.sclouds.datasource.thunder.mode.ThunderConfig;
@@ -26,8 +20,7 @@ import com.sclouds.datasource.thunder.mode.VideoConfig;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.aliplayer.AliPlayerInstance;
 import com.sclouds.mouselive.aliplayer.IAliPlayerListener;
-import com.sclouds.mouselive.bean.effect.EffectDataManager;
-import com.sclouds.mouselive.utils.SampleSingleObserver;
+import com.sclouds.mouselive.utils.SimpleSingleObserver;
 import com.sclouds.mouselive.view.IRoomView;
 import com.sclouds.mouselive.views.dialog.RoomLianMaiDialog;
 import com.sclouds.mouselive.views.dialog.VoiceChangerDialog;
@@ -40,7 +33,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -50,13 +42,17 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 
 /**
  * 直播，逻辑成代码
+ * <p>
+ * 连麦者连麦，要重新打开麦克风，不需要记住上次状态。
+ * 房主需要记住麦克风状态。
  *
  * @author chenhengfei@yy.com
  * @since 2020/03/01
  */
 public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
-        implements SurfaceHolder.Callback,
-        IAliPlayerListener {
+        implements SurfaceHolder.Callback, IAliPlayerListener {
+
+    private static final String WATER_FILE_NAME = "ic_logo.png";
     private MutableLiveData<Boolean> isMirrorMode = new MutableLiveData<>(false);
     private MutableLiveData<Boolean> isCameraFont = new MutableLiveData<>(true);
 
@@ -89,17 +85,39 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
         if (isRoomOwner()) {
             //优先保证预览出来
             ThunderSvc.getInstance().startVideoPreview();
+            RoomUser mine = getMine();
+            if (mine != null) {
+                onVideoStart(mine);
+            }
         }
         super.initData();
-        loadEffectList(0);
     }
 
     @Override
-    protected void resetRoomInfo() {
-        super.resetRoomInfo();
-        if (getChatingUser() != null) {
-            onMemberChatStop(getChatingUser());
+    protected void onJoinRoomAllCompleted() {
+        //如果是断网恢复的，需要处理连麦的状态
+        if (isSomeOneInChating()) {
+            RoomUser chatingUser = getChatingUser();
+            assert chatingUser != null;
+            boolean isNeedRemove = true;
+            for (RoomUser member : members) {
+                if (member.getLinkUid() != 0 && member.getLinkRoomId() != 0) {
+                    if (ObjectsCompat.equals(member, getOwnerUser())) {
+                        continue;
+                    }
+
+                    if (ObjectsCompat.equals(member, chatingUser)) {
+                        isNeedRemove = false;
+                        break;
+                    }
+                }
+            }
+
+            if (isNeedRemove) {
+                onMemberChatStop(chatingUser);
+            }
         }
+        super.onJoinRoomAllCompleted();
     }
 
     /**
@@ -134,27 +152,6 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
         return null;
     }
 
-    private void loadEffectList(int retryCount) {
-        FlyHttpSvc.getInstance().getEffectList("1.0.0")
-                .observeOn(AndroidSchedulers.mainThread())
-                .compose(bindToLifecycle())
-                .subscribe(new BaseObserver<HttpResponse<List<EffectTab>>>(getApplication()) {
-                    @Override
-                    public void handleSuccess(HttpResponse<List<EffectTab>> response) {
-                        EffectDataManager.getIns().loadData(getApplication(), response.Data);
-                    }
-
-                    public void handleError(CustomThrowable e) {
-                        super.handleError(e);
-                        if (retryCount <= 3) {
-                            loadEffectList(retryCount + 1);
-                        } else {
-                            ToastUtil.showToast(getApplication(), R.string.magic_load_data_fail);
-                        }
-                    }
-                });
-    }
-
     private void startAliPlayer() {
         LogUtils.d(TAG, "startAliPlayer() called");
         if (getRoom().getRPublishMode() == Room.RTC) {
@@ -187,7 +184,7 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
      * 保存水印图片到SD卡
      */
     private void saveBitmap() {
-        File file = new File(getApplication().getFilesDir(), "ic_logo.png");
+        File file = new File(getApplication().getFilesDir(), WATER_FILE_NAME);
         if (file.exists()) {
             return;
         }
@@ -221,7 +218,7 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
 
         if (isRoomOwner()) {
             if (reJoinRoom == false) {
-                startPublish();
+                startLive();
                 if (getRoom().getRPublishMode() == Room.CDN) {
                     String roomIdMy = String.valueOf(getRoom().getRoomId());
                     String userIdMy = String.valueOf(mine.getUid());
@@ -240,9 +237,9 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
     }
 
     /**
-     * 开推
+     * 开始直播,包括：开启预览，开始推流，状态同步
      */
-    public void startPublish() {
+    public void startLive() {
         RoomUser mine = getMine();
         if (mine == null) {
             return;
@@ -254,32 +251,31 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
         configuration.publishMode =
                 ThunderRtcConstant.ThunderPublishVideoMode.THUNDERPUBLISH_VIDEO_MODE_HIGHQULITY;
         addWaterMark();
+        ThunderSvc.getInstance().startVideoPreview();
         ThunderSvc.getInstance().publishVideoStream(true, true, configuration);
         toggleCameraFont(true);
         toggleVideoMirrorMode(true);
-
-        mine.setSelfMicEnable(true);
-        onAudioStart(mine);
+        toggleUserMic(mine, true, true);
         onVideoStart(mine);
     }
 
     private void addWaterMark() {
-        File file = new File(getApplication().getFilesDir(), "ic_logo.png");
+        File file = new File(getApplication().getFilesDir(), WATER_FILE_NAME);
         WaterMarkAdapter adapter = new WaterMarkAdapter(file.getAbsolutePath(), 850, 73, 40, 40);
         ThunderSvc.getInstance().setVideoWatermark(adapter);
     }
 
     /**
-     * 关闭
+     * 结束直播,包括：结束预览，结束推流，状态同步
      */
-    public void stopPublish() {
+    public void stopLive() {
+        ThunderSvc.getInstance().stopVideoPreview();
         ThunderSvc.getInstance().stopPublishVideoStream();
         toggleCameraFont(true);
 
         RoomUser mine = getMine();
         if (mine != null) {
-            mine.setSelfMicEnable(false);
-            onAudioStop(mine);
+            toggleUserMic(mine, true, false);
             onVideoStop(mine);
         }
     }
@@ -336,7 +332,7 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
     @Override
     protected void close() {
         if (isRoomOwner()) {
-            stopPublish();
+            stopLive();
             if (getRoom().getRPublishMode() == Room.CDN) {
                 RoomUser mine = getMine();
                 if (mine != null) {
@@ -346,7 +342,7 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
             }
         } else {
             if (isInChating()) {
-                stopPublish();
+                stopLive();
             }
 
             if (getRoom().getRPublishMode() == Room.CDN) {
@@ -402,9 +398,9 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
     }
 
     /**
-     * 同房间叫连麦，跨房间叫PK
+     * 同房间连麦，业务上来说，只有房主才能触发此接口
      *
-     * @param user
+     * @param user 被连麦者
      */
     @SuppressLint("CheckResult")
     public void acceptChat(@NonNull RoomUser user, @NonNull RoomLianMaiDialog dialog) {
@@ -420,6 +416,11 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
                 });
     }
 
+    /**
+     * 拒绝请求连麦，业务上来说，只有房主才能触发此接口
+     *
+     * @param user 被连麦者
+     */
     @SuppressLint("CheckResult")
     public void refuseChat(@NonNull RoomUser user, @NonNull RoomLianMaiDialog dialog) {
         FunWSSvc.getInstance()
@@ -433,9 +434,9 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
     }
 
     /**
-     * 同房间叫连麦，跨房间叫PK
+     * 跨房间PK，业务上来说，只有房主才能触发此接口
      *
-     * @param user
+     * @param user 被连麦者
      */
     @SuppressLint("CheckResult")
     public void acceptPK(@NonNull RoomUser user, @NonNull RoomLianMaiDialog dialog) {
@@ -452,6 +453,11 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
                 });
     }
 
+    /**
+     * 拒绝请求PK，业务上来说，只有房主才能触发此接口
+     *
+     * @param user 被连麦者
+     */
     @SuppressLint("CheckResult")
     public void refusePK(@NonNull RoomUser user, @NonNull RoomLianMaiDialog dialog) {
         FunWSSvc.getInstance()
@@ -483,7 +489,7 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
 
         getUserSync(chatPkg.Body.SrcRoomId, chatPkg.Body.SrcUid)
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<RoomUser>() {
+                .subscribe(new SimpleSingleObserver<RoomUser>() {
                     @Override
                     public void onSuccess(RoomUser user) {
                         if (chatPkg.Body.SrcRoomId == chatPkg.Body.DestRoomId) {
@@ -518,13 +524,18 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
         }
 
         LogUtils.d(TAG, "onChatHangup() called with: chatPkg = [" + chatPkg + "]");
-        long targetId = chatPkg.Body.SrcUid;
-        long targetRoomId = chatPkg.Body.SrcUid;
-
-        getUserSync(targetRoomId, targetId)
+        long targetUserId = chatPkg.Body.SrcUid;
+        long targetRoomId = chatPkg.Body.SrcRoomId;
+        RoomUser owner = getOwnerUser();
+        if (targetUserId == owner.getUid()) {
+            //排除我的房主，找到对方
+            targetUserId = chatPkg.Body.DestUid;
+            targetRoomId = chatPkg.Body.DestRoomId;
+        }
+        getUserSync(targetRoomId, targetUserId)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<RoomUser>() {
+                .subscribe(new SimpleSingleObserver<RoomUser>() {
                     @Override
                     public void onSuccess(RoomUser user) {
                         if (chatPkg.Body.SrcRoomId == chatPkg.Body.DestRoomId) {
@@ -554,18 +565,18 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
         }
 
         RoomUser owner = getOwnerUser();
-        long targetId = chatPkg.Body.SrcUid;
-        long targetRoomId = chatPkg.Body.SrcRoomId;
-        if (targetId == owner.getUid()) {
+        long targetUserId = chatPkg.Body.DestUid;
+        long targetRoomId = chatPkg.Body.DestRoomId;
+        if (targetUserId == owner.getUid()) {
             //排除我的房主，找到对方
-            targetId = chatPkg.Body.DestUid;
-            targetRoomId = chatPkg.Body.DestRoomId;
+            targetUserId = chatPkg.Body.SrcUid;
+            targetRoomId = chatPkg.Body.SrcRoomId;
         }
 
-        getUserSync(targetRoomId, targetId)
+        getUserSync(targetRoomId, targetUserId)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<RoomUser>() {
+                .subscribe(new SimpleSingleObserver<RoomUser>() {
                     @Override
                     public void onSuccess(RoomUser user) {
                         onMemberChatStop(user);
@@ -586,19 +597,18 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
             return;
         }
 
-        long targetUId = chatPkg.Body.SrcUid;
-        long targetRoomId = chatPkg.Body.SrcRoomId;
+        long targetUserId = chatPkg.Body.DestUid;
+        long targetRoomId = chatPkg.Body.DestRoomId;
         RoomUser owner = getOwnerUser();
-        if (targetUId == owner.getUid()) {
+        if (targetUserId == owner.getUid()) {
             //排除我的房主，找到对方
-            targetUId = chatPkg.Body.DestUid;
-            targetRoomId = chatPkg.Body.DestRoomId;
+            targetUserId = chatPkg.Body.SrcUid;
+            targetRoomId = chatPkg.Body.SrcRoomId;
         }
-
-        getUserSync(targetRoomId, targetUId)
+        getUserSync(targetRoomId, targetUserId)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<RoomUser>() {
+                .subscribe(new SimpleSingleObserver<RoomUser>() {
                     @Override
                     public void onSuccess(RoomUser user) {
                         onMemberChatStart(user);
@@ -618,7 +628,7 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
         getUserSync(targetRoomID, targetUID)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<RoomUser>() {
+                .subscribe(new SimpleSingleObserver<RoomUser>() {
                     @Override
                     public void onSuccess(RoomUser user) {
                         onMemberChatStart(user);
@@ -711,7 +721,7 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
                         .startPublishCDN(userIdMy, getRoom().getRUpStream(), liveTranscoding);
             }
         } else if (ObjectsCompat.equals(user, mine)) {
-            startPublish();
+            startLive();
         }
 
         Room room = getRoom();
@@ -727,6 +737,10 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
     public void onMemberChatStop(@NonNull RoomUser user) {
         if (getChatingUser() == null) {
             //没人在连麦，就退出逻辑
+            return;
+        }
+
+        if (!ObjectsCompat.equals(user, getChatingUser())) {
             return;
         }
 
@@ -746,7 +760,7 @@ public class LivingRoomViewModel extends BaseRoomViewModel<IRoomView>
                         .startPublishCDN(userIdMy, getRoom().getRUpStream(), liveTranscoding);
             }
         } else if (ObjectsCompat.equals(user, mine)) {
-            stopPublish();
+            stopLive();
         }
 
         Room room = getRoom();

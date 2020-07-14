@@ -77,11 +77,4 @@ interface EffectConst {
             const val GESTURE_OK = "gesture_ok"
         }
     }
-
-    companion object {
-        /**
-         * orangeFilter sdk sn: 鉴权串
-         */
-        const val OF_SERIAL_NAMBER = "eeb85a58-6cc5-11ea-8247-b42e995a6c82"
-    }
 }

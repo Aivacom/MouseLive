@@ -1,5 +1,5 @@
+include ':effectAdapter'
 include ':app', ':basedroid', ':datasource', ':aliplayer'
 rootProject.name = 'MouseLive'
-include ':common'
 include ':effect'
 include ':effect-kotlin'

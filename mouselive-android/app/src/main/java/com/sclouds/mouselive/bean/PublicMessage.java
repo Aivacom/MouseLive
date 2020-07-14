@@ -9,11 +9,12 @@ package com.sclouds.mouselive.bean;
 public class PublicMessage {
 
     private String NickName;
-    private long Uid;
+    private String Uid;
     private String message;
     private FakeMessage.MessageType type;
 
-    public PublicMessage(String nickName, long uid, String message, FakeMessage.MessageType type) {
+    public PublicMessage(String nickName, String uid, String message,
+                         FakeMessage.MessageType type) {
         NickName = nickName;
         Uid = uid;
         this.message = message;
@@ -28,11 +29,11 @@ public class PublicMessage {
         NickName = nickName;
     }
 
-    public long getUid() {
+    public String getUid() {
         return Uid;
     }
 
-    public void setUid(long uid) {
+    public void setUid(String uid) {
         Uid = uid;
     }
 

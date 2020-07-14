@@ -8,22 +8,23 @@
 
 #import <UIKit/UIKit.h>
 #import "LiveUserModel.h"
-#import "VideoLiveViewController.h"
 
 typedef NS_ENUM(NSInteger, ApplyActionType) {
     ApplyActionTypeAgree,
     ApplyActionTypeReject
 };
 
-typedef void (^ApplyAlertBlock)(ApplyActionType type, NSString *uid, UIButton *button);
+typedef void (^ApplyAlertBlock)(ApplyActionType type, NSString * _Nonnull uid,  NSString * _Nonnull roomId);
 NS_ASSUME_NONNULL_BEGIN
 
 @interface ApplyAlertView : UIView
-+ (instancetype)applyAlertView;
 
-@property(nonatomic,strong)id model;
+@property(nonatomic, strong)LiveUserModel *model;
+
 @property(nonatomic, copy) ApplyAlertBlock applyBlock;
-@property(nonatomic, assign)LiveType livetype;
+
+
+- (instancetype)initWithLiveType:(LiveType)livetype;
 
 @end
 

@@ -8,7 +8,7 @@
 
 #import "SYEffectsFileHelper.h"
 
-static NSString *const BeautyResource = @"BeautyResource";
+static NSString * const BeautyResource = @"BeautyResource";
 @implementation SYEffectsFileHelper
 
 + (NSString *)effectsResourcePathWithTypeName:(NSString *)typeName

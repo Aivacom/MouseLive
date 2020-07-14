@@ -14,7 +14,7 @@
 
 
 static const NSUInteger kSYTokenValidTime = 30*60;    // 鉴权有效期，单位秒
-static NSString * const kSYTokenRequestUrl = @"https://webapi.sunclouds.com/webservice/app/v2/auth/genToken"; // 请求token接口
+static NSString * const kSYTokenRequestUrl = @"https://webapi.jocloud.com/webservice/app/v2/auth/genToken"; // 请求token接口
 
 @implementation SYTokenRequestParams
 

@@ -21,8 +21,6 @@
     <string-array name="rooms_titles">
         <item>Video</item>
         <item>Audio</item>
-        <item>KTV</item>
-        <item>Commentary</item>
     </string-array>
 
     <string-array name="create_rooms_title">

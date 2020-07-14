@@ -24,8 +24,8 @@ android {
             buildConfigField("String", "TB_VERSION", "\"${thunder_version}\"")
             buildConfigField("String", "HRM_VERSION", "\"${hummer_version}\"")
             buildConfigField("String", "SERVICE_VERSION", "\"${service_version}\"")
-            buildConfigField("String", "HTTP_HOST", "\"http://fundbg.sunclouds.com\"")
-            buildConfigField("String", "WS_HOST", "\"ws://fundbg.sunclouds.com/fun/ws/v1\"")
+            buildConfigField("String", "HTTP_HOST", "\"http://fun.jocloud.com\"")
+            buildConfigField("String", "WS_HOST", "\"ws://fun.jocloud.com/fun/ws/v1\"")
         }
 
         qiang {
@@ -36,8 +36,8 @@ android {
 
         release {
             initWith(debug)
-//            buildConfigField("String", "HTTP_HOST", "\"http://funapi.sunclouds.com\"")
-//            buildConfigField("String", "WS_HOST", "\"ws://funws.sunclouds.com/fun/ws/v1\"")
+//            buildConfigField("String", "HTTP_HOST", "\"http://fun.jocloud.com\"")
+//            buildConfigField("String", "WS_HOST", "\"ws://fun.jocloud.com/fun/ws/v1\"")
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -90,7 +90,4 @@ dependencies {
 
     //WS模块
     implementation "org.java-websocket:Java-WebSocket:1.4.1"
-
-    implementation project(':common')
-//    implementation project(':effect_plugin')
 }

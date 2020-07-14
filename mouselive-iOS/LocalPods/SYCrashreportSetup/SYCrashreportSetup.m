@@ -22,7 +22,9 @@ static NSString * const kSYCrashreportAppId = @"MouseLive-ios"; // 对接崩溃�
 
 + (void)load {
     [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationDidFinishLaunchingNotification object:nil queue:nil usingBlock:^(NSNotification *note) {
-        [self p_setupCrashreport];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self p_setupCrashreport];
+        });
     }];
 
     [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationWillTerminateNotification object:nil queue:nil usingBlock:^(NSNotification *note) {
@@ -35,7 +37,12 @@ static NSString * const kSYCrashreportAppId = @"MouseLive-ios"; // 对接崩溃�
     [[CrashReport sharedObject] initWithAppid:kSYCrashreportAppId appVersion:[SYUtils appVersion] market:@"dev"];
 
     [[CrashReport sharedObject] setApplicationStateGetterBlock:^NSInteger {
-        return [UIApplication sharedApplication].applicationState;
+        __block UIApplicationState state;
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            state =  [UIApplication sharedApplication].applicationState;
+        });
+        
+        return state;
     }];
     
     // ANR检测 TODO: app set custom ANR threshold

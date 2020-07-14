@@ -6,14 +6,14 @@ import android.view.View;
 import com.sclouds.basedroid.BaseAdapter;
 import com.sclouds.basedroid.BaseFragment;
 import com.sclouds.datasource.bean.EffectTab;
-import com.sclouds.effect.EffectManager;
-import com.sclouds.effect.consts.EffectConst;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.adapters.GesturePanelAdapter;
-import com.sclouds.mouselive.bean.effect.Effect;
-import com.sclouds.mouselive.bean.effect.EffectDataManager;
+import com.sclouds.datasource.effect.EffectSvc;
+import com.sclouds.datasource.effect.IEffect;
+import com.sclouds.datasource.effect.bean.Effect;
+import com.sclouds.datasource.effect.bean.EffectDataManager;
 import com.sclouds.mouselive.databinding.LayoutRoomGestureBinding;
-import com.sclouds.mouselive.event.EventEffectDowned;
+import com.sclouds.datasource.event.EventEffectDowned;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -140,16 +140,16 @@ public class EffectGestureFragmrnt extends BaseFragment<LayoutRoomGestureBinding
         if (position == 0) {
             //清除所有手势特效
             selected.clear();
-            EffectManager.getIns().closeAllGestureEffect();
+            EffectSvc.getInstance().closeAllGestureEffect();
         } else if (effect.getDownloadStatus() == Effect.DownloadStatus.Download) {
             if (effect.isSelected()) {
                 //设置单个手势
                 selected.add(effect.getName());
-                EffectManager.getIns().setEffectWithType(getType(effect), effect.getPath());
+                EffectSvc.getInstance().setEffectWithType(getType(effect), effect.getPath());
             } else {
                 //取消单个手势
                 selected.remove(effect.getName());
-                EffectManager.getIns().setEffectWithType(getType(effect), "");
+                EffectSvc.getInstance().setEffectWithType(getType(effect), "");
             }
         }
     }
@@ -158,25 +158,25 @@ public class EffectGestureFragmrnt extends BaseFragment<LayoutRoomGestureBinding
         //类型
         if (TextUtils.equals(effect.getResourceTypeName(), "gesture_666")) {
             //666
-            return EffectConst.GestureEffectType.GESTURE_SIX;
+            return IEffect.GestureEffectType.GESTURE_SIX;
         } else if (TextUtils.equals(effect.getResourceTypeName(), "gesture_ok")) {
             //OK
-            return EffectConst.GestureEffectType.GESTURE_OK;
+            return IEffect.GestureEffectType.GESTURE_OK;
         } else if (TextUtils.equals(effect.getResourceTypeName(), "gesture_onehandheart")) {
             //单手比芯
-            return EffectConst.GestureEffectType.GESTURE_SINGLE_LOVE;
+            return IEffect.GestureEffectType.GESTURE_SINGLE_LOVE;
         } else if (TextUtils.equals(effect.getResourceTypeName(), "gesture_palm")) {
             //手掌
-            return EffectConst.GestureEffectType.GESTURE_HAND;
+            return IEffect.GestureEffectType.GESTURE_HAND;
         } else if (TextUtils.equals(effect.getResourceTypeName(), "gesture_thumbsup")) {
             //拇指点赞
-            return EffectConst.GestureEffectType.GESTURE_GOOD;
+            return IEffect.GestureEffectType.GESTURE_GOOD;
         } else if (TextUtils.equals(effect.getResourceTypeName(), "gesture_twohandheart")) {
             //双手比芯
-            return EffectConst.GestureEffectType.GESTURE_DOUBLE_LOVE;
+            return IEffect.GestureEffectType.GESTURE_DOUBLE_LOVE;
         } else if (TextUtils.equals(effect.getResourceTypeName(), "gesture_yeah")) {
             //比V
-            return EffectConst.GestureEffectType.GESTURE_V;
+            return IEffect.GestureEffectType.GESTURE_V;
         }
         return null;
     }
@@ -201,7 +201,7 @@ public class EffectGestureFragmrnt extends BaseFragment<LayoutRoomGestureBinding
 
                 if (effect.isSelected()) {
                     selected.add(effect.getName());
-                    EffectManager.getIns().setEffectWithType(getType(effect), effect.getPath());
+                    EffectSvc.getInstance().setEffectWithType(getType(effect), effect.getPath());
                 }
                 return;
             }

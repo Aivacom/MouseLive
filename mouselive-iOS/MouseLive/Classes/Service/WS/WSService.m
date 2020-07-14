@@ -120,16 +120,12 @@ static NSString * const g_Code = @"Code";
             self.logCount++;
             if (self.logCount >= 6) {
                 // 每 6 次，打印日志
-                YYLogDebug(@"[MouseLive-WSService] 发送心跳 sendCount:%d, receiveHeartCount:%d", weakSelf.sendHeartCount, weakSelf.receiveHeartCount);
+//                YYLogDebug(@"[MouseLive-WSService] 发送心跳 sendCount:%d, receiveHeartCount:%d", weakSelf.sendHeartCount, weakSelf.receiveHeartCount);
                 self.logCount = 0;
             }
             
             // 发送心跳包
             weakSelf.sendHeartCount++;
-            if (weakSelf.sendHeartCount - weakSelf.receiveHeartCount > 2) {
-                // 2 次以上没有收到 ack，就打印出日志
-                YYLogDebug(@"[MouseLive-WSService] 发送心跳 sendCount:%d, receiveHeartCount:%d", weakSelf.sendHeartCount, weakSelf.receiveHeartCount);
-            }
             
             [weakSelf sendWithParam:WS_HEARTBEAT object:@"OK"];
         }
@@ -335,71 +331,71 @@ static NSString * const g_Code = @"Code";
 - (void)webSocketDidReceiveMessageWithString:(NSString * _Nonnull)string
 {
     NSDictionary *response = [self _yy_dictionaryWithJSON:string];
-    if (!response) {
-        YYLogDebug(@"[MouseLive-WSService] receive, _yy_dictionaryWithJSON failed");
-        return;
-    }
-    
-    NSNumber *cmd = [response objectForKey:g_Cmd];
-    int iCmd = [cmd intValue];
-    if (iCmd == WS_HEARTBEAT_ACK) {
-        // 先不处理
-        __weak typeof (self) weakSelf = self;
-        dispatch_main_async_safe(^{
-            weakSelf.receiveHeartCount++;
-            if (weakSelf.receiveHeartCount != weakSelf.sendHeartCount) {
-                YYLogDebug(@"[MouseLive-WSService] 接收心跳, send:%d, receive:%d drop count:%d", weakSelf.sendHeartCount, weakSelf.receiveHeartCount, weakSelf.sendHeartCount - weakSelf.receiveHeartCount);
-            }
-            weakSelf.receiveHeartCount = 0;
-            weakSelf.sendHeartCount = 0;
-        });
-        return;
-    }
+       if (!response) {
+           YYLogDebug(@"[MouseLive-WSService] receive, _yy_dictionaryWithJSON failed");
+           return;
+       }
+       
+       NSNumber *cmd = [response objectForKey:g_Cmd];
+       int iCmd = [cmd intValue];
+       if (iCmd == WS_HEARTBEAT_ACK) {
+           // 先不处理
+           __weak typeof (self) weakSelf = self;
+           dispatch_main_async_safe(^{
+               weakSelf.receiveHeartCount++;
+               if (weakSelf.receiveHeartCount != weakSelf.sendHeartCount) {
+                   YYLogDebug(@"[MouseLive-WSService] 接收心跳, send:%d, receive:%d drop count:%d", weakSelf.sendHeartCount, weakSelf.receiveHeartCount, weakSelf.sendHeartCount - weakSelf.receiveHeartCount);
+               }
+               weakSelf.receiveHeartCount = 0;
+               weakSelf.sendHeartCount = 0;
+           });
+           return;
+       }
 
-    if (iCmd >= 10000 || iCmd == 0) {
-        // 错误了
-        YYLogDebug(@"[MouseLive-WSService] [cmd: %@] 处理错误请求。 接受请求, json = %@", [self enumToString:iCmd], string);
-        
-        iCmd = WS_ERROR;
-        if (self.state == WS_CONNECTED) {
-            if ([self.delegate respondsToSelector:@selector(websocketRecvMsgWithCmd:body:)]) {
-                [self.delegate websocketRecvMsgWithCmd:@(iCmd) body:nil];
-            }
-        }
-        return;
-    }
-    
-    YYLogDebug(@"[MouseLive-WSService] [cmd: %@] 接受请求, json = %@", [self enumToString:iCmd], string);
-    
-    NSDictionary *body = [response objectForKey:g_Body];
-    if (!body || [body isKindOfClass:[NSNull class]] || [body count] == 0) {
-        return;
-    }
-    else {
-        NSString *code = [body objectForKey:g_Code];
-        if (code) {
-            if (![code isEqualToString:@"Ack"]) {
-                return;
-            }
-            else {
-                // 只有 joinroom 的 ack 返回才有用
-                if (iCmd != WS_JOIN_ROOM) {
-                    return;
-                }
-            }
-        }
-    }
+       if (iCmd >= 10000 || iCmd == 0) {
+           // 错误了
+           YYLogDebug(@"[MouseLive-WSService] [cmd: %@] 处理错误请求。 接受请求, json = %@", [self enumToString:iCmd], string);
+           
+           iCmd = WS_ERROR;
+           if (self.state == WS_CONNECTED) {
+               if ([self.delegate respondsToSelector:@selector(websocketRecvMsgWithCmd:body:)]) {
+                   [self.delegate websocketRecvMsgWithCmd:@(iCmd) body:nil];
+               }
+           }
+           return;
+       }
+       
+       YYLogDebug(@"[MouseLive-WSService] [cmd: %@] 接受请求, json = %@", [self enumToString:iCmd], string);
+       
+       NSDictionary *body = [response objectForKey:g_Body];
+       if (!body || [body isKindOfClass:[NSNull class]] || [body count] == 0) {
+           return;
+       }
+       else {
+           NSString *code = [body objectForKey:g_Code];
+           if (code) {
+               if (![code isEqualToString:@"Ack"]) {
+                   return;
+               }
+               else {
+                   // 只有 joinroom 的 ack 返回才有用
+                   if (iCmd != WS_JOIN_ROOM) {
+                       return;
+                   }
+               }
+           }
+       }
 
-    if (self.state != WS_CONNECTED) {
-        YYLogError(@"[MouseLive-WSService] webSocketDidReceiveMessageWithString, state is error. state:%lu", (unsigned long)self.state);
-        return;
-    }
-    
-    if ([response objectForKey:g_Body] && self.state == WS_CONNECTED) {
-        if ([self.delegate respondsToSelector:@selector(websocketRecvMsgWithCmd:body:)]) {
-            [self.delegate websocketRecvMsgWithCmd:cmd body:body];
-        }
-    }
+       if (self.state != WS_CONNECTED) {
+           YYLogError(@"[MouseLive-WSService] webSocketDidReceiveMessageWithString, state is error. state:%lu", (unsigned long)self.state);
+           return;
+       }
+       
+       if ([response objectForKey:g_Body] && self.state == WS_CONNECTED) {
+           if ([self.delegate respondsToSelector:@selector(websocketRecvMsgWithCmd:body:)]) {
+               [self.delegate websocketRecvMsgWithCmd:cmd body:body];
+           }
+       }
 }
 
 - (BOOL)isReconect

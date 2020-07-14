@@ -7,7 +7,6 @@ import android.os.Looper;
 
 import com.orangefilter.OrangeFilter;
 import com.sclouds.basedroid.LogUtils;
-import com.sclouds.common.utils.Accelerometer;
 import com.sclouds.effect.utils.BeautyHelper;
 import com.sclouds.effect.utils.CameraUtil;
 import com.sclouds.effect.utils.FilterHelper;
@@ -74,9 +73,10 @@ public class EffectCaptureProcessor implements IGPUProcess {
                     "    gl_FragColor = color; //vec4(color.y, color.y, color.y, 1.0);\n" +
                     "}";
 
-    private final static String mOESFragmentShader = "#extension GL_OES_EGL_image_external : require\n" +
-            noeffect_fs.replace("uniform sampler2D uTexture0;",
-                    "uniform samplerExternalOES uTexture0;");
+    private final static String mOESFragmentShader =
+            "#extension GL_OES_EGL_image_external : require\n" +
+                    noeffect_fs.replace("uniform sampler2D uTexture0;",
+                            "uniform samplerExternalOES uTexture0;");
 
     private static final float CUBE[] = {
             -1.0f, -1.0f,
@@ -161,11 +161,10 @@ public class EffectCaptureProcessor implements IGPUProcess {
 
     private void checkHandler() {
         Looper looper = Looper.myLooper();
-        if (mHandler == null &&  looper != null) {
+        if (mHandler == null && looper != null) {
             mHandler = new Handler(looper);
         }
     }
-
 
     /**
      * 视频openGl渲染线程初始化回调
@@ -300,7 +299,8 @@ public class EffectCaptureProcessor implements IGPUProcess {
     /**
      * openGl渲染，内部工具函数，业务不用关心
      */
-    private void drawQuad(GLShaderProgram shader, FloatBuffer cubeBuffer, FloatBuffer textureBuffer) {
+    private void drawQuad(GLShaderProgram shader, FloatBuffer cubeBuffer,
+                          FloatBuffer textureBuffer) {
         cubeBuffer.position(0);
         shader.setVertexAttribPointer("aPosition", 2, GLES20.GL_FLOAT, false, 0, cubeBuffer);
 
@@ -336,7 +336,8 @@ public class EffectCaptureProcessor implements IGPUProcess {
             if (effect.currentPath.length() > 0) {
                 if (new File(effect.currentPath).exists()) {
                     // 从素材包文件创建特效
-                    effect.effect = OrangeFilter.createEffectFromPackage(mOfContextId, effect.currentPath);
+                    effect.effect =
+                            OrangeFilter.createEffectFromPackage(mOfContextId, effect.currentPath);
                     if (effect.effect != 0) {
                         updated = true;
                     }
@@ -366,7 +367,8 @@ public class EffectCaptureProcessor implements IGPUProcess {
         // Record old fbo.
         GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, mOldFramebuffer);
 
-        if (mInputTexture.getWidth() != mOutputWidth || mInputTexture.getHeight() != mOutputHeight) {
+        if (mInputTexture.getWidth() != mOutputWidth ||
+                mInputTexture.getHeight() != mOutputHeight) {
             mInputTexture.create(mOutputWidth, mOutputHeight, GLES20.GL_RGBA);
             mOutputTexture.create(mOutputWidth, mOutputHeight, GLES20.GL_RGBA);
             LogUtils.d(TAG, "[sjc] mOutputWidth: " + mOutputWidth + " ,mOutputHeight: " +
@@ -404,7 +406,8 @@ public class EffectCaptureProcessor implements IGPUProcess {
         }
     }
 
-    private void prepareWithApplyFrameData(int textureId, FloatBuffer cubeBuffer, FloatBuffer textureBuffer) {
+    private void prepareWithApplyFrameData(int textureId, FloatBuffer cubeBuffer,
+                                           FloatBuffer textureBuffer) {
         // yuv帧数据
         mFrameData.imageData = mImageData;
         mFrameData.width = mImgWidth;
@@ -418,13 +421,16 @@ public class EffectCaptureProcessor implements IGPUProcess {
         mFrameData.curNode = 0;
         mFrameData.pickOn = false;
         mFrameData.pickResult = false;
-        mFrameData.imageDir = Accelerometer.getDirection(); // 传感器即陀螺仪方向(0表示0度，1表示90度，2表示180度，3表示270度)
+        mFrameData.imageDir =
+                Accelerometer.getDirection(); // 传感器即陀螺仪方向(0表示0度，1表示90度，2表示180度，3表示270度)
         mFrameData.orientation = CameraUtil.getCameraRotation(); // 相机图像的方向
         mFrameData.frontCamera = CameraUtil.isFrontCamera(); // 是否是前置摄像头
 
         if (mBeautyEffect.effect != 0 || mFilterEffect.effect != 0 || mStickerEffect.effect != 0
-                || mGestureEffect.effect != 0 || mGestureGoodEffect.effect != 0 || mGestureSingleLoveEffect.effect != 0
-                || mGestureDoubleLoveEffect.effect != 0 || mGestureSixEffect.effect != 0 || mGestureHandEffect.effect != 0
+                || mGestureEffect.effect != 0 || mGestureGoodEffect.effect != 0 ||
+                mGestureSingleLoveEffect.effect != 0
+                || mGestureDoubleLoveEffect.effect != 0 || mGestureSixEffect.effect != 0 ||
+                mGestureHandEffect.effect != 0
                 || mGestureVEffect.effect != 0 || mGestureOkEffect.effect != 0) {
 
             //  数据预处理，如人脸跟踪点的姿态估计
@@ -485,7 +491,8 @@ public class EffectCaptureProcessor implements IGPUProcess {
                 }
 
                 // 渲染帧特效
-                int a = OrangeFilter.applyFrameBatch(mOfContextId, effectArray, mInputs, mOutputs, resultArray);
+                int a = OrangeFilter
+                        .applyFrameBatch(mOfContextId, effectArray, mInputs, mOutputs, resultArray);
 
                 swap(mInputTexture, mOutputTexture);
 
@@ -493,8 +500,10 @@ public class EffectCaptureProcessor implements IGPUProcess {
                 GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mOldFramebuffer.get(0));
                 mPassthroughShader.useProgram();
                 mPassthroughShader
-                        .setUniformTexture("uTexture0", 0, mInputTexture.getTextureId(), mInputTexture.getTarget());
-                drawQuad(mPassthroughShader, mRectDrawable.getVertexArray(), mRectDrawable.getTexCoordArray());
+                        .setUniformTexture("uTexture0", 0, mInputTexture.getTextureId(),
+                                mInputTexture.getTarget());
+                drawQuad(mPassthroughShader, mRectDrawable.getVertexArray(),
+                        mRectDrawable.getTexCoordArray());
                 // Restore OpenGL states.
                 GLES20.glBindTexture(mTextureTarget, 0);
             } else {
@@ -680,7 +689,6 @@ public class EffectCaptureProcessor implements IGPUProcess {
         }
     }
 
-
     public void setGestureSingleLovePath(final String effectPath) {
         if (mHandler != null) {
             mHandler.post(new Runnable() {
@@ -759,7 +767,7 @@ public class EffectCaptureProcessor implements IGPUProcess {
     }
 
     public void setGestureVEnable(final boolean enable) {
-        if (mHandler != null){
+        if (mHandler != null) {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -844,7 +852,6 @@ public class EffectCaptureProcessor implements IGPUProcess {
         mGestureOkEffect.targetPath = null;
     }
 
-
     public class VideoCaptureWrapper implements IVideoCaptureObserver {
 
         /**
@@ -857,12 +864,12 @@ public class EffectCaptureProcessor implements IGPUProcess {
          * @param length 视频数据长度
          */
         @Override
-        public void onCaptureVideoFrame(int width, int height, byte[] data, int length, int imageFormat) {
+        public void onCaptureVideoFrame(int width, int height, byte[] data, int length,
+                                        int imageFormat) {
             synchronized (mHandleLock) {
                 mImageData = data;
-                mImgHeight = height;
-                mImgWidth = width;
-
+                mImgHeight = width;
+                mImgWidth = height;
             }
         }
     }

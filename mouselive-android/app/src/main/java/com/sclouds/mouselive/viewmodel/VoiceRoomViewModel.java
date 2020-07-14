@@ -13,7 +13,7 @@ import com.sclouds.datasource.thunder.mode.ThunderConfig;
 import com.sclouds.datasource.thunder.mode.VoiceConfig;
 import com.sclouds.mouselive.R;
 import com.sclouds.mouselive.utils.FileUtil;
-import com.sclouds.mouselive.utils.SampleSingleObserver;
+import com.sclouds.mouselive.utils.SimpleSingleObserver;
 import com.sclouds.mouselive.view.IRoomView;
 import com.sclouds.mouselive.views.dialog.RoomLianMaiDialog;
 import com.sclouds.mouselive.views.dialog.VoiceChangerDialog;
@@ -35,7 +35,10 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 
 /**
- * 聊天室，逻辑成代码
+ * 聊天室，逻辑成代码。
+ * <p>
+ * 连麦者连麦，要重新打开麦克风，不需要记住上次状态。
+ * 房主需要记住麦克风状态。
  *
  * @author chenhengfei@yy.com
  * @since 2020/03/01
@@ -60,16 +63,6 @@ public class VoiceRoomViewModel extends BaseRoomViewModel<IRoomView> {
     }
 
     @Override
-    protected void resetRoomInfo() {
-        super.resetRoomInfo();
-        if (chatingMembers != null && !chatingMembers.isEmpty()) {
-            for (RoomUser chatingMember : chatingMembers) {
-                onMemberChatStop(chatingMember);
-            }
-        }
-    }
-
-    @Override
     public boolean isInChating() {
         return chatingMembers.contains(getMine());
     }
@@ -91,6 +84,38 @@ public class VoiceRoomViewModel extends BaseRoomViewModel<IRoomView> {
     }
 
     @Override
+    protected void onJoinRoomAllCompleted() {
+        //如果是断网恢复的，需要处理连麦的状态
+        if (chatingMembers.isEmpty() == false) {
+            int index = 0;
+            while (index < chatingMembers.size()) {
+                RoomUser chatingUser = chatingMembers.get(index);
+                boolean isNeedRemove = true;
+                for (RoomUser member : members) {
+                    if (member.getLinkUid() != 0 && member.getLinkRoomId() != 0) {
+                        if (ObjectsCompat.equals(member, getOwnerUser())) {
+                            continue;
+                        }
+
+                        if (ObjectsCompat.equals(chatingUser, member)) {
+                            isNeedRemove = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (isNeedRemove) {
+                    onMemberChatStop(chatingUser);
+                    continue;
+                }
+
+                index++;
+            }
+        }
+        super.onJoinRoomAllCompleted();
+    }
+
+    @Override
     protected void onJoinThunderSuccess() {
         if (isRoomOwner()) {
             if (reJoinRoom == false) {
@@ -103,16 +128,37 @@ public class VoiceRoomViewModel extends BaseRoomViewModel<IRoomView> {
     /**
      * 对于聊天室而言，因为有背景音乐的存在，所以不能单纯的关闭和打开本地麦克风
      *
-     * @param isEnable
+     * @param user     用户
+     * @param isActive true-主动调用；false-被动调用
+     * @param isEnable true-打开；false-关闭
      */
     @Override
-    protected void toggleThunderMic(boolean isEnable) {
-        if (isRoomOwner()) {
-            //只有房主需要考虑背景音乐
-            ThunderSvc.getInstance().toggleMicWithMusicEnable(isEnable);
+    protected void toggleUserMic(@NonNull RoomUser user, boolean isActive, boolean isEnable) {
+        if (isActive) {
+            user.setSelfMicEnable(isEnable);
         } else {
-            ThunderSvc.getInstance().toggleMicEnable(isEnable);
+            user.setMicEnable(isEnable);
         }
+
+        if (ObjectsCompat.equals(user, getMine())) {
+            if (isEnable == false) {
+                if (isRoomOwner()) {
+                    //只有房主需要考虑背景音乐
+                    ThunderSvc.getInstance().toggleMicWithMusicEnable(isEnable);
+                } else {
+                    ThunderSvc.getInstance().toggleMicEnable(isEnable);
+                }
+            } else if (user.isSelfMicEnable()) {
+                //被动控制，但前提是我本地是允许打开的
+                if (isRoomOwner()) {
+                    //只有房主需要考虑背景音乐
+                    ThunderSvc.getInstance().toggleMicWithMusicEnable(isEnable);
+                } else {
+                    ThunderSvc.getInstance().toggleMicEnable(isEnable);
+                }
+            }
+        }
+        onMemberMicStatusChanged(user);
     }
 
     /**
@@ -125,8 +171,7 @@ public class VoiceRoomViewModel extends BaseRoomViewModel<IRoomView> {
         }
 
         ThunderSvc.getInstance().publishAudioStream();
-        mine.setSelfMicEnable(true);
-        onAudioStart(getMine());
+        toggleUserMic(mine, true, true);
     }
 
     /**
@@ -137,8 +182,7 @@ public class VoiceRoomViewModel extends BaseRoomViewModel<IRoomView> {
 
         RoomUser mine = getMine();
         if (mine != null) {
-            mine.setSelfMicEnable(false);
-            onAudioStop(mine);
+            toggleUserMic(mine, true, false);
         }
     }
 
@@ -153,7 +197,7 @@ public class VoiceRoomViewModel extends BaseRoomViewModel<IRoomView> {
 
             if (mine.isSelfMicEnable()) {
                 //如果本地是打开状态，才需要开启或者关闭thunder
-                toggleThunderMic(mine.isMicEnable());
+                toggleUserMic(mine, false, mine.isMicEnable());
             }
         }
         super.onBasicInfoChanged(room);
@@ -198,9 +242,9 @@ public class VoiceRoomViewModel extends BaseRoomViewModel<IRoomView> {
             return;
         }
 
-        getUserSync(chatPkg.Body.SrcUid)
+        getUserSync(chatPkg.Body.SrcRoomId, chatPkg.Body.SrcUid)
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<RoomUser>() {
+                .subscribe(new SimpleSingleObserver<RoomUser>() {
                     @Override
                     public void onSuccess(RoomUser user) {
                         mRoomQueueAction.onChatRequestMeesage(user);
@@ -237,7 +281,7 @@ public class VoiceRoomViewModel extends BaseRoomViewModel<IRoomView> {
             getUserSync(targetRoomId, targetId)
                     .observeOn(AndroidSchedulers.mainThread())
                     .compose(bindToLifecycle())
-                    .subscribe(new SampleSingleObserver<RoomUser>() {
+                    .subscribe(new SimpleSingleObserver<RoomUser>() {
                         @Override
                         public void onSuccess(RoomUser user) {
                             onMemberChatStop(user);
@@ -286,19 +330,24 @@ public class VoiceRoomViewModel extends BaseRoomViewModel<IRoomView> {
             return;
         }
 
+        //目前有3种情况挂断，假设房主R，管理员A，观众B
+        //R->B：房主下麦B，SrcUid是R，DestUid是B。
+        //A->B：管理员下麦B，SrcUid是A，DestUid是B。
+        //B自己挂断：B自己下麦，SrcUid是B，DestUid是R。
+        //所以先取DestUid，如果是房主R，就换成SrcUid
         RoomUser owner = getOwnerUser();
-        long targetId = chatPkg.Body.SrcUid;
-        long targetRoomId = chatPkg.Body.SrcRoomId;
-        if (targetId == owner.getUid()) {
+        long targetUserId = chatPkg.Body.DestUid;
+        long targetRoomId = chatPkg.Body.DestRoomId;
+        if (targetUserId == owner.getUid()) {
             //排除我的房主，找到对方
-            targetId = chatPkg.Body.DestUid;
-            targetRoomId = chatPkg.Body.DestRoomId;
+            targetUserId = chatPkg.Body.SrcUid;
+            targetRoomId = chatPkg.Body.SrcRoomId;
         }
 
-        getUserSync(targetRoomId, targetId)
+        getUserSync(targetRoomId, targetUserId)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<RoomUser>() {
+                .subscribe(new SimpleSingleObserver<RoomUser>() {
                     @Override
                     public void onSuccess(RoomUser user) {
                         onMemberChatStop(user);
@@ -319,19 +368,12 @@ public class VoiceRoomViewModel extends BaseRoomViewModel<IRoomView> {
             return;
         }
 
-        long targetUId = chatPkg.Body.SrcUid;
-        long targetRoomId = chatPkg.Body.SrcRoomId;
-        RoomUser owner = getOwnerUser();
-        if (targetUId == owner.getUid()) {
-            //排除我的房主，找到对方
-            targetUId = chatPkg.Body.DestUid;
-            targetRoomId = chatPkg.Body.DestRoomId;
-        }
-
-        getUserSync(targetRoomId, targetUId)
+        long targetUserId = chatPkg.Body.DestUid;
+        long targetRoomId = chatPkg.Body.DestRoomId;
+        getUserSync(targetRoomId, targetUserId)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<RoomUser>() {
+                .subscribe(new SimpleSingleObserver<RoomUser>() {
                     @Override
                     public void onSuccess(RoomUser user) {
                         onMemberChatStart(user);
@@ -352,7 +394,7 @@ public class VoiceRoomViewModel extends BaseRoomViewModel<IRoomView> {
         getUserSync(targetRoomID, targetUID)
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindToLifecycle())
-                .subscribe(new SampleSingleObserver<RoomUser>() {
+                .subscribe(new SimpleSingleObserver<RoomUser>() {
                     @Override
                     public void onSuccess(RoomUser user) {
                         onMemberChatStart(user);
@@ -381,14 +423,22 @@ public class VoiceRoomViewModel extends BaseRoomViewModel<IRoomView> {
             return;
         }
 
+        //默认值
         Room room = getRoom();
-        user.setMicEnable(room.getRMicEnable());
+        boolean isEnable = user.isMicEnable();
+        if (isEnable) {
+            isEnable = room.getRMicEnable();
+            user.setMicEnable(isEnable);
+        }
 
         if (ObjectsCompat.equals(user, mine)) {
-            if (user.isMicEnable()) {
+            if (isEnable) {
                 startPublish();
             }
+        } else {
+            toggleUserMic(user, false, isEnable);
         }
+
         chatingMembers.add(user);
         super.onMemberChatStart(user);
     }
@@ -405,8 +455,9 @@ public class VoiceRoomViewModel extends BaseRoomViewModel<IRoomView> {
             return;
         }
 
-        Room room = getRoom();
-        user.setMicEnable(room.getRMicEnable());
+        //还原
+        user.setMicEnable(true);
+        user.setSelfMicEnable(true);
 
         if (ObjectsCompat.equals(user, mine)) {
             stopPublish();

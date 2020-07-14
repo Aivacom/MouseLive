@@ -298,33 +298,31 @@ static NSString * const kHMRAdminRole = @"Admin";
     HMRChatRoom *chatRoom = [HMRChatRoom chatRoomWithID:roomId.longLongValue];
     self.tokenUpdateCount = 0;
     [[HMRChatRoomService instance] joinChatRoom:chatRoom extraProps:nil completionHandler:^(NSError *error) {
-        [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
-
         if (!error) {
             weakSelf.chatRoom = chatRoom;
 
             // 获取基本属性
             [[HMRChatRoomService instance] fetchBasicInfo:weakSelf.chatRoom completionHandler:^(HMRChatRoomInfo * _Nullable chatRoomInfo, NSError * _Nullable error) {
                 YYLogDebug(@"[MouseLive-Hummer] joinChatRoomWithRoomId");
-                [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
+                if (!error) {
+                    weakSelf.isMicOff = NO;
+                    weakSelf.isMuted = NO;
+                    weakSelf.isAllMicOff = NO;
+                    weakSelf.isAllMuted = NO;
+                    [weakSelf decodeExtention:chatRoomInfo.appExtra];
+                    YYLogDebug(@"[MouseLive-Hummer] joinChatRoomWithRoomId fetchBasicInfo success");
+                } else {
+                    [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
 
-                weakSelf.isMicOff = NO;
-                weakSelf.isMuted = NO;
-                weakSelf.isAllMicOff = NO;
-                weakSelf.isAllMuted = NO;
-                [weakSelf decodeExtention:chatRoomInfo.appExtra];
-
-                YYLogDebug(@"fetchBasicInfo, appExtra:%@", chatRoomInfo.appExtra);
-
-                if (completionHandler) {
-                    completionHandler(error);
                 }
+                YYLogDebug(@"fetchBasicInfo, appExtra:%@", chatRoomInfo.appExtra);
             }];
         }
         else {
-            if (completionHandler) {
-                completionHandler(error);
-            }
+            [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
+        }
+        if (completionHandler) {
+            completionHandler(error);
         }
     }];
     YYLogDebug(@"[MouseLive-Hummer] joinChatRoomWithRoomId exit");
@@ -420,6 +418,56 @@ static NSString * const kHMRAdminRole = @"Admin";
         }
     }];
     YYLogDebug(@"[MouseLive-Hummer] fetchMembersWithCompletionHandler exit");
+}
+
+- (void)fetchMutedUsers:(SYFetchMembersCompletionHandler)completionHandler
+{
+    [[HMRChatRoomService instance] fetchMutedUsers:self.chatRoom completionHandler:^(NSSet<HMRUser *> *mutedMembers, NSError * _Nullable mutedError) {
+        if (mutedError) {
+            if (completionHandler) {
+                completionHandler(nil, mutedError);
+            }
+        } else {
+            if (completionHandler) {
+                completionHandler([mutedMembers copy], nil);
+            }
+        }
+    }];
+}
+
+- (void)fetchRoleMember:(SYFetchMembersCompletionHandler)completionHandler
+{
+    [[HMRChatRoomService instance] fetchRoleMembers:self.chatRoom onlineOnly:NO completionHandler:^(NSDictionary<NSString *,NSSet<HMRUser *> *> * _Nullable roleToMembers, NSError * _Nullable error) {
+        if (error) {
+            if (completionHandler) {
+                completionHandler(nil, error);
+            }
+        } else {
+            NSSet<HMRUser *> * roleMembers = [roleToMembers objectForKey:HMRAdminRole];
+            
+            if (completionHandler) {
+                completionHandler([roleMembers copy], nil);
+            }
+        }
+    }];
+}
+
+- (void)fetchRoomInfo:(SYCompletionHandler)completionHandler
+{
+    WeakSelf
+    [[HMRChatRoomService instance] fetchBasicInfo:self.chatRoom completionHandler:^(HMRChatRoomInfo * _Nullable chatRoomInfo, NSError * _Nullable error) {
+        if (!error) {
+            weakSelf.isMicOff = NO;
+            weakSelf.isMuted = NO;
+            weakSelf.isAllMicOff = NO;
+            weakSelf.isAllMuted = NO;
+            [weakSelf decodeExtention:chatRoomInfo.appExtra];
+        } else {
+            if (completionHandler) {
+                completionHandler(error);
+            }
+        }
+    }];
 }
 
 - (void)fetchMutedUsersWithMembers:(NSMutableArray<SYUser *> *)members completionHandler:(SYFetchMembersCompletionHandler)completionHandler
@@ -683,36 +731,23 @@ static NSString * const kHMRAdminRole = @"Admin";
 {
     YYLogDebug(@"[MouseLive-Hummer] sendKickWithUid entry, uid:%@", uid);
     WeakSelf
-    if (![self isHavePermissionWithCompletionHandler:completionHandler funName:"sendKickWithUid"]) {
-        return;
-    }
-    
-    SYUser *user = [self.userDic objectForKey:uid];
-    if (user) {
-        [[HMRChatRoomService instance] kickMember:user.hummerUser fromChatRoom:self.chatRoom extraInfo:@{HMRKickReasonExtraKey:@"房主踢出"} completionHandler:^(NSError *error) {
-            [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
-            
-            if (error) {
-                if (completionHandler) {
-                    NSError *error = [NSError errorWithDomain:@"提出房间失败" code:HUMMER_ERROR_KICK userInfo:nil];
-                    completionHandler(error);
-                    [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
-                }
+    HMRUser *user = [HMRUser userWithID:[uid intValue]];
+    [[HMRChatRoomService instance] kickMember:user fromChatRoom:self.chatRoom extraInfo:@{HMRKickReasonExtraKey:@"房主踢出"} completionHandler:^(NSError *error) {
+        if (error) {
+            if (completionHandler) {
+                NSError *error = [NSError errorWithDomain:@"踢出房间失败" code:HUMMER_ERROR_KICK userInfo:nil];
+                completionHandler(error);
+                [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
             }
-            else {
-                if (completionHandler) {
-                    completionHandler(error);
-                }
-            }
-        }];
-    }
-    else {
-        if (completionHandler) {
-            NSError *error = [NSError errorWithDomain:@"没有此用户" code:HUMMER_ERROR_NO_USER userInfo:nil];
-            completionHandler(error);
-            [self showErrorLog:__PRETTY_FUNCTION__ error:error];
         }
-    }
+        else {
+            if (completionHandler) {
+                completionHandler(error);
+                YYLogDebug(@"[MouseLive-Hummer] kickMember success uid:%@",uid);
+            }
+        }
+    }];
+    
     YYLogDebug(@"[MouseLive-Hummer] sendKickWithUid exit");
 }
 
@@ -721,55 +756,42 @@ static NSString * const kHMRAdminRole = @"Admin";
 {
     YYLogDebug(@"[MouseLive-Hummer] sendMutedWithUid entry, uid:%@, muted:%d", uid, muted);
     WeakSelf
-    if (![self isHavePermissionWithCompletionHandler:completionHandler funName:"sendMutedWithUid"]) {
-        return;
-    }
+    
+    HMRUser *user = [HMRUser userWithID:uid.intValue];
+    if (muted) {
+        [[HMRChatRoomService instance] muteMember:user inChatRoom:self.chatRoom reason:@"禁言" completionHandler:^(NSError *error) {
+            if (error) {
+                if (completionHandler) {
+                    NSError *error = [NSError errorWithDomain:@"禁言失败" code:HUMMER_ERROR_MUTE userInfo:nil];
+                    completionHandler(error);
+                    [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
+                }
+            }
+            else {
+                if (completionHandler) {
+                    completionHandler(error);
+                    YYLogDebug(@"[MouseLive-Hummer] muteMember success uid:%@",uid);
 
-    SYUser *user = [self.userDic objectForKey:uid];
-    if (user) {
-        if (muted) {
-            [[HMRChatRoomService instance] muteMember:user.hummerUser inChatRoom:self.chatRoom reason:@"禁言" completionHandler:^(NSError *error) {
-                [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
-                
-                if (error) {
-                    if (completionHandler) {
-                        NSError *error = [NSError errorWithDomain:@"禁言失败" code:HUMMER_ERROR_MUTE userInfo:nil];
-                        completionHandler(error);
-                        [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
-                    }
                 }
-                else {
-                    if (completionHandler) {
-                        completionHandler(error);
-                    }
-                }
-            }];
-        }
-        else {
-            [[HMRChatRoomService instance] unmuteMember:user.hummerUser inChatRoom:self.chatRoom reason:@"解禁" completionHandler:^(NSError *error) {
-                [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
-                
-                if (error) {
-                    if (completionHandler) {
-                        NSError *error = [NSError errorWithDomain:@"解禁失败" code:HUMMER_ERROR_MUTE userInfo:nil];
-                        completionHandler(error);
-                        [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
-                    }
-                }
-                else {
-                    if (completionHandler) {
-                        completionHandler(error);
-                    }
-                }
-            }];
-        }
+            }
+        }];
     }
     else {
-        if (completionHandler) {
-            NSError *error = [NSError errorWithDomain:@"没有此用户" code:HUMMER_ERROR_NO_USER userInfo:nil];
-            completionHandler(error);
-            [self showErrorLog:__PRETTY_FUNCTION__ error:error];
-        }
+        [[HMRChatRoomService instance] unmuteMember:user inChatRoom:self.chatRoom reason:@"解禁" completionHandler:^(NSError *error) {
+            if (error) {
+                if (completionHandler) {
+                    NSError *error = [NSError errorWithDomain:@"解禁失败" code:HUMMER_ERROR_MUTE userInfo:nil];
+                    completionHandler(error);
+                    [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
+                }
+            }
+            else {
+                if (completionHandler) {
+                    completionHandler(error);
+                    YYLogDebug(@"[MouseLive-Hummer] unmuteMember success uid:%@",uid);
+                }
+            }
+        }];
     }
     YYLogDebug(@"[MouseLive-Hummer] sendMutedWithUid exit");
 }
@@ -778,13 +800,9 @@ static NSString * const kHMRAdminRole = @"Admin";
 - (void)sendAllMutedWithMuted:(BOOL)muted completionHandler:(SYCompletionHandler)completionHandler
 {
     YYLogDebug(@"[MouseLive-Hummer] sendAllMutedWithMuted entry, muted:%d", muted);
-    WeakSelf
-    if (![self isOwnerWithCompletionHandler:completionHandler funName:"sendAllMutedWithMuted"]) {
-        return;
-    }
-    
+ 
     [[HMRChatRoomService instance] changeBasicInfo:@{@(HMRChatRoomBasicInfoTypeExtention):[self encodeExtentionWithAllMute:muted allMicOff:self.isAllMicOff]} forChatRoom:self.chatRoom completionHandler:^(NSError *error) {
-        [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
+        [self showErrorLog:__PRETTY_FUNCTION__ error:error];
         
         if (error) {
             if (completionHandler) {
@@ -794,11 +812,10 @@ static NSString * const kHMRAdminRole = @"Admin";
                 }
                 NSError *error = [NSError errorWithDomain:str code:HUMMER_ERROR_MUTE userInfo:nil];
                 completionHandler(error);
-                [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
+                [self showErrorLog:__PRETTY_FUNCTION__ error:error];
             }
         }
         else {
-//            self.isAllMuted = muted;
             if (completionHandler) {
                 completionHandler(error);
             }
@@ -812,10 +829,6 @@ static NSString * const kHMRAdminRole = @"Admin";
 {
     YYLogDebug(@"[MouseLive-Hummer] sendAllMicOffWithOff entry, off:%d", off);
     WeakSelf
-    if (![self isOwnerWithCompletionHandler:completionHandler funName:"sendAllMicOffWithOff"]) {
-        return;
-    }
-    
     [[HMRChatRoomService instance] changeBasicInfo:@{@(HMRChatRoomBasicInfoTypeExtention):[self encodeExtentionWithAllMute:self.isAllMuted allMicOff:off]} forChatRoom:self.chatRoom completionHandler:^(NSError *error) {
         [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
         
@@ -845,36 +858,22 @@ static NSString * const kHMRAdminRole = @"Admin";
 {
     YYLogDebug(@"[MouseLive-Hummer] addAdminWithUid entry, uid:%@", uid);
     WeakSelf
-    if (![self isOwnerWithCompletionHandler:completionHandler funName:"addAdminWithUid"]) {
-        return;
-    }
-
-    SYUser *user = [self.userDic objectForKey:uid];
-    if (user) {
-        [[HMRChatRoomService instance] addRole:HMRAdminRole forMember:user.hummerUser chatRoom:self.chatRoom completionHandler:^(NSError *error) {
-            [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
-            
-            if (error) {
-                if (completionHandler) {
-                    NSError *error = [NSError errorWithDomain:@"添加管理员失败" code:HUMMER_ERROR_ROLE userInfo:nil];
-                    completionHandler(error);
-                    [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
-                }
+    HMRUser *user = [HMRUser userWithID:uid.intValue];
+    [[HMRChatRoomService instance] addRole:HMRAdminRole forMember:user chatRoom:self.chatRoom completionHandler:^(NSError *error) {
+        if (error) {
+            if (completionHandler) {
+                NSError *error = [NSError errorWithDomain:@"添加管理员失败" code:HUMMER_ERROR_ROLE userInfo:nil];
+                completionHandler(error);
+                [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
             }
-            else {
-                if (completionHandler) {
-                    completionHandler(error);
-                }
+        } else {
+            if (completionHandler) {
+                completionHandler(error);
             }
-        }];
-    }
-    else {
-        if (completionHandler) {
-            NSError *error = [NSError errorWithDomain:@"没有此用户" code:HUMMER_ERROR_NO_USER userInfo:nil];
-            completionHandler(error);
-            [self showErrorLog:__PRETTY_FUNCTION__ error:error];
+            YYLogDebug(@"[MouseLive-Hummer] addAdminWithUid success uid:%@",uid);
         }
-    }
+    }];
+    
     YYLogDebug(@"[MouseLive-Hummer] addAdminWithUid exit");
 }
 
@@ -883,36 +882,26 @@ static NSString * const kHMRAdminRole = @"Admin";
 {
     YYLogDebug(@"[MouseLive-Hummer] removeAdminWithUid entry, uid:%@", uid);
     WeakSelf
-    if (![self isOwnerWithCompletionHandler:completionHandler funName:"removeAdminWithUid"]) {
-        return;
-    }
 
-    SYUser *user = [self.userDic objectForKey:uid];
-    if (user) {
-        [[HMRChatRoomService instance] removeRole:HMRAdminRole forMember:user.hummerUser chatRoom:self.chatRoom completionHandler:^(NSError *error) {
-            [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
-            
-            if (error) {
-                if (completionHandler) {
-                    NSError *error = [NSError errorWithDomain:@"撤销管理员失败" code:HUMMER_ERROR_ROLE userInfo:nil];
-                    completionHandler(error);
-                    [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
-                }
+    HMRUser *user = [HMRUser userWithID:uid.intValue];
+    
+    [[HMRChatRoomService instance] removeRole:HMRAdminRole forMember:user chatRoom:self.chatRoom completionHandler:^(NSError *error) {
+        
+        if (error) {
+            if (completionHandler) {
+                NSError *error = [NSError errorWithDomain:@"撤销管理员失败" code:HUMMER_ERROR_ROLE userInfo:nil];
+                completionHandler(error);
+                [weakSelf showErrorLog:__PRETTY_FUNCTION__ error:error];
             }
-            else {
-                if (completionHandler) {
-                    completionHandler(error);
-                }
-            }
-        }];
-    }
-    else {
-        if (completionHandler) {
-            NSError *error = [NSError errorWithDomain:@"没有此用户" code:HUMMER_ERROR_NO_USER userInfo:nil];
-            completionHandler(error);
-            [self showErrorLog:__PRETTY_FUNCTION__ error:error];
         }
-    }
+        else {
+            if (completionHandler) {
+                completionHandler(error);
+            }
+            YYLogDebug(@"[MouseLive-Hummer] removeRole success uid:%@",uid);
+        }
+    }];
+    
     YYLogDebug(@"[MouseLive-Hummer] removeAdminWithUid exit");
 }
 
@@ -1235,15 +1224,17 @@ didLeaveMembers:(NSSet<HMRUser *> *)members
     NSMutableArray *targetMembers = [[NSMutableArray alloc] initWithCapacity:members.count];
     [members enumerateObjectsUsingBlock:^(HMRUser * _Nonnull obj, BOOL * _Nonnull stop) {
         YYLogDebug(@"[MouseLive-Hummer] didMuteMembers [%d]:%lld", index++, obj.ID);
-        if (weakSelf.uid.longLongValue != obj.ID) {
-            SYUser *user = [[SYUser alloc] initWithHummerUser:obj];
-            [targetMembers addObject:user];
-        }
-        else {
-            if (!weakSelf.isOwner) {
-                weakSelf.isMuted = YES;
-            }
-        }
+        SYUser *user = [[SYUser alloc] initWithHummerUser:obj];
+        [targetMembers addObject:user];
+//        if (weakSelf.uid.longLongValue != obj.ID) {
+//            SYUser *user = [[SYUser alloc] initWithHummerUser:obj];
+//            [targetMembers addObject:user];
+//        }
+//        else {
+//            if (!weakSelf.isOwner) {
+//                weakSelf.isMuted = YES;
+//            }
+//        }
     }];
     
     if ([self.observer respondsToSelector:@selector(didMutedWithArray:muted:)]) {
@@ -1388,12 +1379,22 @@ didUnmuteMembers:(NSSet<HMRUser *> *)members
         if (!self.isOwner) {
             self.isMuted = self.isAllMuted;
         }
+        
+        if ([self.observer respondsToSelector:@selector(didAllMuted:)]) {
+            YYLogDebug(@"[MouseLive-Hummer] didChangeBasicInfo didAllMuted, self.isAllMuted:%d", self.isAllMuted);
+            [self.observer didAllMuted:self.isAllMuted];
+        }
     }
     id isAllMicOff = [response objectForKey:g_AllMicOff];
     if (isAllMicOff) {
         self.isAllMicOff = [isAllMicOff boolValue];
         if (!self.isOwner) {
             self.isMicOff = self.isAllMicOff;
+        }
+        
+        if ([self.observer respondsToSelector:@selector(didAllMicOff:)]) {
+            YYLogDebug(@"[MouseLive-Hummer] didChangeBasicInfo didAllMicOff, self.isAllMicOff:%d", self.isAllMicOff);
+            [self.observer didAllMicOff:self.isAllMicOff];
         }
     }
 }
@@ -1452,6 +1453,28 @@ didUnmuteMembers:(NSSet<HMRUser *> *)members
             }
         }];
     }
+}
+
+- (void)createChatRoomSuccess:(StrCompletion)success fail:(ErrorComplete)fail
+{
+    NSString *roomName = [NSString stringWithFormat:@"SY-%@", [SYUtils generateRandomNumberWithDigitCount:6]];
+    HMRChatRoomInfo *chatRoomInfo = [HMRChatRoomInfo chatRoomInfoWithName:roomName description:nil bulletin:nil appExtra:nil];
+    // 创建聊天室
+    [[HMRChatRoomService instance] createChatRoom:chatRoomInfo completionHandler:^(HMRChatRoom *chatRoom, NSError *error) {
+        if (error) {
+            if (fail) {
+                fail(error);
+            }
+        }
+        else {
+            if (success) {
+                NSString *roomid = [NSString stringWithFormat:@"%llu",chatRoom.ID];
+                if (success) {
+                    success(roomid);
+                }
+            }
+        }
+    }];
 }
 
 @end

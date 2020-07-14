@@ -24,9 +24,19 @@ public class FileUtil {
     private static final String LOG = "log";
     private static final String MUSIC = "music";
     private static final String EFFECTS = "effects";
+    private static final String RECORD = "record";
 
     private static String log;
     private static String music;
+    private static String record;
+
+    public static String getRecord(Context context) {
+        if (!TextUtils.isEmpty(record)) {
+            return record;
+        }
+        record = getFilesDir(context, RECORD).getAbsolutePath();
+        return record;
+    }
 
     public static String getMusic(Context context) {
         if (!TextUtils.isEmpty(music)) {

@@ -20,6 +20,9 @@ public class TokenGetter {
     public static long EXPIRED_TIME = 60 * 60 * 24; // second
 
     public static Observable<Boolean> updateToken(long uid, long appId,String appSecret) {
+        if(TextUtils.isEmpty(appSecret)) {  //如果传入的appSecret为空，则默认使用appid模式
+            return Observable.just(true);
+        }
         return FlyHttpSvc.getInstance().getToken(uid, appId,appSecret,EXPIRED_TIME)
                 .map((response) -> {
                     sToken = response.Data;

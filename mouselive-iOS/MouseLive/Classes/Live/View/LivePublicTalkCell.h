@@ -11,7 +11,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface LivePublicTalkCell : UITableViewCell
-@property (weak, nonatomic) IBOutlet UILabel *talkLable;
+@property (nonatomic, weak) IBOutlet UILabel *talkLable;
 
 @end
 
