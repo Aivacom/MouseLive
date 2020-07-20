@@ -16,7 +16,7 @@ The solution is designed for Video Live Streaming and Audio Chat. You can use Th
 1. Go to [Jocloud](https://www.jocloud.com/en/reg) to register an account and create your own project to get the AppID.
 2. Add the following line in **allprojects-repositories** under **build.gradle** file in your project.
     ```
-    maven {url "http://nexus.sunclouds.com:8081/nexus/content/groups/public/"}
+    maven {url "http://nexus.jocloud.com:8081/nexus/content/groups/public/"}
     ```
 
 3. Import Thunderbolt and Hummer SDK packages.

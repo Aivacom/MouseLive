@@ -218,8 +218,7 @@ public class FlyHttpSvc {
     public Observable<List<EffectTab>> getEffectList(String Version) {
         HashMap<String, Object> params = createParams();
         params.put("Version", Version);
-        return mService.getEffectList("http://fundbg.sunclouds.com/fun/api/v1/getBeauty", params)
-                .flatMap(new ObservableFunction<>());
+        return mService.getEffectList(params).flatMap(new ObservableFunction<>());
     }
 
     private HashMap<String, Object> createParams() {

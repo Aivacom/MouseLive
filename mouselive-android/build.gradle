@@ -34,7 +34,7 @@ buildscript {
 
 allprojects {
     repositories {
-        maven { url "http://nexus.sunclouds.com:8081/nexus/content/groups/public/" }
+        maven { url "http://nexus.jocloud.com:8081/nexus/content/groups/public/" }
         google()
         jcenter()
         maven { url 'http://www.idescout.com/maven/repo/' }

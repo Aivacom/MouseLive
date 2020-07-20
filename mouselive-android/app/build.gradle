@@ -51,7 +51,7 @@ android {
         release {
             initWith(debug)
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            proguardFiles 'proguard-sunclouds.pro'
+            proguardFiles 'proguard-jocloud.pro'
         }
     }
 

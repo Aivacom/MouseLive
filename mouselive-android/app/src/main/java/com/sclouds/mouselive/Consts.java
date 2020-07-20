@@ -10,7 +10,7 @@ public class Consts {
     /**
      * 聚联云官网申请的AppId，请关注https://www.jocloud.com
      */
-    public static long APPID = 请填写appid
+    public static long APPID = 2117985714;
 
     /**
      * 聚联云官网申请的AppId所对应的AppSecret
@@ -27,5 +27,5 @@ public class Consts {
      * orangeFilter sdk sn: 鉴权串。请联系技术支持相关的同学。
      * 如果不需要加载美颜模块，请直接注销app模块下的effectAdapter模块即可
      */
-    public static String OF_SERIAL_NAMBER = 请填写鉴权串
+    public static String OF_SERIAL_NAMBER = "eeb85a58-6cc5-11ea-8247-b42e995a6c82";
 }

@@ -16,7 +16,7 @@
 2. 添加maven地址。
     在工程父目录下找到build.gradle，然后在allprojects-repositories中增加以下代码。
     ```
-    maven { url "http://nexus.sunclouds.com:8081/nexus/content/groups/public/" }
+    maven { url "http://nexus.jocloud.com:8081/nexus/content/groups/public/" }
     ```
 
 3. 引入Thunder SDK 和 Hummer SDK 包。

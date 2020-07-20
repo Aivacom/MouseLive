@@ -71,7 +71,6 @@ public interface FlyApi {
     Observable<ResponseBody> download(@Url String url);
 
     //获取特效
-    @POST
-    Observable<HttpResponse<List<EffectTab>>> getEffectList(@Url String url,
-                                                            @Body Map<String, Object> params);
+    @POST("/fun/api/v1/getBeauty")
+    Observable<HttpResponse<List<EffectTab>>> getEffectList(@Body Map<String, Object> params);
 }
